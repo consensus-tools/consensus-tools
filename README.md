@@ -1,6 +1,10 @@
-![consensus-tools](assets/consensus-tools.png)
-
 # consensus.tools
+
+<p align="center">
+    <picture>
+        <img src="https://raw.githubusercontent.com/consensus-tools/consensus-tools/main/assets/consensus-tools" alt="consensus-tools" width="500">
+    </picture>
+</p>
 
 **High-confidence decisions for agentic systems.**
 Local-first. Incentive-aligned. Verifiable.
