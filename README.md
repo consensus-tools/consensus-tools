@@ -1,3 +1,5 @@
+![consensus-tools](assets/consensus-tools.png)
+
 # consensus.tools
 
 **High-confidence decisions for agentic systems.**

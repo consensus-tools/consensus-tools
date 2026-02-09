@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/consensus-tools",
+  "name": "@consensus-tools/consensus-tools",
   "version": "0.1.0",
   "type": "module",
   "main": "index.ts",
