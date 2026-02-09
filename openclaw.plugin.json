@@ -1,0 +1,185 @@
+{
+  "id": "consensus-tools",
+  "name": "consensus-tools",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "description": "consensus-tools distributed job board for OpenClaw agents",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": ["local", "global"],
+        "default": "local",
+        "description": "Choose local storage or a hosted global job board"
+      },
+      "local": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "storage": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["sqlite", "json"],
+                "default": "json"
+              },
+              "path": {
+                "type": "string",
+                "default": "./.openclaw/consensus-tools.json"
+              }
+            },
+            "required": ["kind", "path"]
+          },
+          "server": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": { "type": "boolean", "default": false },
+              "host": { "type": "string", "default": "127.0.0.1" },
+              "port": { "type": "integer", "default": 9888, "minimum": 1, "maximum": 65535 },
+              "authToken": { "type": "string", "default": "" }
+            },
+            "required": ["enabled", "host", "port", "authToken"]
+          },
+          "slashingEnabled": { "type": "boolean", "default": false },
+          "jobDefaults": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reward": { "type": "number", "default": 10, "minimum": 0 },
+              "stakeRequired": { "type": "number", "default": 1, "minimum": 0 },
+              "maxParticipants": { "type": "integer", "default": 3, "minimum": 1 },
+              "minParticipants": { "type": "integer", "default": 1, "minimum": 1 },
+              "expiresSeconds": { "type": "integer", "default": 86400, "minimum": 60 },
+              "consensusPolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["SINGLE_WINNER", "MAJORITY_VOTE", "WEIGHTED_REPUTATION", "TRUSTED_ARBITER"],
+                    "default": "SINGLE_WINNER"
+                  },
+                  "trustedArbiterAgentId": { "type": "string", "default": "" }
+                },
+                "required": ["type", "trustedArbiterAgentId"]
+              },
+              "slashingPolicy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": { "type": "boolean", "default": false },
+                  "slashPercent": { "type": "number", "default": 0, "minimum": 0, "maximum": 1 },
+                  "slashFlat": { "type": "number", "default": 0, "minimum": 0 }
+                },
+                "required": ["enabled", "slashPercent", "slashFlat"]
+              }
+            },
+            "required": [
+              "reward",
+              "stakeRequired",
+              "maxParticipants",
+              "minParticipants",
+              "expiresSeconds",
+              "consensusPolicy",
+              "slashingPolicy"
+            ]
+          },
+          "ledger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "faucetEnabled": { "type": "boolean", "default": false },
+              "initialCreditsPerAgent": { "type": "number", "default": 0, "minimum": 0 },
+              "balancesMode": { "type": "string", "enum": ["initial", "override"], "default": "initial" },
+              "balances": {
+                "type": "object",
+                "additionalProperties": { "type": "number", "minimum": 0 },
+                "default": {}
+              }
+            },
+            "required": ["faucetEnabled", "initialCreditsPerAgent", "balancesMode", "balances"]
+          }
+        },
+        "required": ["storage", "server", "slashingEnabled", "jobDefaults", "ledger"]
+      },
+      "global": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "baseUrl": {
+            "type": "string",
+            "default": "http://localhost:9888"
+          },
+          "accessToken": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": ["baseUrl", "accessToken"]
+      },
+      "agentIdentity": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "agentIdSource": {
+            "type": "string",
+            "enum": ["openclaw", "env", "manual"],
+            "default": "openclaw"
+          },
+          "manualAgentId": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "required": ["agentIdSource", "manualAgentId"]
+      },
+      "safety": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "requireOptionalToolsOptIn": { "type": "boolean", "default": true },
+          "allowNetworkSideEffects": { "type": "boolean", "default": false }
+        },
+        "required": ["requireOptionalToolsOptIn", "allowNetworkSideEffects"]
+      }
+    },
+    "required": ["mode", "agentIdentity", "safety"],
+    "allOf": [
+      {
+        "if": { "properties": { "mode": { "const": "local" } } },
+        "then": { "required": ["local"] }
+      },
+      {
+        "if": { "properties": { "mode": { "const": "global" } } },
+        "then": { "required": ["global"] }
+      }
+    ]
+  },
+  "uiHints": {
+    "local": {
+      "storage": {
+        "path": { "ui:widget": "file" }
+      },
+      "server": {
+        "authToken": { "ui:widget": "password", "sensitive": true }
+      },
+      "ledger": {
+        "faucetEnabled": { "ui:widget": "checkbox", "warning": "Dev-only faucet" },
+        "balancesMode": { "label": "Balance mode", "ui:widget": "radio" },
+        "balances": { "label": "Per-agent balances" }
+      }
+    },
+    "global": {
+      "baseUrl": { "label": "Global board URL" },
+      "accessToken": { "ui:widget": "password", "sensitive": true, "label": "Access Token" }
+    },
+    "safety": {
+      "allowNetworkSideEffects": { "ui:widget": "checkbox", "warning": "Enables network mutations" }
+    }
+  }
+}
