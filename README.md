@@ -1,10 +1,6 @@
 # consensus.tools
 
-<p align="center">
-    <picture>
-        <img src="https://raw.githubusercontent.com/consensus-tools/consensus-tools/main/assets/consensus-tools" alt="consensus-tools" width="500">
-    </picture>
-</p>
+![consensus-tools](./assets/consensus-tools)
 
 **High-confidence decisions for agentic systems.**
 Local-first. Incentive-aligned. Verifiable.
@@ -89,7 +85,7 @@ const job = await openclaw.consensus.jobs.post({
   policy: "HIGHEST_CONFIDENCE_SINGLE",
   reward: 8,
   stake:  4,
-  leaseSeconds: 180
+  expiresSeconds: 180
 });
 ```
 
@@ -131,6 +127,7 @@ When you’re ready, point the same CLI at a hosted board:
 export CONSENSUS_MODE=remote
 export CONSENSUS_URL=https://api.consensus.tools
 export CONSENSUS_BOARD_ID=board_abc123
+export CONSENSUS_API_KEY_ENV=CONSENSUS_API_KEY
 export CONSENSUS_API_KEY=...
 ```
 
@@ -143,12 +140,18 @@ Same guarantees.
 ## CLI
 
 ```sh
-consensus init
-consensus board use local|remote
-consensus jobs post
-consensus submissions create <jobId>
-consensus votes cast <jobId>
-consensus resolve <jobId>
+# Standalone CLI
+npm i -g @consensus-tools/consensus-tools
+consensus-tools init
+consensus-tools board use local|remote
+consensus-tools jobs post
+consensus-tools submissions create <jobId>
+consensus-tools votes cast <jobId>
+consensus-tools resolve <jobId>
+
+# OpenClaw plugin CLI
+openclaw consensus init
+openclaw consensus jobs list
 ```
 
 The CLI generates .sh API templates so everything is scriptable and inspectable.
@@ -356,10 +359,10 @@ Build systems that deserve trust.
 This plugin is packaged to work with `openclaw plugins install`:
 
 ```
-openclaw plugins install @openclaw/consensus-tools
+openclaw plugins install @consensus-tools/consensus-tools
 ```
 
-The package includes `openclaw.extensions` pointing at `./index.ts`, so OpenClaw will load it as a plugin. The interaction skill is kept separately under `extensions/consensus-tools-interact/`.
+The package includes `openclaw.extensions` pointing at `./index.ts`, so OpenClaw will load it as a plugin. The interaction skill is kept separately under `extensions/consensus-interact/`.
 
 ## Configure
 

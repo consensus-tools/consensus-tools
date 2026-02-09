@@ -1,9 +1,18 @@
-import { readFileSync, promises as fs } from 'node:fs';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import type { ConsensusToolsConfig, Job } from './types';
 import { renderTable } from './util/table';
-import { runConsensusPolicyTests } from '../tests/runner/consensusTestRunner';
+import { runConsensusPolicyTests } from './testing/consensusTestRunner';
+import { runInitWizard } from './initWizard';
+import {
+  defaultConsensusCliConfig,
+  getConfigValue,
+  loadCliConfig,
+  parseValue,
+  saveCliConfig,
+  setConfigValue,
+  type ConsensusCliConfig
+} from './cliConfig';
 
 export interface ConsensusToolsBackendCli {
   postJob(agentId: string, input: any): Promise<Job>;
@@ -17,15 +26,67 @@ export interface ConsensusToolsBackendCli {
   resolveJob(agentId: string, jobId: string, input: any): Promise<any>;
 }
 
+export async function initRepo(opts: {
+  rootDir?: string;
+  force?: boolean;
+  wizard?: boolean;
+  templatesOnly?: boolean;
+}): Promise<void> {
+  const rootDir = opts.rootDir || process.cwd();
+  const force = Boolean(opts.force);
+  const templatesOnly = Boolean(opts.templatesOnly);
+  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  const wizard = typeof opts.wizard === 'boolean' ? opts.wizard : interactive;
+
+  if (templatesOnly || !wizard) {
+    await writeInitTemplates(rootDir, force, defaultConsensusCliConfig);
+    return;
+  }
+
+  if (!interactive) {
+    throw new Error('init wizard requires a TTY. Re-run with --templates-only.');
+  }
+
+  const result = await runInitWizard(rootDir);
+  await writeInitTemplates(rootDir, force, result.config);
+  if (result.env) {
+    await writeEnvFile(rootDir, force, result.env);
+  }
+}
+
 export function registerCli(program: any, backend: ConsensusToolsBackendCli, config: ConsensusToolsConfig, agentId: string) {
   const consensus = program.command('consensus').description('Consensus tools');
+  registerConsensusSubcommands(consensus, backend, config, agentId);
+}
 
+export function registerStandaloneCli(
+  program: any,
+  backend: ConsensusToolsBackendCli,
+  config: ConsensusToolsConfig,
+  agentId: string
+) {
+  registerConsensusSubcommands(program, backend, config, agentId);
+}
+
+function registerConsensusSubcommands(
+  consensus: any,
+  backend: ConsensusToolsBackendCli,
+  _config: ConsensusToolsConfig,
+  agentId: string
+) {
   consensus
     .command('init')
-    .description('Generate .consensus shell templates')
+    .description('Initialize consensus-tools in this repo (.consensus/)')
     .option('--force', 'Overwrite existing files')
+    .option('--wizard', 'Run an interactive wizard (default when TTY)')
+    .option('--templates-only', 'Only generate templates; skip prompts')
     .action(async (opts: any) => {
-      await writeInitTemplates(process.cwd(), Boolean(opts.force));
+      await initRepo({
+        rootDir: process.cwd(),
+        force: Boolean(opts.force),
+        wizard: typeof opts.wizard === 'boolean' ? opts.wizard : undefined,
+        templatesOnly: Boolean(opts.templatesOnly)
+      });
       console.log('Created .consensus templates.');
     });
 
@@ -34,7 +95,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .command('get <key>')
     .description('Get a config value')
     .action(async (key: string) => {
-      const cfg = await loadConfigFile();
+      const cfg = await loadCliConfig();
       const value = getConfigValue(cfg, key);
       output(value ?? null, true);
     });
@@ -43,10 +104,10 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .command('set <key> <value>')
     .description('Set a config value')
     .action(async (key: string, value: string) => {
-      const cfg = await loadConfigFile();
+      const cfg = await loadCliConfig();
       const parsed = parseValue(value);
       setConfigValue(cfg, key, parsed);
-      await saveConfigFile(cfg);
+      await saveCliConfig(cfg);
       output({ ok: true }, true);
     });
 
@@ -55,7 +116,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .command('use <type> [url]')
     .description('Select local or remote board')
     .action(async (type: string, url?: string) => {
-      const cfg = await loadConfigFile();
+      const cfg = await loadCliConfig();
       if (type !== 'local' && type !== 'remote') {
         throw new Error('board type must be local or remote');
       }
@@ -63,7 +124,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
       if (type === 'remote' && url) {
         cfg.boards.remote.url = url;
       }
-      await saveConfigFile(cfg);
+      await saveCliConfig(cfg);
       output({ activeBoard: cfg.activeBoard, url: cfg.boards.remote.url }, true);
     });
 
@@ -78,7 +139,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .option('--policy <policy>', 'Policy key')
     .option('--reward <n>', 'Reward amount', parseFloat)
     .option('--stake <n>', 'Stake amount', parseFloat)
-    .option('--lease <seconds>', 'Lease seconds', parseInt)
+    .option('--expires <seconds>', 'Expires seconds', parseInt)
     .option('--json', 'JSON output')
     .action(async (opts: any) => {
       const input = opts.input ?? (await readStdinIfAny());
@@ -93,7 +154,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
         stakeAmount: opts.stake,
         reward: opts.reward,
         stakeRequired: opts.stake,
-        expiresSeconds: opts.lease
+        expiresSeconds: opts.expires
       });
       output(job, opts.json);
     });
@@ -228,7 +289,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .command('run')
     .description('Run consensus policy tests with generation script')
     .option('--agents <n>', 'Number of agent personalities', parseInt)
-    .option('--script <path>', 'Path to generation script', 'tests/runner/generation.ts')
+    .option('--script <path>', 'Path to generation script', '.consensus/generation.ts')
     .option('--openai-key <key>', 'OpenAI API key (or set OPENAI_API_KEY)')
     .option('--model <name>', 'Model name', 'gpt-5.2')
     .action(async (opts: any) => {
@@ -270,89 +331,14 @@ async function readStdinIfAny(): Promise<string | undefined> {
   return text || undefined;
 }
 
-type ConsensusConfig = {
-  activeBoard: 'local' | 'remote';
-  boards: {
-    local: { type: 'local'; root: string; jobsPath: string; ledgerPath: string };
-    remote: { type: 'remote'; url: string; boardId: string; auth: { type: 'apiKey'; apiKeyEnv: string } };
-  };
-  defaults: { policy: string; reward: number; stake: number; leaseSeconds: number };
-};
-
-const defaultConsensusConfig: ConsensusConfig = {
-  activeBoard: 'local',
-  boards: {
-    local: {
-      type: 'local',
-      root: '~/.openclaw/workplace/consensus-board',
-      jobsPath: 'jobs',
-      ledgerPath: 'ledger.json'
-    },
-    remote: {
-      type: 'remote',
-      url: 'https://api.consensus.tools',
-      boardId: 'board_replace_me',
-      auth: { type: 'apiKey', apiKeyEnv: 'CONSENSUS_API_KEY' }
-    }
-  },
-  defaults: {
-    policy: 'HIGHEST_CONFIDENCE_SINGLE',
-    reward: 8,
-    stake: 4,
-    leaseSeconds: 180
-  }
-};
-
-function configPath(): string {
-  const envPath = process.env.CONSENSUS_CONFIG;
-  if (envPath) return expandHome(envPath);
-  return path.join(os.homedir(), '.consensus', 'config.json');
+async function writeEnvFile(rootDir: string, force: boolean, env: Record<string, string>): Promise<void> {
+  const filePath = path.join(rootDir, '.consensus', '.env');
+  const lines = Object.entries(env).map(([k, v]) => `export ${k}=${v}`);
+  const content = [...lines, ''].join('\n');
+  await writeFile(filePath, content, force);
 }
 
-function expandHome(input: string): string {
-  if (!input.startsWith('~')) return input;
-  return path.join(os.homedir(), input.slice(1));
-}
-
-async function loadConfigFile(): Promise<ConsensusConfig> {
-  const filePath = configPath();
-  try {
-    const raw = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(raw) as ConsensusConfig;
-  } catch {
-    return JSON.parse(JSON.stringify(defaultConsensusConfig)) as ConsensusConfig;
-  }
-}
-
-async function saveConfigFile(config: ConsensusConfig): Promise<void> {
-  const filePath = configPath();
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(config, null, 2), 'utf8');
-}
-
-function getConfigValue(config: any, key: string): any {
-  return key.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), config);
-}
-
-function setConfigValue(config: any, key: string, value: any): void {
-  const parts = key.split('.');
-  let cur = config as any;
-  for (let i = 0; i < parts.length - 1; i += 1) {
-    if (!cur[parts[i]]) cur[parts[i]] = {};
-    cur = cur[parts[i]];
-  }
-  cur[parts[parts.length - 1]] = value;
-}
-
-function parseValue(input: string): any {
-  try {
-    return JSON.parse(input);
-  } catch {
-    return input;
-  }
-}
-
-async function writeInitTemplates(rootDir: string, force: boolean): Promise<void> {
+async function writeInitTemplates(rootDir: string, force: boolean, config: ConsensusCliConfig): Promise<void> {
   const baseDir = path.join(rootDir, '.consensus');
   const apiDir = path.join(baseDir, 'api');
 
@@ -360,8 +346,10 @@ async function writeInitTemplates(rootDir: string, force: boolean): Promise<void
 
   const files: Array<{ path: string; content: string; executable?: boolean }> = [
     { path: path.join(baseDir, 'README.md'), content: consensusReadme() },
-    { path: path.join(baseDir, 'env.example'), content: envExample() },
-    { path: path.join(baseDir, 'config.json'), content: JSON.stringify(defaultConsensusConfig, null, 2) },
+    { path: path.join(baseDir, 'env.example'), content: envExample(config) },
+    { path: path.join(baseDir, '.gitignore'), content: ['.env', ''].join('\n') },
+    { path: path.join(baseDir, 'config.json'), content: JSON.stringify(config, null, 2) },
+    { path: path.join(baseDir, 'generation.ts'), content: generationScriptTemplate() },
     { path: path.join(apiDir, 'common.sh'), content: commonSh(), executable: true },
     { path: path.join(apiDir, 'jobs_post.sh'), content: jobsPostSh(), executable: true },
     { path: path.join(apiDir, 'jobs_get.sh'), content: jobsGetSh(), executable: true },
@@ -397,7 +385,7 @@ function consensusReadme(): string {
   return [
     '# consensus.tools shell templates',
     '',
-    'This folder is generated by `consensus init`.',
+    'This folder is generated by `consensus-tools init` (or `openclaw consensus init`).',
     '',
     '## Quick start',
     '',
@@ -426,6 +414,13 @@ function consensusReadme(): string {
     'bash .consensus/api/jobs_post.sh "Title" "Desc" "Input"',
     '```',
     '',
+    'Try the CLI:',
+    '',
+    '```bash',
+    'consensus-tools jobs list',
+    'consensus-tools jobs post --title "Hello" --desc "World" --input "Test"',
+    '```',
+    '',
     'Notes',
     '',
     'Local mode writes to CONSENSUS_ROOT (defaults in env.example).',
@@ -437,24 +432,129 @@ function consensusReadme(): string {
   ].join('\n');
 }
 
-function envExample(): string {
+function envExample(config: ConsensusCliConfig): string {
+  const apiKeyEnv = config.boards.remote.auth.apiKeyEnv || 'CONSENSUS_API_KEY';
   return [
     '# Mode: "local" or "remote"',
-    'export CONSENSUS_MODE=local',
+    `export CONSENSUS_MODE=${config.activeBoard === 'remote' ? 'remote' : 'local'}`,
+    '',
+    '# Agent id (used by the CLI; optional)',
+    'export CONSENSUS_AGENT_ID="cli@your-machine"',
     '',
     '# Local board root (JSON filesystem board)',
-    'export CONSENSUS_ROOT="$HOME/.openclaw/workplace/consensus-board"',
+    `export CONSENSUS_ROOT="${config.boards.local.root}"`,
     '',
     '# Remote board settings',
-    'export CONSENSUS_URL="https://api.consensus.tools"',
-    'export CONSENSUS_BOARD_ID="board_replace_me"',
-    'export CONSENSUS_API_KEY="replace_me"',
+    `export CONSENSUS_URL="${config.boards.remote.url}"`,
+    `export CONSENSUS_BOARD_ID="${config.boards.remote.boardId}"`,
+    `export CONSENSUS_API_KEY_ENV="${apiKeyEnv}"`,
+    `export ${apiKeyEnv}="replace_me"`,
     '',
     '# Defaults (used by jobs_post.sh if not provided)',
-    'export CONSENSUS_DEFAULT_POLICY="HIGHEST_CONFIDENCE_SINGLE"',
-    'export CONSENSUS_DEFAULT_REWARD="8"',
-    'export CONSENSUS_DEFAULT_STAKE="4"',
-    'export CONSENSUS_DEFAULT_LEASE_SECONDS="180"',
+    `export CONSENSUS_DEFAULT_POLICY="${config.defaults.policy}"`,
+    `export CONSENSUS_DEFAULT_REWARD="${config.defaults.reward}"`,
+    `export CONSENSUS_DEFAULT_STAKE="${config.defaults.stake}"`,
+    `export CONSENSUS_DEFAULT_LEASE_SECONDS="${config.defaults.leaseSeconds}"`,
+    ''
+  ].join('\n');
+}
+
+function generationScriptTemplate(): string {
+  return [
+    '// Generated by consensus-tools init.',
+    '// Customize this file, then run:',
+    '//   consensus-tools tests run --agents 6 --script .consensus/generation.ts',
+    '',
+    '/**',
+    ' * This script is intentionally deterministic by default (mockResponse).',
+    ' * If you provide OPENAI_API_KEY (or --openai-key), the runner will call OpenAI.',
+    ' */',
+    'const script = {',
+    "  name: 'rx_negation_demo',",
+    '  task: {',
+    "    title: 'Negation test: prescription advancement',",
+    "    desc: 'Tell us why this insulin amount is NOT enough based on patient file, insurance reqs, and doctor notes.',",
+    '    input: [',
+    "      'We want to negation test prescription advancement for diabetic patients.',",
+    "      'Explain why the insulin amount is not enough based on:',",
+    "      '- patient file',",
+    "      '- insurance info/requirements',",
+    "      '- doctor notes',",
+    "      '',",
+    "      'Patient file: (paste here)',",
+    "      '',",
+    "      'Insurance info/requirements: (paste here)',",
+    "      '',",
+    "      'Doctor notes: (paste here)'",
+    '    ].join(\"\\n\")',
+    '  },',
+    "  expectedAnswer: 'INSUFFICIENT',",
+    '  personas: [],',
+    '  getPersonas(count) {',
+    '    const n = Math.max(3, Number(count || 3));',
+    '    const third = Math.ceil(n / 3);',
+    '',
+    '    const mk = (role, i, systemPrompt, personaRole) => ({',
+    "      id: `${role}_${i + 1}`,",
+    "      name: `${role.toUpperCase()} Agent ${i + 1}`,",
+    '      systemPrompt,',
+    '      role: personaRole',
+    '    });',
+    '',
+    '    const doctors = Array.from({ length: third }, (_, i) =>',
+    '      mk(',
+    "        'doctor',",
+    '        i,',
+    "        'You are a practicing clinician. Be precise. Use only the provided case context. Focus on medical necessity.',",
+    "        'accurate'",
+    '      )',
+    '    );',
+    '    const support = Array.from({ length: third }, (_, i) =>',
+    '      mk(',
+    "        'support',",
+    '        i,',
+    "        'You are customer support at a pharmacy benefits manager. Focus on process, eligibility, required docs, and next steps.',",
+    "        'accurate'",
+    '      )',
+    '    );',
+    '    const insurance = Array.from({ length: n - 2 * third }, (_, i) =>',
+    '      mk(',
+    "        'insurance',",
+    '        i,',
+    "        'You are an insurance reviewer. Apply coverage criteria and utilization management rules. Be skeptical and cite requirements.',",
+    // Make the last insurance persona contrarian to ensure policies see disagreement.
+    "        i === (n - 2 * third) - 1 ? 'contrarian' : 'accurate'",
+    '      )',
+    '    );',
+    '',
+    '    return [...doctors, ...support, ...insurance].slice(0, n);',
+    '  },',
+    '  buildPrompt(persona, task, expectedAnswer) {',
+    '    return {',
+    '      system: persona.systemPrompt,',
+    '      user: [',
+    "        'Return JSON: {\"answer\": string, \"confidence\": number, \"evidence\": string[]}',",
+    "        '',",
+    "        `TASK: ${task.title}`,",
+    "        task.desc ? `DESC: ${task.desc}` : '',",
+    "        '',",
+    "        `INPUT:\\n${task.input}`,",
+    "        '',",
+    "        `EXPECTED (for negation testing): ${expectedAnswer}`",
+    '      ].filter(Boolean).join(\"\\n\")',
+    '    };',
+    '  },',
+    '  mockResponse(persona, task, expectedAnswer) {',
+    '    const answer = persona.role === \"contrarian\" ? \"SUFFICIENT\" : expectedAnswer;',
+    '    return JSON.stringify({',
+    '      answer,',
+    '      confidence: persona.role === \"contrarian\" ? 0.2 : 0.9,',
+    '      evidence: [persona.name, task.title]',
+    '    });',
+    '  }',
+    '};',
+    '',
+    'export default script;',
     ''
   ].join('\n');
 }
@@ -509,9 +609,14 @@ function commonSh(): string {
     '  echo "${CONSENSUS_URL%/}/v1/boards/${CONSENSUS_BOARD_ID}"',
     '}',
     '',
+    'api_key_env() {',
+    '  echo "${CONSENSUS_API_KEY_ENV:-CONSENSUS_API_KEY}"',
+    '}',
+    '',
     'remote_auth_header() {',
-    '  require_env "CONSENSUS_API_KEY"',
-    '  echo "Authorization: Bearer ${CONSENSUS_API_KEY}"',
+    '  local name; name="$(api_key_env)"',
+    '  require_env "$name"',
+    '  echo "Authorization: Bearer ${!name}"',
     '}',
     '',
     'curl_json() {',
