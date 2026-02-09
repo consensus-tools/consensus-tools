@@ -89,7 +89,7 @@ const job = await openclaw.consensus.jobs.post({
   policy: "HIGHEST_CONFIDENCE_SINGLE",
   reward: 8,
   stake:  4,
-  leaseSeconds: 180
+  expiresSeconds: 180
 });
 ```
 

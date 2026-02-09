@@ -78,7 +78,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
     .option('--policy <policy>', 'Policy key')
     .option('--reward <n>', 'Reward amount', parseFloat)
     .option('--stake <n>', 'Stake amount', parseFloat)
-    .option('--lease <seconds>', 'Lease seconds', parseInt)
+    .option('--expires <seconds>', 'Expires seconds', parseInt)
     .option('--json', 'JSON output')
     .action(async (opts: any) => {
       const input = opts.input ?? (await readStdinIfAny());
@@ -93,7 +93,7 @@ export function registerCli(program: any, backend: ConsensusToolsBackendCli, con
         stakeAmount: opts.stake,
         reward: opts.reward,
         stakeRequired: opts.stake,
-        expiresSeconds: opts.lease
+        expiresSeconds: opts.expires
       });
       output(job, opts.json);
     });
