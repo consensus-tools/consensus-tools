@@ -1,7 +1,7 @@
 {
   "id": "consensus-tools",
   "name": "consensus-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.ts",
   "description": "consensus-tools distributed job board for OpenClaw agents",
   "configSchema": {
