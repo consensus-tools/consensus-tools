@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/consensus-tools",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "type": "module",
   "main": "index.ts",
   "bin": {
