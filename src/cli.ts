@@ -1057,7 +1057,7 @@ function resolveSh(): string {
     'const storage=new JsonStorage(stateFile); await storage.init();',
     'const ledger=new LedgerEngine(storage, defaultConfig);',
     'const engine=new JobEngine(storage, ledger, defaultConfig);',
-    'const input:any = {};',
+    'const input = {};',
     'if (winner) input.manualWinners = [winner];',
     'if (subId) input.manualSubmissionId = subId;',
     "const actor = winner || 'cli@local';",

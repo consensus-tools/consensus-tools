@@ -170,11 +170,16 @@ test('local engine: resolve authorization invariants (TRUSTED_ARBITER / OWNER_PI
   });
 
   await engine.claimJob('agentA', jobArb.id, { stakeAmount: 1, leaseSeconds: 3600 });
-  await engine.submitJob('agentA', jobArb.id, { summary: 'A', artifacts: { ok: true }, confidence: 0.8 });
+  const subArb = await engine.submitJob('agentA', jobArb.id, { summary: 'A', artifacts: { ok: true }, confidence: 0.8 });
 
   await assert.rejects(() => engine.resolveJob('not-arb', jobArb.id, {}));
-  const resArb = await engine.resolveJob('arb', jobArb.id, {});
+  await assert.rejects(() => engine.resolveJob('arb', jobArb.id, {}));
+  const resArb = await engine.resolveJob('arb', jobArb.id, {
+    manualWinners: ['agentA'],
+    manualSubmissionId: subArb.id
+  });
   assert.equal(resArb.jobId, jobArb.id);
+  assert.equal(resArb.winners[0], 'agentA');
 
   // OWNER_PICK
   const jobOwner = await engine.postJob('owner', {
@@ -187,11 +192,16 @@ test('local engine: resolve authorization invariants (TRUSTED_ARBITER / OWNER_PI
   });
 
   await engine.claimJob('agentA', jobOwner.id, { stakeAmount: 1, leaseSeconds: 3600 });
-  await engine.submitJob('agentA', jobOwner.id, { summary: 'A', artifacts: { ok: true }, confidence: 0.8 });
+  const subOwner = await engine.submitJob('agentA', jobOwner.id, { summary: 'A', artifacts: { ok: true }, confidence: 0.8 });
 
   await assert.rejects(() => engine.resolveJob('arb', jobOwner.id, {}));
-  const resOwner = await engine.resolveJob('owner', jobOwner.id, {});
+  await assert.rejects(() => engine.resolveJob('owner', jobOwner.id, {}));
+  const resOwner = await engine.resolveJob('owner', jobOwner.id, {
+    manualWinners: ['agentA'],
+    manualSubmissionId: subOwner.id
+  });
   assert.equal(resOwner.jobId, jobOwner.id);
+  assert.equal(resOwner.winners[0], 'agentA');
 });
 
 test('local engine: slashing + ledger conservation (no submit => slash when enabled)', async () => {
