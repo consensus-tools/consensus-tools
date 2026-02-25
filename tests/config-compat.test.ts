@@ -17,26 +17,25 @@ test('config compatibility: loadConfig normalizes SINGLE_WINNER to FIRST_SUBMISS
       getPluginConfig: () => ({
         mode: 'local',
         local: {
-          storage: { kind: 'json', path: './.openclaw/consensus-tools.json' },
-          server: { enabled: false, host: '127.0.0.1', port: 9888, authToken: '' },
-          slashingEnabled: false,
           jobDefaults: {
-            reward: 10,
-            stakeRequired: 1,
-            maxParticipants: 3,
-            minParticipants: 1,
-            expiresSeconds: 86400,
-            consensusPolicy: { type: 'SINGLE_WINNER', trustedArbiterAgentId: '' },
-            slashingPolicy: { enabled: false, slashPercent: 0, slashFlat: 0 }
-          },
-          ledger: { faucetEnabled: false, initialCreditsPerAgent: 0, balancesMode: 'initial', balances: {} }
-        },
-        global: { baseUrl: 'http://localhost:9888', accessToken: '' },
-        agentIdentity: { agentIdSource: 'openclaw', manualAgentId: '' },
-        safety: { requireOptionalToolsOptIn: true, allowNetworkSideEffects: false }
+            consensusPolicy: { type: 'SINGLE_WINNER', trustedArbiterAgentId: '' }
+          }
+        }
       })
     }
   });
 
   assert.equal(loaded.local.jobDefaults.consensusPolicy.type, 'FIRST_SUBMISSION_WINS');
+});
+
+test('config compatibility: partial/empty plugin config still validates after defaults merge', () => {
+  const loaded = loadConfig({
+    config: {
+      getPluginConfig: () => ({})
+    }
+  });
+
+  const result = validateConfig(loaded);
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.config.mode, 'local');
 });

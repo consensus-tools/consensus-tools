@@ -19,8 +19,7 @@ export const configSchema = {
           properties: {
             kind: { type: 'string', enum: ['sqlite', 'json'], default: 'json' },
             path: { type: 'string', default: './.openclaw/consensus-tools.json' }
-          },
-          required: ['kind', 'path']
+          }
         },
         server: {
           type: 'object',
@@ -31,7 +30,6 @@ export const configSchema = {
             port: { type: 'integer', default: 9888, minimum: 1, maximum: 65535 },
             authToken: { type: 'string', default: '' }
           },
-          required: ['enabled', 'host', 'port', 'authToken']
         },
         slashingEnabled: { type: 'boolean', default: false },
         jobDefaults: {
@@ -82,7 +80,6 @@ export const configSchema = {
                   }
                 }
               },
-              required: ['type', 'trustedArbiterAgentId']
             },
             slashingPolicy: {
               type: 'object',
@@ -92,18 +89,8 @@ export const configSchema = {
                 slashPercent: { type: 'number', default: 0, minimum: 0, maximum: 1 },
                 slashFlat: { type: 'number', default: 0, minimum: 0 }
               },
-              required: ['enabled', 'slashPercent', 'slashFlat']
             }
           },
-          required: [
-            'reward',
-            'stakeRequired',
-            'maxParticipants',
-            'minParticipants',
-            'expiresSeconds',
-            'consensusPolicy',
-            'slashingPolicy'
-          ]
         },
         consensusPolicies: {
           type: 'object',
@@ -145,7 +132,6 @@ export const configSchema = {
                 }
               }
             },
-            required: ['type']
           },
           default: {}
         },
@@ -162,10 +148,8 @@ export const configSchema = {
               default: {}
             }
           },
-          required: ['faucetEnabled', 'initialCreditsPerAgent', 'balancesMode', 'balances']
         }
       },
-      required: ['storage', 'server', 'slashingEnabled', 'jobDefaults', 'ledger']
     },
     global: {
       type: 'object',
@@ -174,7 +158,6 @@ export const configSchema = {
         baseUrl: { type: 'string', default: 'http://localhost:9888' },
         accessToken: { type: 'string', default: '' }
       },
-      required: ['baseUrl', 'accessToken']
     },
     agentIdentity: {
       type: 'object',
@@ -183,7 +166,6 @@ export const configSchema = {
         agentIdSource: { type: 'string', enum: ['openclaw', 'env', 'manual'], default: 'openclaw' },
         manualAgentId: { type: 'string', default: '' }
       },
-      required: ['agentIdSource', 'manualAgentId']
     },
     safety: {
       type: 'object',
@@ -192,20 +174,8 @@ export const configSchema = {
         requireOptionalToolsOptIn: { type: 'boolean', default: true },
         allowNetworkSideEffects: { type: 'boolean', default: false }
       },
-      required: ['requireOptionalToolsOptIn', 'allowNetworkSideEffects']
     }
   },
-  required: ['mode', 'agentIdentity', 'safety'],
-  allOf: [
-    {
-      if: { properties: { mode: { const: 'local' } } },
-      then: { required: ['local'] }
-    },
-    {
-      if: { properties: { mode: { const: 'global' } } },
-      then: { required: ['global'] }
-    }
-  ]
 } as const;
 
 export const defaultConfig: ConsensusToolsConfig = {
