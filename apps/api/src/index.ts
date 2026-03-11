@@ -30,7 +30,7 @@ async function main() {
   const resolver = createRegistryResolver();
   const engine = new JobEngine(storage, ledger, config, undefined, resolver);
 
-  const server = new ConsensusToolsServer(config, engine, ledger, console);
+  const server = new ConsensusToolsServer({ config, engine, ledger, storage, logger: console });
   await server.start();
   console.log("consensus-tools API server running on http://127.0.0.1:9888");
 }

@@ -96,3 +96,77 @@ export {
   traceSpanSchema,
   type TraceSpan,
 } from "./telemetry.js";
+
+// ── Guard ───────────────────────────────────────────────────────────
+export {
+  guardTypeSchema,
+  type GuardType,
+  guardDecisionSchema,
+  type GuardDecision,
+  guardVoteValueSchema,
+  type GuardVoteValue,
+  guardVoteSchema,
+  type GuardVote,
+  weightedGuardVoteSchema,
+  type WeightedGuardVote,
+  guardPolicySchema,
+  type GuardPolicy,
+  guardEvaluateInputSchema,
+  type GuardEvaluateInput,
+  guardEvaluateRequestSchema,
+  type GuardEvaluateRequest,
+  guardResultSchema,
+  type GuardResult,
+  weightingModeSchema,
+  type WeightingMode,
+  type VoteTally,
+  humanApprovalRequestSchema,
+  type HumanApprovalRequest,
+  parseHumanApprovalYesNo,
+} from "./guard.js";
+
+// ── Agent ───────────────────────────────────────────────────────────
+export {
+  agentKindSchema,
+  type AgentKind,
+  agentStatusSchema,
+  type AgentStatus,
+  agentSchema,
+  type Agent,
+  agentConfigSchema,
+  type AgentConfig,
+} from "./agent.js";
+
+// ── Participant ─────────────────────────────────────────────────────
+export {
+  participantSubjectTypeSchema,
+  type ParticipantSubjectType,
+  participantStatusSchema,
+  type ParticipantStatus,
+  participantSchema,
+  type Participant,
+} from "./participant.js";
+
+// ── Workflow ────────────────────────────────────────────────────────
+export {
+  workflowStatusSchema,
+  type WorkflowStatus,
+  workflowSchema,
+  type Workflow,
+  workflowRunSchema,
+  type WorkflowRun,
+  cronScheduleSchema,
+  type CronSchedule,
+} from "./workflow.js";
+
+// ── HITL ────────────────────────────────────────────────────────────
+export {
+  hitlModeSchema,
+  type HitlMode,
+  hitlStatusSchema,
+  type HitlStatus,
+  hitlApprovalSchema,
+  type HitlApproval,
+  humanDecisionSchema,
+  type HumanDecision,
+} from "./hitl.js";

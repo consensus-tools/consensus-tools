@@ -1,0 +1,46 @@
+{
+  "name": "@consensus-tools/guards",
+  "version": "0.3.0",
+  "description": "Guard evaluation engine — deterministic evaluators, voting, and decision logic",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@consensus-tools/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/guards"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/guards",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

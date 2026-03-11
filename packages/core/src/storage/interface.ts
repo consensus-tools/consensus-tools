@@ -20,6 +20,13 @@ export function defaultState(): StorageState {
     ledger: [],
     audit: [],
     errors: [],
+    agents: [],
+    participants: [],
+    workflows: [],
+    workflowRuns: [],
+    cronSchedules: [],
+    hitlApprovals: [],
+    guardResults: [],
   };
 }
 

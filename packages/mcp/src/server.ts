@@ -1,47 +1,73 @@
-import { LocalBoard } from "@consensus-tools/core";
-import { createRegistryResolver } from "@consensus-tools/policies";
-import { mcpToolDefinitions } from "./tools.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import type { McpContext } from "./context.js";
 
-export interface McpServerOptions {
-  board: LocalBoard;
-  agentId?: string;
+import { tools as guardTools, handle as handleGuard } from "./tools/guard-tools.js";
+import { tools as agentTools, handle as handleAgent } from "./tools/agent-tools.js";
+import { tools as consensusTools, handle as handleConsensus } from "./tools/consensus-tools.js";
+import { tools as hitlTools, handle as handleHitl } from "./tools/hitl-tools.js";
+import { tools as boardTools, handle as handleBoard } from "./tools/board-tools.js";
+import { tools as workflowTools, handle as handleWorkflow } from "./tools/workflow-tools.js";
+
+const allTools = [
+  ...guardTools,
+  ...agentTools,
+  ...consensusTools,
+  ...hitlTools,
+  ...boardTools,
+  ...workflowTools,
+];
+
+type ToolHandler = (name: string, args: Record<string, unknown>, ctx: McpContext) => Promise<{
+  content: Array<{ type: string; text: string }>;
+  isError?: boolean;
+}>;
+
+const handlers: Array<{ prefix: string; names: Set<string>; handler: ToolHandler }> = [
+  { prefix: "guard.", names: new Set(guardTools.map((t) => t.name)), handler: handleGuard },
+  { prefix: "agent.", names: new Set(agentTools.map((t) => t.name)), handler: handleAgent },
+  { prefix: "consensus_", names: new Set(consensusTools.map((t) => t.name)), handler: handleConsensus },
+  { prefix: "human.", names: new Set(hitlTools.map((t) => t.name)), handler: handleHitl },
+  { prefix: "board.|run.|audit.", names: new Set(boardTools.map((t) => t.name)), handler: handleBoard },
+  { prefix: "workflow.|cron.", names: new Set(workflowTools.map((t) => t.name)), handler: handleWorkflow },
+];
+
+export function createMcpServer(ctx: McpContext): Server {
+  const server = new Server(
+    { name: "consensus-tools", version: "0.3.0" },
+    { capabilities: { tools: {} } },
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return { tools: allTools };
+  });
+
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+    const a = (args ?? {}) as Record<string, unknown>;
+
+    for (const h of handlers) {
+      if (h.names.has(name)) {
+        return h.handler(name, a, ctx);
+      }
+    }
+
+    return {
+      isError: true,
+      content: [{ type: "text", text: JSON.stringify({ error: `Tool not found: ${name}` }) }],
+    };
+  });
+
+  return server;
 }
 
-/**
- * Stub MCP server adapter.
- * A real implementation would integrate with the MCP SDK.
- * This provides the tool definitions and a dispatch method.
- */
-export class McpServerAdapter {
-  private readonly board: LocalBoard;
-  private readonly agentId: string;
-
-  constructor(opts: McpServerOptions) {
-    this.board = opts.board;
-    this.agentId = opts.agentId ?? "mcp-agent";
-  }
-
-  /** Returns the tool definitions for MCP registration. */
-  getToolDefinitions() {
-    return mcpToolDefinitions;
-  }
-
-  /** Dispatch a tool call by name. */
-  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    const engine = this.board.engine;
-    switch (name) {
-      case "consensus_post_job":
-        return engine.postJob(this.agentId, args as any);
-      case "consensus_list_jobs":
-        return engine.listJobs(args as any);
-      case "consensus_submit":
-        return engine.submitJob(this.agentId, args.jobId as string, args as any);
-      case "consensus_vote":
-        return engine.vote(this.agentId, args.jobId as string, args as any);
-      case "consensus_status":
-        return engine.getStatus(args.jobId as string);
-      default:
-        throw new Error(`Unknown tool: ${name}`);
-    }
-  }
+export async function startMcpServer(ctx: McpContext): Promise<void> {
+  const server = createMcpServer(ctx);
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("Consensus MCP Server running on stdio");
 }

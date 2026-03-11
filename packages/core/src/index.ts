@@ -8,6 +8,11 @@ export type { JobFilters, JobPostInput, ClaimInput, SubmitInput, VoteInput, Reso
 export { checkEligibility } from "./engine/eligibility.js";
 export type { EligibilityResult } from "./engine/eligibility.js";
 export { calculateSlashAmount } from "./engine/slashing.js";
+export { AgentRegistry } from "./engine/agent-registry.js";
+export { GuardEngine } from "./engine/guard-engine.js";
+export type { GuardEngineOptions } from "./engine/guard-engine.js";
+export { HitlTracker } from "./engine/hitl-tracker.js";
+export type { NotificationDispatcher, HitlTrackerOptions } from "./engine/hitl-tracker.js";
 
 // ── Resolve ─────────────────────────────────────────────────────────
 export { resolveConsensus } from "./resolve/resolve.js";
