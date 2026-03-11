@@ -1,0 +1,24 @@
+{
+  "name": "@consensus-tools/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API server app for consensus-tools",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "dev": "node --loader tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/policies": "workspace:*",
+    "@consensus-tools/node": "workspace:*",
+    "@consensus-tools/telemetry": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.0.0"
+  }
+}

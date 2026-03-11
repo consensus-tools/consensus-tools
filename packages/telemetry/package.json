@@ -1,0 +1,27 @@
+{
+  "name": "@consensus-tools/telemetry",
+  "version": "0.1.0",
+  "description": "Observability layer for consensus-tools — traces, events, and local sinks",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@consensus-tools/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "files": ["dist", "src"],
+  "license": "MIT"
+}

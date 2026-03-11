@@ -1,0 +1,30 @@
+{
+  "name": "@consensus-tools/core",
+  "version": "0.1.0",
+  "description": "Protocol engine, ledger, storage, and resolution primitives for consensus-tools",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@consensus-tools/schemas": "workspace:*"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^9.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "files": ["dist", "src"],
+  "license": "MIT"
+}

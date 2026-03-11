@@ -1,0 +1,13 @@
+{
+  "name": "example-mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example: consensus-tools as an MCP server",
+  "type": "module",
+  "dependencies": {
+    "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/policies": "workspace:*",
+    "@consensus-tools/mcp": "workspace:*"
+  }
+}

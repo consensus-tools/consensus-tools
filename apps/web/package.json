@@ -1,0 +1,14 @@
+{
+  "name": "@consensus-tools/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web dashboard stub for consensus-tools",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'web stub — no build yet'",
+    "dev": "echo 'web stub — no dev server yet'",
+    "typecheck": "echo 'no typecheck for web stub'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
