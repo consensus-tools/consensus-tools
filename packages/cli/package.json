@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/cli",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "CLI for consensus-tools — init, manage jobs, view traces",
   "type": "module",
   "main": "./dist/index.js",
@@ -30,5 +30,18 @@
     "typescript": "^5.7.0"
   },
   "files": ["dist", "src", "bin"],
-  "license": "MIT"
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/cli",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

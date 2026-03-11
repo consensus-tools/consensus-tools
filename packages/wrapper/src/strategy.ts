@@ -33,7 +33,7 @@ export function aggregateScores<T>(
     return { action: "allow", output, scores, aggregateScore: avg, attempt };
   }
 
-  if (attempt < maxRetries) {
+  if (attempt <= maxRetries) {
     return { action: "retry", output, scores, aggregateScore: avg, attempt };
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/telemetry",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Observability layer for consensus-tools — traces, events, and local sinks",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,5 +23,18 @@
     "typescript": "^5.7.0"
   },
   "files": ["dist", "src"],
-  "license": "MIT"
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/telemetry"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/telemetry",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

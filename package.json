@@ -2,6 +2,16 @@
   "name": "consensus-tools",
   "private": true,
   "description": "Decision infrastructure for agentic systems — monorepo",
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -11,6 +21,7 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
+    "tsx": "^4.0.0",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"
   },

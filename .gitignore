@@ -4,3 +4,5 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+_legacy/
+*.tgz

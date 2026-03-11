@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/node",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Node.js HTTP server for consensus-tools local board",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,5 +24,18 @@
     "typescript": "^5.7.0"
   },
   "files": ["dist", "src"],
-  "license": "MIT"
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/node"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/node",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
