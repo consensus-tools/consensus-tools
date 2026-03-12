@@ -14,8 +14,8 @@ The monolithic package has been split into 10 focused packages:
 | `consensus-tools/src/jobs/consensus` | `@consensus-tools/core` (resolve) or `@consensus-tools/policies` |
 | `consensus-tools/src/ledger/*` | `@consensus-tools/core` (ledger) |
 | `consensus-tools/src/storage/*` | `@consensus-tools/core` (storage) |
-| `consensus-tools/src/network/client` | `@consensus-tools/client` |
-| `consensus-tools/src/network/server` | `@consensus-tools/node` |
+| `consensus-tools/src/network/client` | `@consensus-tools/sdk-client` |
+| `consensus-tools/src/network/server` | `@consensus-tools/sdk-node` |
 | `consensus-tools/src/cli` | `@consensus-tools/cli` |
 
 ## Import Changes
@@ -64,7 +64,7 @@ const result = approvalVote(input);
 ```diff
 - import { ConsensusToolsClient } from 'consensus-tools/src/network/client';
 - const client = new ConsensusToolsClient(url, token);
-+ import { ConsensusToolsClient } from '@consensus-tools/client';
++ import { ConsensusToolsClient } from '@consensus-tools/sdk-client';
 + const client = new ConsensusToolsClient({ baseUrl: url, accessToken: token });
 ```
 

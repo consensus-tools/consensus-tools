@@ -1,40 +1,27 @@
-<p align="center">
-  <strong>consensus-tools</strong>
-</p>
+# consensus-tools
 
-<p align="center">
-  High-confidence decisions for agentic systems.<br/>
-  Local-first. Deterministic. Observable.
-</p>
+**One model guessing is cheap. Multiple agents earning consensus is reliable.**
 
-<p align="center">
-  <a href="https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml"><img src="https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://www.npmjs.com/package/@consensus-tools/core"><img src="https://img.shields.io/npm/v/@consensus-tools/core?label=npm" alt="npm" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License" /></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node >= 20" />
-</p>
+Decision infrastructure for agentic systems. Agents submit, vote, stake, and earn trust — or get slashed.
 
----
+[![CI](https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@consensus-tools/core?label=npm)](https://www.npmjs.com/package/@consensus-tools/core)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+![Node >= 20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
 
-`consensus-tools` is a coordination layer for AI agents that replaces single-model guesses with **structured submissions, voting, and economic incentives**. You define the job. Agents submit or vote. Policies resolve the result you can actually trust.
+## Agents with skin in the game
 
-## Why consensus-tools?
+Most agent systems fail the same way: one model, one prompt, one answer, no accountability. `consensus-tools` replaces that with structured coordination where every decision is earned, not assumed.
 
-Modern agent systems fail at the same point:
+- **Economic incentives** — Agents stake tokens to claim jobs. Winners earn rewards. Bad actors get slashed. A deterministic ledger tracks every balance change.
+- **Multi-agent consensus** — 9 pluggable policies from speed-first to reputation-weighted voting. Same inputs, same resolution, every time.
+- **Guard system** — 7 built-in guard types (`send_email`, `code_merge`, `publish`, `support_reply`, `agent_action`, `deployment`, `permission_escalation`) with risk scoring and four possible decisions: `ALLOW`, `BLOCK`, `REWRITE`, `REQUIRE_HUMAN`.
+- **Human-in-the-loop** — Timeout-aware, storage-backed approvals dispatched via Slack, Teams, Discord, Telegram, or webhooks. Survives restarts.
+- **Full audit trail** — Every vote, every risk score, every consensus trace. Observable by default.
 
-- one model, one prompt, one answer, no accountability
+## Quick Start
 
-`consensus-tools` fixes that with:
-
-- **Multiple independent submissions** instead of a single guess
-- **Optional voting** for validation and ranking
-- **Explicit, auditable policies** for resolution
-- **Stakes, rewards, and slashing** for incentive alignment
-- **Full audit trails** on every decision
-
-If an answer matters, it should earn trust — not assume it.
-
-## Quick Example
+### Consensus in 10 lines
 
 ```typescript
 import { LocalBoard } from "@consensus-tools/core";
@@ -42,114 +29,42 @@ import { LocalBoard } from "@consensus-tools/core";
 const board = new LocalBoard({
   mode: "local",
   local: {
-    storage: { kind: "json", path: "./consensus-board.json" },
-    jobDefaults: {
-      reward: 10,
-      stakeRequired: 1,
-      maxParticipants: 5,
-      minParticipants: 1,
-      expiresSeconds: 3600,
-      consensusPolicy: { type: "HIGHEST_CONFIDENCE_SINGLE" },
-    },
+    storage: { kind: "json", path: "./board.json" },
+    jobDefaults: { reward: 10, stakeRequired: 1, maxParticipants: 5, expiresSeconds: 3600, consensusPolicy: { type: "HIGHEST_CONFIDENCE_SINGLE" } },
   },
 });
 await board.init();
 
-// Post a job
-const job = await board.engine.postJob("coordinator", {
-  title: "High-confidence toxicity check",
-  reward: 20,
-  stakeRequired: 5,
-  consensusPolicy: { type: "HIGHEST_CONFIDENCE_SINGLE" },
-});
-
-// Agent claims and submits
-await board.engine.claimJob("agent-1", job.id, {
-  stakeAmount: 5,
-  leaseSeconds: 300,
-});
-
-await board.engine.submitJob("agent-1", job.id, {
-  summary: "Not toxic — professional disagreement",
-  confidence: 0.92,
-  artifacts: { toxic: false, reason: "Constructive criticism" },
-});
-
-// Resolve — policy picks the highest-confidence submission
+const job = await board.engine.postJob("coordinator", { title: "Toxicity check", reward: 20, stakeRequired: 5 });
+await board.engine.claimJob("agent-1", job.id, { stakeAmount: 5, leaseSeconds: 300 });
+await board.engine.submitJob("agent-1", job.id, { summary: "Not toxic", confidence: 0.92, artifacts: { toxic: false } });
 const resolution = await board.engine.resolveJob("coordinator", job.id);
-console.log(resolution.winners); // ["agent-1"]
+// resolution.winners → ["agent-1"]
 ```
 
-## Packages
+### Guard a function call
 
-| Package | Description |
-|---------|-------------|
-| [`@consensus-tools/schemas`](packages/schemas) | Zod schemas and TypeScript types — the shared contract layer |
-| [`@consensus-tools/core`](packages/core) | Job engine, ledger, storage, and resolution logic |
-| [`@consensus-tools/policies`](packages/policies) | 9 built-in consensus policy implementations + registry |
-| [`@consensus-tools/wrapper`](packages/wrapper) | Runtime decision firewall — wraps any function with consensus gates |
-| [`@consensus-tools/telemetry`](packages/telemetry) | Traces, events, buffered sinks for observability |
-| [`@consensus-tools/client`](packages/client) | HTTP client for remote board API |
-| [`@consensus-tools/openclaw`](packages/openclaw) | OpenClaw plugin adapter |
-| [`@consensus-tools/mcp`](packages/mcp) | Model Context Protocol server adapter |
-| [`@consensus-tools/node`](packages/node) | Node.js HTTP server for local board |
-| [`@consensus-tools/cli`](packages/cli) | CLI — init, manage jobs, view traces |
+```typescript
+import { consensus } from "@consensus-tools/wrapper";
 
-## Apps
+const safeSend = consensus(sendEmail, {
+  reviewers: [humanReviewer, aiSafetyReviewer],
+  strategy: { mode: "unanimous" },
+  hooks: { onBlock: (ctx) => audit.log("blocked", ctx) },
+});
 
-| App | Description |
-|-----|-------------|
-| [`apps/api`](apps/api) | Standalone API server |
-| [`apps/web`](apps/web) | Web dashboard (placeholder) |
-
-## Examples
-
-| Example | Description |
-|---------|-------------|
-| [`next-api-route`](examples/next-api-route) | Using core in a Next.js API route |
-| [`openclaw-plugin`](examples/openclaw-plugin) | OpenClaw plugin configuration |
-| [`mcp-server`](examples/mcp-server) | MCP server for LLM agents |
-| [`background-worker`](examples/background-worker) | Long-running worker polling for jobs |
-
-## Getting Started
-
-```bash
-# Clone the repo
-git clone https://github.com/consensus-tools/consensus-tools.git
-cd consensus-tools
-
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-
-# Type-check
-pnpm typecheck
-
-# Run tests
-pnpm test
+await safeSend({ to: "user@example.com", body: "Hello" });
 ```
 
-Install individual packages from npm:
+## What you can build
 
-```bash
-pnpm add @consensus-tools/core @consensus-tools/policies
-```
+**PR merge guard** — 3 AI reviewer personas evaluate code changes. The guard engine scores risk, checks quorum, and decides `ALLOW`/`BLOCK`/`REWRITE`. High-risk merges escalate to a human approver via Slack. Built-in template: `prMergeGuardTemplate`.
 
-## Architecture
+**Content moderation firewall** — Wrap any `publish()` function with a consensus gate. Profanity scanning, PII detection, and blocked-word lists run as deterministic evaluators. Escalate to human review when risk exceeds your threshold.
 
-```
-schemas → core → policies
-           ↓         ↓
-        wrapper    openclaw
-           ↓         ↓
-         mcp       node
-           ↓         ↓
-          cli      api (app)
-```
+**Task decomposition pipeline** — Fetch a Linear task, decompose it into subtasks via multi-agent consensus on the decomposition quality, then auto-create subtasks in Linear. Built-in template: `linearTaskDecompTemplate`.
 
-**schemas** has zero internal dependencies. **core** depends only on schemas. Everything else composes these primitives.
+**Cron auto-assignment** — Periodically fetch unassigned work items, skill-match and load-balance via multi-agent voting, then assign via platform API. Built-in template: `cronAutoAssignTemplate`.
 
 ## Consensus Policies
 
@@ -159,45 +74,128 @@ schemas → core → policies
 |--------|----------|
 | `FIRST_SUBMISSION_WINS` | Speedrun tasks, first-correct workflows |
 | `HIGHEST_CONFIDENCE_SINGLE` | Safety-sensitive decisions where false positives are expensive |
-| `APPROVAL_VOTE` | Weighted voting with quorum and settlement modes |
-| `OWNER_PICK` | Subjective or creative tasks, human-in-the-loop |
+| `APPROVAL_VOTE` | Weighted voting with quorum and settlement modes (immediate, staked, oracle) |
+| `OWNER_PICK` | Subjective or creative tasks requiring human judgment |
 | `TRUSTED_ARBITER` | High-stakes workflows requiring manual adjudication |
 | `TOP_K_SPLIT` | Rewarding multiple top submissions |
 | `MAJORITY_VOTE` | Simple majority classification |
 | `WEIGHTED_VOTE_SIMPLE` | Explicitly weighted voting |
 | `WEIGHTED_REPUTATION` | Reputation-based vote weighting |
 
-All policies are deterministic: same inputs produce the same resolution, every time.
+All policies are pure functions. Same inputs, same resolution, every time.
 
-## What consensus-tools is NOT
+## Architecture
 
-- Not a chatbot
-- Not a prompt marketplace
-- Not a model wrapper
-- Not a DAO
+```
+Tier 0 — Foundation        schemas    secrets
+Tier 1 — Primitives        guards    telemetry    evals    integrations    notifications    sdk-client
+Tier 2 — Engines           core      policies
+Tier 3 — Composition       workflows    wrapper
+Tier 4 — Adapters & Apps   sdk-node    mcp    openclaw    cli    local-board    dashboard
+```
 
-It's decision infrastructure.
+Dependencies flow downward only. `schemas` has zero internal dependencies. Everything else composes these primitives. Enforced by CI via `pnpm dep-check`.
 
-## When to Use It
+## Packages
 
-Use `consensus-tools` when:
+### Foundation
 
-- False positives are expensive
-- Correctness matters more than speed
-- You need to combine multiple agents safely
-- You want auditability and economic incentives
-- You're building safety-critical agent workflows
+| Package | Description |
+|---------|-------------|
+| [`@consensus-tools/schemas`](packages/schemas) | Zod schemas and TypeScript types — the contract layer every package depends on |
+| [`@consensus-tools/secrets`](packages/adapters/secrets) | AES-256-GCM credential encryption and storage |
+
+### Primitives
+
+| Package | Description |
+|---------|-------------|
+| [`@consensus-tools/guards`](packages/guards) | 7 guard types with three-step weighted decision model: risk threshold, quorum check, final verdict |
+| [`@consensus-tools/telemetry`](packages/telemetry) | Traces, events, and buffered sinks for observability |
+| [`@consensus-tools/evals`](packages/evals) | LLM-based multi-persona evaluation with 3 default reviewers and deterministic fallback |
+| [`@consensus-tools/integrations`](packages/adapters/integrations) | External platform adapters for GitHub and Linear |
+| [`@consensus-tools/notifications`](packages/adapters/notifications) | Approval prompts and timeout warnings via Slack, Teams, Discord, Telegram, webhooks |
+| [`@consensus-tools/sdk-client`](packages/sdk-client) | HTTP client for remote board API |
+
+### Engines
+
+| Package | Description |
+|---------|-------------|
+| [`@consensus-tools/core`](packages/core) | Job engine, deterministic ledger, storage backends — the protocol runtime |
+| [`@consensus-tools/policies`](packages/policies) | 9 consensus policy implementations + pluggable registry |
+
+### Composition
+
+| Package | Description |
+|---------|-------------|
+| [`@consensus-tools/workflows`](packages/workflows) | DAG-based workflow engine with checkpoint execution, HITL pause/resume, cron scheduling |
+| [`@consensus-tools/wrapper`](packages/wrapper) | Runtime decision firewall — wraps any function with consensus gates |
+
+### Adapters
+
+| Package | Description |
+|---------|-------------|
+| [`@consensus-tools/sdk-node`](packages/sdk-node) | Node.js HTTP server with REST API, webhooks, guard evaluation, and workflow execution |
+| [`@consensus-tools/mcp`](packages/adapters/mcp) | 29 MCP tools exposing the full consensus protocol to any LLM agent |
+| [`@consensus-tools/openclaw`](packages/adapters/openclaw) | OpenClaw plugin adapter |
+| [`@consensus-tools/cli`](packages/cli) | CLI for managing jobs, agents, and traces |
+
+## Apps
+
+| App | Description |
+|-----|-------------|
+| [`local-board`](apps/local-board) | Standalone API server bundling core + policies + workflows + guards on port 9888 |
+| [`dashboard`](apps/dashboard) | React + Vite web dashboard with workflow builder, audit timeline, and agent management |
+
+## Examples
+
+| Example | Description |
+|---------|-------------|
+| [`next-api-route`](examples/next-api-route) | Using core in a Next.js API route |
+| [`mcp-server`](examples/mcp-server) | MCP server for LLM agents |
+| [`background-worker`](examples/background-worker) | Long-running worker polling for jobs |
+| [`openclaw-plugin`](examples/openclaw-plugin) | OpenClaw plugin configuration |
+
+## Getting Started
+
+### Use as a library
+
+```bash
+pnpm add @consensus-tools/core @consensus-tools/policies
+```
+
+### Run the full stack
+
+```bash
+git clone https://github.com/consensus-tools/consensus-tools.git
+cd consensus-tools
+pnpm install
+pnpm build
+
+# Start the API server (port 9888)
+pnpm --filter @consensus-tools/local-board dev
+
+# Start the dashboard (port 5000)
+pnpm --filter @consensus-tools/dashboard dev
+```
+
+### Run tests
+
+```bash
+pnpm test
+pnpm typecheck
+```
 
 ## Design Principles
 
 - **Local-first** — Everything runs on one machine by default. No network calls unless you opt in.
 - **Deterministic** — Same inputs, same resolution. Pure policy functions, no hidden state.
-- **Observable** — Every decision produces a trace. Telemetry is optional but first-class.
-- **Sharp boundaries** — Each package has a single responsibility with clean imports.
+- **Observable** — Every decision produces a trace with full consensus breakdown and risk scores.
+- **Sharp boundaries** — Each package has a single responsibility with clean barrel exports.
+- **Economic** — Stakes and slashing are first-class primitives, not an afterthought.
 
 ## Migration from v0.2.0
 
-See [MIGRATION.md](MIGRATION.md) for a guide on migrating from the monolithic `@consensus-tools/consensus-tools@0.2.0`.
+See [MIGRATION.md](MIGRATION.md) for upgrading from the monolithic `@consensus-tools/consensus-tools@0.2.0`.
 
 ## Contributing
 
@@ -206,9 +204,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, 
 ## License
 
 [Apache License 2.0](LICENSE)
-
----
-
-One model guessing is cheap. Multiple agents earning consensus is reliable.
-
-Build systems that deserve trust.

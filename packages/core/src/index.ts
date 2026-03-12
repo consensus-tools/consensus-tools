@@ -26,7 +26,8 @@ export { computeBalances, getBalance, ensureNonNegative } from "./ledger/rules.j
 
 // ── Storage ─────────────────────────────────────────────────────────
 export type { IStorage } from "./storage/interface.js";
-export { defaultState, createStorage } from "./storage/interface.js";
+export { defaultState } from "./storage/interface.js";
+export { createStorage } from "./storage/factory.js";
 export { JsonStorage } from "./storage/json.js";
 export { SqliteStorage } from "./storage/sqlite.js";
 

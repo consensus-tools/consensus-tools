@@ -11,6 +11,23 @@ Observability layer for [consensus-tools](https://github.com/consensus-tools/con
 pnpm add @consensus-tools/telemetry
 ```
 
+## What it does
+
+Captures structured events and trace spans from consensus operations. Events are buffered and flushed to pluggable sinks (console, file, or custom). Sensitive data can be redacted before emission. Used by the CLI and local-board for runtime observability.
+
+## Event types
+
+The system emits events for key decision points:
+
+| Event | When |
+|-------|------|
+| `AGENT_VERDICT` | An evaluator casts a guard vote |
+| `RISK_SCORE` | Combined risk score computed |
+| `CONSENSUS_QUORUM` | Quorum threshold checked |
+| `FINAL_DECISION` | Guard produces ALLOW/BLOCK/REWRITE/REQUIRE_HUMAN |
+| `WORKFLOW_START` / `WORKFLOW_COMPLETE` | Workflow lifecycle |
+| `HITL_PENDING` / `HITL_RESOLVED` | Human approval lifecycle |
+
 ## Usage
 
 ```typescript
@@ -26,17 +43,20 @@ closeSpan(span);
 buffer.flush(sink);
 ```
 
-## Key Exports
+## API
 
-- **`EventBuffer`** — buffered event collection
-- **`createSpan()` / `closeSpan()`** — trace span lifecycle
-- **`createEvent()`** — create telemetry events
-- **`ConsoleSink`** / **`FileSink`** — local telemetry sinks
-- **`redact()`** — sanitize sensitive data from events
+| Export | Description |
+|--------|-------------|
+| `EventBuffer` | Buffered event collection with flush |
+| `createSpan(name, meta)` / `closeSpan(span)` | Trace span lifecycle |
+| `createEvent(type, data)` | Create a structured telemetry event |
+| `ConsoleSink` | Log events to stdout |
+| `FileSink` | Write events to a file |
+| `redact(data)` | Strip sensitive fields (tokens, keys) from event data |
 
-## Documentation
+## How it fits
 
-See the [consensus-tools monorepo](https://github.com/consensus-tools/consensus-tools) for full documentation.
+Tier 1 package. Depends on `@consensus-tools/schemas`. Used by `cli` and `local-board`.
 
 ## License
 

@@ -1,6 +1,5 @@
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import type { IStorage } from "../storage/interface.js";
-import { createStorage, defaultState } from "../storage/interface.js";
 import { JobEngine } from "../engine/engine.js";
 import { LedgerEngine } from "../ledger/ledger.js";
 
@@ -16,10 +15,10 @@ export class LocalBoard {
 
   constructor(
     config: ConsensusToolsConfig,
-    storage?: IStorage,
+    storage: IStorage,
     logger?: { info?: (...args: unknown[]) => void },
   ) {
-    this.storage = storage ?? createStorage(config);
+    this.storage = storage;
     this.ledger = new LedgerEngine(this.storage, config, logger);
     this.engine = new JobEngine(this.storage, this.ledger, config, logger);
   }

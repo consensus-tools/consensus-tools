@@ -1,0 +1,52 @@
+{
+  "name": "@consensus-tools/mcp",
+  "version": "0.3.0",
+  "description": "Model Context Protocol server adapter for consensus-tools",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/policies": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/workflows": "workspace:*",
+    "@consensus-tools/wrapper": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/adapters/mcp"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/mcp",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

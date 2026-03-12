@@ -10,6 +10,7 @@ import { participantSchema } from "./participant.js";
 import { workflowSchema, workflowRunSchema, cronScheduleSchema } from "./workflow.js";
 import { hitlApprovalSchema } from "./hitl.js";
 import { guardResultSchema } from "./guard.js";
+import { policyAssignmentSchema, consensusVoteSchema } from "./policy-assignment.js";
 
 // ── Storage State ───────────────────────────────────────────────────
 
@@ -30,5 +31,7 @@ export const storageStateSchema = z.object({
   cronSchedules: z.array(cronScheduleSchema),
   hitlApprovals: z.array(hitlApprovalSchema),
   guardResults: z.array(guardResultSchema),
+  policyAssignments: z.array(policyAssignmentSchema),
+  consensusVotes: z.array(consensusVoteSchema),
 });
 export type StorageState = z.infer<typeof storageStateSchema>;

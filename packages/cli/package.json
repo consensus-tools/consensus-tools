@@ -22,7 +22,7 @@
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/core": "workspace:*",
-    "@consensus-tools/client": "workspace:*",
+    "@consensus-tools/sdk-client": "workspace:*",
     "@consensus-tools/telemetry": "workspace:*",
     "commander": "^13.0.0"
   },

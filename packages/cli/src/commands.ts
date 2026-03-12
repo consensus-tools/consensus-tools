@@ -1,6 +1,6 @@
 import os from "node:os";
 import { Command } from "commander";
-import { ConsensusToolsClient } from "@consensus-tools/client";
+import { ConsensusToolsClient } from "@consensus-tools/sdk-client";
 import {
   loadCliConfig,
   saveCliConfig,

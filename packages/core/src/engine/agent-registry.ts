@@ -79,6 +79,11 @@ export class AgentRegistry {
     ).result;
   }
 
+  async getAgentByApiKeyHash(apiKeyHash: string): Promise<Agent | undefined> {
+    const state = await this.storage.getState();
+    return state.agents.find((a) => a.apiKeyHash === apiKeyHash && a.status === "active");
+  }
+
   async validateAgentScope(
     agentId: string,
     actionType: string,

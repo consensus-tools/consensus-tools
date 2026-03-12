@@ -1,0 +1,28 @@
+{
+  "name": "@consensus-tools/local-board",
+  "version": "0.3.0",
+  "private": true,
+  "description": "API server app for consensus-tools",
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "dev": "node --import tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/policies": "workspace:*",
+    "@consensus-tools/sdk-node": "workspace:*",
+    "@consensus-tools/telemetry": "workspace:*",
+    "@consensus-tools/workflows": "workspace:*",
+    "@consensus-tools/secrets": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.0.0"
+  }
+}

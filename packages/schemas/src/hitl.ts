@@ -21,6 +21,7 @@ export const hitlApprovalSchema = z.object({
   startedAt: z.string(),
   warningSentAt: z.string().nullable(),
   status: hitlStatusSchema,
+  metadata: z.record(z.unknown()).optional(),
 });
 export type HitlApproval = z.infer<typeof hitlApprovalSchema>;
 

@@ -21,7 +21,9 @@
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/core": "workspace:*",
-    "@consensus-tools/guards": "workspace:*"
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/evals": "workspace:*",
+    "@consensus-tools/integrations": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

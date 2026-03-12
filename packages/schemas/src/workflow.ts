@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ── Workflow ────────────────────────────────────────────────────────
 
-export const workflowStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled"]);
+export const workflowStatusSchema = z.enum(["pending", "running", "completed", "failed", "cancelled", "waiting"]);
 export type WorkflowStatus = z.infer<typeof workflowStatusSchema>;
 
 export const workflowSchema = z.object({
@@ -22,6 +22,8 @@ export const workflowRunSchema = z.object({
   status: workflowStatusSchema,
   cursor: z.record(z.unknown()).optional(),
   createdAt: z.string(),
+  completedAt: z.string().optional(),
+  result: z.string().optional(),
 });
 export type WorkflowRun = z.infer<typeof workflowRunSchema>;
 

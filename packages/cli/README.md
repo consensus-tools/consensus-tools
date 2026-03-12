@@ -1,6 +1,6 @@
 # @consensus-tools/cli
 
-CLI for [consensus-tools](https://github.com/consensus-tools/consensus-tools) — init, manage jobs, view traces.
+CLI for [consensus-tools](https://github.com/consensus-tools/consensus-tools) — manage jobs, agents, boards, and traces from the terminal.
 
 [![npm](https://img.shields.io/npm/v/@consensus-tools/cli)](https://www.npmjs.com/package/@consensus-tools/cli)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/consensus-tools/consensus-tools/blob/main/LICENSE)
@@ -11,29 +11,52 @@ CLI for [consensus-tools](https://github.com/consensus-tools/consensus-tools) �
 pnpm add -g @consensus-tools/cli
 ```
 
-## Usage
+## Commands
 
 ```bash
-consensus-tools init
+# Configuration
+consensus-tools config get <key>
+consensus-tools config set <key> <value>
+
+# Board management
 consensus-tools board use local
-consensus-tools jobs post --title "Review content" --reward 10
-consensus-tools jobs list
-consensus-tools submissions create <jobId> --summary "Result"
-consensus-tools votes cast <jobId> --submission <subId>
-consensus-tools resolve <jobId>
+consensus-tools board use remote <url>
+
+# Jobs
+consensus-tools jobs post --title "Review PR" --reward 10 --stake 5
+consensus-tools jobs list [--status open] [--json]
+consensus-tools jobs claim <jobId> [--stake 5]
+consensus-tools jobs submit <jobId> --summary "Result" [--confidence 0.9]
+consensus-tools jobs vote <jobId> --submission <subId> --score 1
+consensus-tools jobs resolve <jobId>
+
+# Agents
+consensus-tools agent register --name "reviewer-1"
+consensus-tools agent list
+consensus-tools agent suspend <agentId>
+consensus-tools agent activate <agentId>
 ```
 
-## Key Exports
+## Programmatic use
 
-For programmatic use:
+```typescript
+import { buildProgram, loadCliConfig, saveCliConfig, renderTable } from "@consensus-tools/cli";
 
-- **`buildProgram()`** — creates the Commander.js CLI program
-- **`loadCliConfig()` / `saveCliConfig()`** — config management
-- **`renderTable()`** — table rendering utility
+const program = buildProgram();
+await program.parseAsync(["node", "consensus-tools", "jobs", "list", "--json"]);
+```
 
-## Documentation
+## API
 
-See the [consensus-tools monorepo](https://github.com/consensus-tools/consensus-tools) for full documentation.
+| Export | Description |
+|--------|-------------|
+| `buildProgram()` | Create the Commander.js CLI program |
+| `loadCliConfig()` / `saveCliConfig(config)` | Read/write CLI configuration |
+| `renderTable(rows, columns)` | Format data as a table for terminal output |
+
+## How it fits
+
+Tier 4 package. Depends on `sdk-client`, `core`, `schemas`, and `telemetry`. Connects to a local or remote board server.
 
 ## License
 

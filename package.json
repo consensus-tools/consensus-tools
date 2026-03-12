@@ -18,9 +18,12 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "clean": "turbo clean && rm -rf node_modules",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "dep-check": "depcruise --config .dependency-cruiser.cjs packages apps",
+    "dep-graph": "depcruise --config .dependency-cruiser.cjs --output-type dot packages | dot -T svg > docs/dependency-graph.svg"
   },
   "devDependencies": {
+    "dependency-cruiser": "^16.0.0",
     "tsx": "^4.0.0",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"

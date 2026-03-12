@@ -1,0 +1,49 @@
+{
+  "name": "@consensus-tools/sdk-node",
+  "version": "0.3.0",
+  "description": "Node.js HTTP server for consensus-tools local board",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/workflows": "workspace:*",
+    "@consensus-tools/integrations": "workspace:*",
+    "@consensus-tools/secrets": "workspace:*",
+    "@consensus-tools/notifications": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "files": ["dist", "src"],
+  "author": "consensus-tools <https://github.com/consensus-tools>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "directory": "packages/sdk-node"
+  },
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/sdk-node",
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

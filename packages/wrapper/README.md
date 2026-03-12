@@ -11,6 +11,10 @@ Runtime decision firewall — wraps any function with consensus gates. Part of [
 pnpm add @consensus-tools/wrapper
 ```
 
+## What it does
+
+Wraps any async function with a multi-reviewer consensus gate. Reviewers (human or AI) independently evaluate the call. The strategy aggregates their scores and decides whether to allow, block, or escalate. Lifecycle hooks fire at each stage.
+
 ## Usage
 
 ```typescript
@@ -21,21 +25,37 @@ const safeSend = consensus(sendEmail, {
   strategy: { mode: "unanimous" },
   hooks: {
     onBlock: (ctx) => console.log("Blocked:", ctx.reason),
+    onAllow: (ctx) => console.log("Allowed:", ctx.scores),
   },
 });
 
 const result = await safeSend({ to: "user@example.com", body: "Hello" });
 ```
 
-## Key Exports
+## Strategies
 
-- **`consensus(fn, options)`** — wraps any async function with reviewer-based consensus
-- **`aggregateScores()`** — strategy aggregation (unanimous, majority, threshold)
-- Types: `ConsensusOptions`, `ReviewerFn`, `ReviewContext`, `ReviewResult`, `Strategy`, `DecisionResult`, `LifecycleHooks`
+| Mode | Behavior |
+|------|----------|
+| `unanimous` | All reviewers must approve |
+| `majority` | More than half must approve |
+| `threshold` | Average score must exceed a numeric threshold |
 
-## Documentation
+## API
 
-See the [consensus-tools monorepo](https://github.com/consensus-tools/consensus-tools) for full documentation.
+| Export | Description |
+|--------|-------------|
+| `consensus(fn, options)` | Wrap any async function with reviewer-based consensus |
+| `aggregateScores(scores, strategy)` | Compute aggregate decision from reviewer scores |
+| `ConsensusOptions` | Configuration type for consensus wrapper |
+| `ReviewerFn` | Reviewer function signature |
+| `ReviewContext` / `ReviewResult` | Reviewer input/output types |
+| `Strategy` / `StrategyConfig` | Strategy configuration |
+| `DecisionResult` | Final allow/block decision |
+| `LifecycleHooks` | Hook callbacks (onAllow, onBlock, onEscalate) |
+
+## How it fits
+
+Tier 3 package. Depends on `@consensus-tools/schemas`. Used by `mcp` for guard wrapping.
 
 ## License
 

@@ -11,6 +11,10 @@
 pnpm add @consensus-tools/policies
 ```
 
+## What it does
+
+Policies determine how multi-agent submissions and votes resolve into a final winner. Each policy is a pure function — same inputs, same resolution, every time. Use the built-in registry to dispatch by policy type, or call individual policies directly.
+
 ## Usage
 
 ```typescript
@@ -29,27 +33,29 @@ const result = resolve({
 
 ## Built-in Policies
 
-| Policy | Description |
+| Policy | Description | Best for |
+|--------|-------------|----------|
+| `firstSubmissionWins` | Earliest valid submission wins | Speedrun tasks, first-correct workflows |
+| `highestConfidenceSingle` | Highest confidence score wins | Safety-sensitive decisions |
+| `approvalVote` | Weighted voting with quorum and 3 settlement modes (immediate, staked, oracle) | Multi-stakeholder decisions |
+| `ownerPick` | Job creator selects winner | Subjective or creative tasks |
+| `trustedArbiter` | Designated arbiter resolves | High-stakes manual adjudication |
+| `topKSplit` | Top K submissions split reward | Rewarding multiple contributors |
+| `majorityVote` | Simple majority classification | Binary decisions |
+| `weightedVoteSimple` | Explicitly weighted voting | Heterogeneous agent importance |
+| `weightedReputation` | Reputation-based vote weighting | Trust-based systems |
+
+## API
+
+| Export | Description |
 |--------|-------------|
-| `firstSubmissionWins` | Earliest valid submission wins |
-| `highestConfidenceSingle` | Highest confidence score wins |
-| `approvalVote` | Weighted voting with quorum |
-| `ownerPick` | Job creator selects winner |
-| `trustedArbiter` | Designated arbiter resolves |
-| `topKSplit` | Top K submissions split reward |
-| `majorityVote` | Simple majority voting |
-| `weightedVoteSimple` | Explicitly weighted voting |
-| `weightedReputation` | Reputation-based vote weighting |
+| `firstSubmissionWins` ... `weightedReputation` | Individual policy functions |
+| `createPolicyRegistry()` | Factory for the full policy map |
+| `createRegistryResolver(registry)` | Creates a dispatcher from a registry |
 
-## Key Exports
+## How it fits
 
-- Individual policy functions (e.g., `firstSubmissionWins`, `approvalVote`)
-- **`createPolicyRegistry()`** — factory for the full policy map
-- **`createRegistryResolver()`** — creates a dispatcher from a registry
-
-## Documentation
-
-See the [consensus-tools monorepo](https://github.com/consensus-tools/consensus-tools) for full documentation.
+Tier 2 package. Depends on `@consensus-tools/schemas` and `@consensus-tools/core`. Used by `wrapper`, `openclaw`, `mcp`, and `local-board`.
 
 ## License
 

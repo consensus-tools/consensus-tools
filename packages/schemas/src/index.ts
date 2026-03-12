@@ -12,10 +12,14 @@ export {
   type ConsensusPolicyConfig,
   slashingPolicySchema,
   type SlashingPolicy,
+} from "./policy.js";
+
+// ── Resolver ─────────────────────────────────────────────────────────
+export {
   type ConsensusInput,
   type ConsensusResult,
   type PolicyResolver,
-} from "./policy.js";
+} from "./resolver.js";
 
 // ── Job ─────────────────────────────────────────────────────────────
 export {
@@ -158,6 +162,14 @@ export {
   cronScheduleSchema,
   type CronSchedule,
 } from "./workflow.js";
+
+// ── Policy Assignment ──────────────────────────────────────────────
+export {
+  policyAssignmentSchema,
+  type PolicyAssignment,
+  consensusVoteSchema,
+  type ConsensusVote,
+} from "./policy-assignment.js";
 
 // ── HITL ────────────────────────────────────────────────────────────
 export {

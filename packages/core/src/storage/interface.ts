@@ -1,4 +1,4 @@
-import type { StorageState, ConsensusToolsConfig } from "@consensus-tools/schemas";
+import type { StorageState } from "@consensus-tools/schemas";
 
 /** Abstract storage contract for consensus state. */
 export interface IStorage {
@@ -27,16 +27,7 @@ export function defaultState(): StorageState {
     cronSchedules: [],
     hitlApprovals: [],
     guardResults: [],
+    policyAssignments: [],
+    consensusVotes: [],
   };
-}
-
-/** Factory: creates the appropriate IStorage based on config. */
-export function createStorage(config: ConsensusToolsConfig): IStorage {
-  if (config.local.storage.kind === "sqlite") {
-    // Lazy import to keep sqlite optional
-    const { SqliteStorage } = require("./sqlite.js") as typeof import("./sqlite.js");
-    return new SqliteStorage(config.local.storage.path);
-  }
-  const { JsonStorage } = require("./json.js") as typeof import("./json.js");
-  return new JsonStorage(config.local.storage.path);
 }

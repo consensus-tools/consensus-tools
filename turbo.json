@@ -18,6 +18,9 @@
     "lint": {},
     "clean": {
       "cache": false
+    },
+    "dep-check": {
+      "cache": false
     }
   }
 }

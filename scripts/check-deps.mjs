@@ -21,9 +21,17 @@ const FORBIDDEN = [
 ];
 
 const packagesDir = join(process.cwd(), "packages");
-const dirs = readdirSync(packagesDir, { withFileTypes: true })
-  .filter((d) => d.isDirectory())
+const topLevel = readdirSync(packagesDir, { withFileTypes: true })
+  .filter((d) => d.isDirectory() && d.name !== "adapters")
   .map((d) => d.name);
+const adaptersDir = join(packagesDir, "adapters");
+let adapterDirs = [];
+try {
+  adapterDirs = readdirSync(adaptersDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => join("adapters", d.name));
+} catch { /* adapters dir may not exist */ }
+const dirs = [...topLevel, ...adapterDirs];
 
 let failed = false;
 
