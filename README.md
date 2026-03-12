@@ -87,6 +87,18 @@ All policies are pure functions. Same inputs, same resolution, every time.
 ## Architecture
 
 ```
+Agent A ----\
+Agent B -----\            ┌─────────────┐
+Agent C ------> Guards -->│ Consensus   │
+Human -------/            │ Policies    │
+                         └──────┬──────┘
+                                │
+                          Final Decision
+                                │
+                         Function Executes
+```
+
+```
 Tier 0 — Foundation        schemas    secrets
 Tier 1 — Primitives        guards    telemetry    evals    integrations    notifications    sdk-client
 Tier 2 — Engines           core      policies
