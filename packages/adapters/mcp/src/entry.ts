@@ -5,30 +5,48 @@
 import { LocalBoard, AgentRegistry, GuardEngine, HitlTracker, createStorage } from "@consensus-tools/core";
 import { createGuardEvaluatorRegistry } from "@consensus-tools/guards";
 import { WorkflowRunner, CronScheduler, prMergeGuardTemplate, linearTaskDecompTemplate, cronAutoAssignTemplate } from "@consensus-tools/workflows";
+import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { startMcpServer } from "./server.js";
 import type { McpContext } from "./context.js";
 
 async function main() {
-  const config = {
-    version: "0.3.0",
+  const config: ConsensusToolsConfig = {
+    mode: "local",
     local: {
-      storage: { kind: "json" as const, path: "./data/consensus-state.json" },
-      server: { port: 4010 },
+      storage: { kind: "json", path: "./data/consensus-state.json" },
+      server: { enabled: true, host: "127.0.0.1", port: 4010, authToken: "" },
       jobDefaults: {
         reward: 100,
         stakeRequired: 10,
         maxParticipants: 5,
         minParticipants: 1,
         expiresSeconds: 3600,
-        consensusPolicy: { type: "FIRST_SUBMISSION_WINS" as const },
-        slashingPolicy: { enabled: false },
+        consensusPolicy: { type: "FIRST_SUBMISSION_WINS" },
+        slashingPolicy: { enabled: false, slashPercent: 0, slashFlat: 0 },
       },
       slashingEnabled: false,
+      ledger: {
+        faucetEnabled: true,
+        initialCreditsPerAgent: 1000,
+        balances: {},
+      },
+    },
+    global: {
+      baseUrl: "https://api.consensus.tools",
+      accessToken: "",
+    },
+    agentIdentity: {
+      agentIdSource: "manual",
+      manualAgentId: "mcp-agent",
+    },
+    safety: {
+      requireOptionalToolsOptIn: false,
+      allowNetworkSideEffects: false,
     },
   };
 
-  const storage = await createStorage(config as any);
-  const board = new LocalBoard(config as any, storage);
+  const storage = await createStorage(config);
+  const board = new LocalBoard(config, storage);
   await board.init();
 
   const agentRegistry = new AgentRegistry(storage);

@@ -70,8 +70,7 @@ describe("guard tools", () => {
       action: { type: "test", payload: {} },
     }, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("Engine failure");
+    expect(result.content[0].text).toContain("Engine failure");
   });
 
   it("passes agentId from args", async () => {

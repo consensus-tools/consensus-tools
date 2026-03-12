@@ -71,7 +71,7 @@ export async function handle(
       }
 
       case "board.get": {
-        if (!args.id) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "id is required" }) }] };
+        if (!args.id) return { isError: true, content: [{ type: "text", text: "id is required" }] };
         const id = args.id as string;
         const state = await ctx.storage.getState();
         // Return jobs, submissions, and resolutions for the board
@@ -91,7 +91,7 @@ export async function handle(
       }
 
       case "run.get": {
-        if (!args.id) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "id is required" }) }] };
+        if (!args.id) return { isError: true, content: [{ type: "text", text: "id is required" }] };
         const id = args.id as string;
         const status = await ctx.engine.getStatus(id);
         if (!status.job) {
@@ -110,7 +110,7 @@ export async function handle(
           }
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: `Run not found: ${id}` }) }],
+            content: [{ type: "text", text: `Run not found: ${id}` }],
           };
         }
         return { content: [{ type: "text", text: JSON.stringify(status) }] };
@@ -141,10 +141,10 @@ export async function handle(
       }
 
       default:
-        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }] };
+        return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

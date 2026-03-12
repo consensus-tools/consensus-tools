@@ -18,7 +18,9 @@ function resolveAgentId(cfg: ConsensusCliConfig): string {
   if (cfg.agentId) return cfg.agentId;
   let user = "cli";
   try { const u = os.userInfo(); if (u?.username) user = u.username; } catch { /* ignore */ }
-  return `${user}@${os.hostname()}`;
+  const id = `${user}@${os.hostname()}`;
+  console.warn(`[cli] Using default agent ID: ${id}. Set CONSENSUS_AGENT_ID or run 'consensus-tools config set agentId <id>' for stable identity.`);
+  return id;
 }
 
 function createRemoteClient(cfg: ConsensusCliConfig): ConsensusToolsClient {

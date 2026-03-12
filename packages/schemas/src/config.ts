@@ -16,6 +16,12 @@ export const consensusToolsConfigSchema = z.object({
       host: z.string(),
       port: z.number(),
       authToken: z.string(),
+      corsOrigins: z.union([z.string(), z.array(z.string())]).optional(),
+      rateLimit: z.object({
+        enabled: z.boolean(),
+        windowMs: z.number(),
+        maxRequests: z.number(),
+      }).optional(),
     }),
     slashingEnabled: z.boolean(),
     jobDefaults: z.object({

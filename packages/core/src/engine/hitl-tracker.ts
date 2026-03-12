@@ -16,6 +16,7 @@ export interface HitlTrackerOptions {
   storage: IStorage;
   notifications?: NotificationDispatcher;
   onExpiry?: (approval: HitlApproval, decision: string) => Promise<void>;
+  logger?: { warn?: (...args: unknown[]) => void };
 }
 
 /**
@@ -26,12 +27,14 @@ export class HitlTracker {
   private readonly storage: IStorage;
   private readonly notifications?: NotificationDispatcher;
   private readonly onExpiry?: (approval: HitlApproval, decision: string) => Promise<void>;
+  private readonly logger?: { warn?: (...args: unknown[]) => void };
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(opts: HitlTrackerOptions) {
     this.storage = opts.storage;
     this.notifications = opts.notifications;
     this.onExpiry = opts.onExpiry;
+    this.logger = opts.logger;
   }
 
   async registerPendingApproval(opts: {
@@ -63,7 +66,9 @@ export class HitlTracker {
     });
 
     if (this.notifications) {
-      await this.notifications.sendApprovalPrompt(approval).catch(() => {});
+      await this.notifications.sendApprovalPrompt(approval).catch((err) => {
+        this.logger?.warn?.("[hitl] Failed to send approval prompt", err);
+      });
     }
 
     this.ensureTimerRunning();
@@ -110,7 +115,9 @@ export class HitlTracker {
   private ensureTimerRunning() {
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {
-      this.checkDeadlines().catch(() => {});
+      this.checkDeadlines().catch((err) => {
+        this.logger?.warn?.("[hitl] Deadline check failed", err);
+      });
     }, CHECK_INTERVAL_MS);
   }
 
@@ -131,7 +138,9 @@ export class HitlTracker {
         });
 
         if (this.notifications) {
-          await this.notifications.sendWarning(entry, Math.max(0, remaining)).catch(() => {});
+          await this.notifications.sendWarning(entry, Math.max(0, remaining)).catch((err) => {
+            this.logger?.warn?.("[hitl] Failed to send warning", err);
+          });
         }
 
         await this.storage.update((state) => {
@@ -174,11 +183,15 @@ export class HitlTracker {
         });
 
         if (this.notifications) {
-          await this.notifications.sendExpired(entry, decision).catch(() => {});
+          await this.notifications.sendExpired(entry, decision).catch((err) => {
+            this.logger?.warn?.("[hitl] Failed to send expiry notification", err);
+          });
         }
 
         if (this.onExpiry) {
-          await this.onExpiry(entry, decision).catch(() => {});
+          await this.onExpiry(entry, decision).catch((err) => {
+            this.logger?.warn?.("[hitl] onExpiry callback failed", err);
+          });
         }
       }
     }

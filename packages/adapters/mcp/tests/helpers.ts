@@ -58,5 +58,13 @@ export function makeMockCtx(overrides: Partial<McpContext> = {}): McpContext {
 }
 
 export function parseContent(result: { content: Array<{ type: string; text: string }> }): any {
-  return JSON.parse(result.content[0].text);
+  try {
+    return JSON.parse(result.content[0].text);
+  } catch {
+    return result.content[0].text;
+  }
+}
+
+export function getErrorText(result: { content: Array<{ type: string; text: string }> }): string {
+  return result.content[0].text;
 }

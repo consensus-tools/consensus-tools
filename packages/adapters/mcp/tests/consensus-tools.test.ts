@@ -61,7 +61,6 @@ describe("consensus tools", () => {
     (ctx.engine.postJob as any).mockRejectedValue(new Error("Job failed"));
     const result = await handle("consensus_post_job", { title: "T", description: "D" }, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("Job failed");
+    expect(result.content[0].text).toContain("Job failed");
   });
 });

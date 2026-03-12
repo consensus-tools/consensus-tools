@@ -1,4 +1,11 @@
+import {
+  jobPostInputSchema, submitInputSchema, voteInputSchema,
+} from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
+
+function validationError(issues: unknown[]) {
+  return { isError: true as const, content: [{ type: "text" as const, text: JSON.stringify({ error: "Validation failed", details: issues }) }] as [{ type: "text"; text: string }] };
+}
 
 export const tools = [
   {
@@ -83,55 +90,50 @@ export async function handle(
   try {
     switch (name) {
       case "consensus_post_job": {
-        const job = await ctx.engine.postJob(ctx.agentId, args as any);
+        const parsed = jobPostInputSchema.safeParse(args);
+        if (!parsed.success) return validationError(parsed.error.issues);
+        const job = await ctx.engine.postJob(ctx.agentId, parsed.data);
         return { content: [{ type: "text", text: JSON.stringify(job) }] };
       }
 
       case "consensus_list_jobs": {
-        const jobs = await ctx.engine.listJobs({
-          status: args.status as string | undefined,
-          tag: args.tag as string | undefined,
-        });
+        const status = typeof args.status === "string" ? args.status : undefined;
+        const tag = typeof args.tag === "string" ? args.tag : undefined;
+        const jobs = await ctx.engine.listJobs({ status, tag });
         return { content: [{ type: "text", text: JSON.stringify({ jobs }) }] };
       }
 
       case "consensus_submit": {
-        if (!args.jobId) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "jobId is required" }) }] };
+        if (typeof args.jobId !== "string" || !args.jobId) return { isError: true, content: [{ type: "text", text: "jobId is required and must be a string" }] };
+        const parsed = submitInputSchema.safeParse(args);
+        if (!parsed.success) return validationError(parsed.error.issues);
         const submission = await ctx.engine.submitJob(
           ctx.agentId,
-          args.jobId as string,
-          {
-            summary: (args.summary as string) ?? "",
-            artifacts: (args.artifacts as Record<string, unknown>) ?? {},
-            confidence: (args.confidence as number) ?? 0.5,
-          },
+          args.jobId,
+          parsed.data,
         );
         return { content: [{ type: "text", text: JSON.stringify(submission) }] };
       }
 
       case "consensus_vote": {
-        if (!args.jobId) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "jobId is required" }) }] };
-        const vote = await ctx.engine.vote(ctx.agentId, args.jobId as string, {
-          submissionId: args.submissionId as string | undefined,
-          score: args.score as number | undefined,
-          rationale: args.rationale as string | undefined,
-          weight: args.weight as number | undefined,
-          stakeAmount: args.stakeAmount as number | undefined,
-        });
+        if (typeof args.jobId !== "string" || !args.jobId) return { isError: true, content: [{ type: "text", text: "jobId is required and must be a string" }] };
+        const parsed = voteInputSchema.safeParse(args);
+        if (!parsed.success) return validationError(parsed.error.issues);
+        const vote = await ctx.engine.vote(ctx.agentId, args.jobId, parsed.data);
         return { content: [{ type: "text", text: JSON.stringify(vote) }] };
       }
 
       case "consensus_status": {
-        if (!args.jobId) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "jobId is required" }) }] };
-        const status = await ctx.engine.getStatus(args.jobId as string);
+        if (typeof args.jobId !== "string" || !args.jobId) return { isError: true, content: [{ type: "text", text: "jobId is required and must be a string" }] };
+        const status = await ctx.engine.getStatus(args.jobId);
         return { content: [{ type: "text", text: JSON.stringify(status) }] };
       }
 
       default:
-        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }] };
+        return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

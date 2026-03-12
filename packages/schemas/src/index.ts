@@ -182,3 +182,23 @@ export {
   humanDecisionSchema,
   type HumanDecision,
 } from "./hitl.js";
+
+// ── Input Validation ────────────────────────────────────────────────
+export {
+  agentIdFieldSchema,
+  type AgentIdField,
+  jobPostInputSchema,
+  type JobPostInput,
+  claimInputSchema,
+  type ClaimInput,
+  submitInputSchema,
+  type SubmitInput,
+  voteInputSchema,
+  type VoteInput,
+  resolveInputSchema,
+  type ResolveInput,
+  workflowCreateInputSchema,
+  type WorkflowCreateInput,
+  cronRegisterInputSchema,
+  type CronRegisterInput,
+} from "./inputs.js";

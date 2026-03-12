@@ -61,16 +61,14 @@ describe("workflow tools", () => {
     ctx.workflowRunner = undefined;
     const result = await handle("workflow.create", { name: "X", definition: {} }, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("not configured");
+    expect(result.content[0].text).toContain("not configured");
   });
 
   it("returns isError when cronScheduler is undefined", async () => {
     ctx.cronScheduler = undefined;
     const result = await handle("cron.register", { workflowId: "wf-1", cronExpression: "* * * * *" }, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("not configured");
+    expect(result.content[0].text).toContain("not configured");
   });
 
   it("unknown tool returns isError", async () => {

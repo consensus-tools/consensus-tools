@@ -1,4 +1,4 @@
-import { parseHumanApprovalYesNo } from "@consensus-tools/schemas";
+import { parseHumanApprovalYesNo, humanApprovalRequestSchema } from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 export const tools = [
@@ -31,14 +31,15 @@ export async function handle(
   ctx: McpContext,
 ): Promise<{ content: [{ type: "text"; text: string }] } | { isError: true; content: [{ type: "text"; text: string }] }> {
   if (name !== "human.approve") {
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }] };
+    return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
   }
 
   try {
-    const runId = args.runId as string;
-    const approver = (args.approver as string) ?? "human";
-    const replyText = args.replyText as string;
-    const idempotencyKey = args.idempotencyKey as string;
+    const parsed = humanApprovalRequestSchema.safeParse(args);
+    if (!parsed.success) {
+      return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
+    }
+    const { runId, approver, replyText, idempotencyKey } = parsed.data;
 
     // Parse the human reply into a normalized decision
     const decision = parseHumanApprovalYesNo(replyText);
@@ -69,6 +70,6 @@ export async function handle(
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

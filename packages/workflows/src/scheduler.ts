@@ -39,6 +39,7 @@ export class CronScheduler {
   private readonly storage: IStorage;
   private readonly onTrigger: CronCallback;
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private checking = false;
 
   constructor(storage: IStorage, onTrigger: CronCallback) {
     this.storage = storage;
@@ -94,11 +95,23 @@ export class CronScheduler {
   private ensureTimerRunning(): void {
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {
-      this.checkSchedules().catch(() => {});
+      this.checkSchedules().catch((err) => {
+        console.error("[cron] checkSchedules failed:", err);
+      });
     }, CHECK_INTERVAL_MS);
   }
 
   private async checkSchedules(): Promise<void> {
+    if (this.checking) return;
+    this.checking = true;
+    try {
+      await this.doCheckSchedules();
+    } finally {
+      this.checking = false;
+    }
+  }
+
+  private async doCheckSchedules(): Promise<void> {
     const state = await this.storage.getState();
     const now = new Date().toISOString();
 

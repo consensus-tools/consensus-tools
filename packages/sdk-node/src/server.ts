@@ -1,6 +1,12 @@
 import http from "node:http";
 import type { ConsensusToolsConfig, GuardEvaluateInput, Participant, AgentConfig, Workflow, WorkflowRun, CronSchedule, PolicyAssignment, ConsensusVote } from "@consensus-tools/schemas";
-import { parseHumanApprovalYesNo, policyAssignmentSchema } from "@consensus-tools/schemas";
+import {
+  parseHumanApprovalYesNo, policyAssignmentSchema,
+  agentIdFieldSchema, jobPostInputSchema, claimInputSchema, submitInputSchema,
+  voteInputSchema, resolveInputSchema, guardEvaluateInputSchema,
+  humanApprovalRequestSchema, agentConfigSchema,
+  workflowCreateInputSchema, cronRegisterInputSchema, consensusVoteSchema,
+} from "@consensus-tools/schemas";
 import { tallyVotes, computeEffectiveWeight } from "@consensus-tools/guards";
 import type {
   JobEngine, JobPostInput, ClaimInput, SubmitInput, LedgerEngine,
@@ -15,6 +21,7 @@ import { handleChatApprovalReply, handleWorkflowRunApprove } from "./handlers/ch
 import { handleListCredentials, handleUpsertCredential, handleDeleteCredential, handleProviderStatus } from "./handlers/credentials.js";
 import { ToolRegistry } from "./handlers/tool-registry.js";
 import { handleListAdapters, handleInstallAdapter, handleUninstallAdapter } from "./handlers/adapters.js";
+import { SlidingWindowRateLimiter } from "./rate-limiter.js";
 
 /** Minimal interface so we don't need a hard dep on @consensus-tools/workflows at compile time. */
 export interface WorkflowRunner {
@@ -81,6 +88,7 @@ export class ConsensusToolsServer {
   private readonly cronScheduler?: CronScheduler;
   private readonly credentialManager?: CredentialManager;
   private readonly toolRegistry: ToolRegistry;
+  private readonly rateLimiter?: SlidingWindowRateLimiter;
   private readonly logger?: { info?: (...a: unknown[]) => void; warn?: (...a: unknown[]) => void };
 
   constructor(deps: ServerDeps) {
@@ -96,6 +104,10 @@ export class ConsensusToolsServer {
     this.credentialManager = deps.credentialManager;
     this.toolRegistry = new ToolRegistry({ storage: deps.storage, guardEngine: deps.guardEngine });
     this.logger = deps.logger;
+    const rl = deps.config.local.server.rateLimit;
+    if (rl?.enabled) {
+      this.rateLimiter = new SlidingWindowRateLimiter(rl.windowMs, rl.maxRequests);
+    }
   }
 
   async start(): Promise<void> {
@@ -106,6 +118,9 @@ export class ConsensusToolsServer {
       this.server?.listen(port, host, () => resolve());
     });
     this.logger?.info?.(`consensus-tools server started (${host}:${port})`);
+    if (!this.config.local.server.authToken) {
+      this.logger?.warn?.("[server] WARNING: No auth token configured — API is unauthenticated");
+    }
   }
 
   async stop(): Promise<void> {
@@ -118,12 +133,30 @@ export class ConsensusToolsServer {
 
   private async handle(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
     // CORS
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const allowedOrigins = this.config.local.server.corsOrigins ?? "*";
+    const reqOrigin = req.headers.origin || "";
+    let corsOrigin: string;
+    if (allowedOrigins === "*") {
+      corsOrigin = "*";
+    } else {
+      const list = Array.isArray(allowedOrigins) ? allowedOrigins : [allowedOrigins];
+      corsOrigin = list.includes(reqOrigin) ? reqOrigin : (list[0] || "");
+    }
+    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-agent-key");
     if (req.method === "OPTIONS") { res.statusCode = 204; res.end(); return; }
 
     try {
+      const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+      const path = url.pathname;
+      const method = req.method || "GET";
+
+      // ── Health check (unauthenticated) ────────────────────
+      if (method === "GET" && path === "/healthz") {
+        return this.reply(res, 200, { status: "ok", uptime: process.uptime() });
+      }
+
       if (this.config.local.server.authToken) {
         const auth = req.headers.authorization || "";
         if (auth !== `Bearer ${this.config.local.server.authToken}`) {
@@ -131,14 +164,24 @@ export class ConsensusToolsServer {
         }
       }
 
-      const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-      const path = url.pathname;
-      const method = req.method || "GET";
+      // ── Rate limiting ──────────────────────────────────────
+      if (this.rateLimiter) {
+        const clientKey = req.socket.remoteAddress || "unknown";
+        const check = this.rateLimiter.check(clientKey);
+        if (!check.allowed) {
+          res.setHeader("Retry-After", String(Math.ceil(check.retryAfterMs / 1000)));
+          return this.reply(res, 429, { error: "Too many requests" });
+        }
+      }
 
       // ── Job routes (existing) ───────────────────────────────
       if (method === "POST" && path === "/jobs") {
         const body = await this.readJson(req);
-        const job = await this.engine.postJob(body.agentId, body as JobPostInput);
+        const agent = this.parseBody(agentIdFieldSchema, body, res);
+        if (!agent) return;
+        const input = this.parseBody(jobPostInputSchema, body, res);
+        if (!input) return;
+        const job = await this.engine.postJob(agent.agentId, input as JobPostInput);
         return this.reply(res, 200, job);
       }
 
@@ -166,19 +209,35 @@ export class ConsensusToolsServer {
         }
         if (method === "POST" && action === "claim") {
           const body = await this.readJson(req);
-          return this.reply(res, 200, await this.engine.claimJob(body.agentId, jobId, body as ClaimInput));
+          const agent = this.parseBody(agentIdFieldSchema, body, res);
+          if (!agent) return;
+          const input = this.parseBody(claimInputSchema, body, res);
+          if (!input) return;
+          return this.reply(res, 200, await this.engine.claimJob(agent.agentId, jobId, input as ClaimInput));
         }
         if (method === "POST" && action === "submit") {
           const body = await this.readJson(req);
-          return this.reply(res, 200, await this.engine.submitJob(body.agentId, jobId, body as SubmitInput));
+          const agent = this.parseBody(agentIdFieldSchema, body, res);
+          if (!agent) return;
+          const input = this.parseBody(submitInputSchema, body, res);
+          if (!input) return;
+          return this.reply(res, 200, await this.engine.submitJob(agent.agentId, jobId, input as SubmitInput));
         }
         if (method === "POST" && action === "vote") {
           const body = await this.readJson(req);
-          return this.reply(res, 200, await this.engine.vote(body.agentId, jobId, body));
+          const agent = this.parseBody(agentIdFieldSchema, body, res);
+          if (!agent) return;
+          const input = this.parseBody(voteInputSchema, body, res);
+          if (!input) return;
+          return this.reply(res, 200, await this.engine.vote(agent.agentId, jobId, input));
         }
         if (method === "POST" && action === "resolve") {
           const body = await this.readJson(req);
-          return this.reply(res, 200, await this.engine.resolveJob(body.agentId, jobId, body));
+          const agent = this.parseBody(agentIdFieldSchema, body, res);
+          if (!agent) return;
+          const input = this.parseBody(resolveInputSchema, body, res);
+          if (!input) return;
+          return this.reply(res, 200, await this.engine.resolveJob(agent.agentId, jobId, input));
         }
       }
 
@@ -193,12 +252,13 @@ export class ConsensusToolsServer {
       if (method === "POST" && (path === "/api/guard.evaluate" || path === "/api/mcp/evaluate")) {
         if (!this.guardEngine) return this.reply(res, 501, { error: "Guard engine not configured" });
         const body = await this.readJson(req);
-        const input: GuardEvaluateInput = {
-          boardId: body.boardId ?? "default",
-          agentId: body.agentId,
-          action: body.action ?? { type: body.type ?? "agent_action", payload: body.payload ?? body },
-        };
-        const result = await this.guardEngine.evaluate(input, body.policy);
+        // Allow shorthand: { type, payload } → { action: { type, payload } }
+        if (!body.action && body.type) {
+          body.action = { type: body.type, payload: body.payload ?? {} };
+        }
+        const parsed = this.parseBody(guardEvaluateInputSchema, body, res);
+        if (!parsed) return;
+        const result = await this.guardEngine.evaluate(parsed, body.policy);
         return this.reply(res, 200, result);
       }
 
@@ -235,10 +295,12 @@ export class ConsensusToolsServer {
         }
         if (method === "POST") {
           const body = await this.readJson(req);
+          const parsed = this.parseBody(agentConfigSchema, body, res);
+          if (!parsed) return;
           const config = {
-            ...body,
+            ...parsed,
             metadata: {
-              ...((body.metadata as Record<string, unknown>) ?? {}),
+              ...((parsed.metadata as Record<string, unknown>) ?? {}),
               ...(body.boards ? { boards: body.boards } : {}),
               ...(body.workflows ? { workflows: body.workflows } : {}),
             },
@@ -453,10 +515,12 @@ export class ConsensusToolsServer {
         }
         if (method === "POST") {
           const body = await this.readJson(req);
-          const validationError = validateWorkflowNodes(body.definition);
+          const parsed = this.parseBody(workflowCreateInputSchema, body, res);
+          if (!parsed) return;
+          const validationError = validateWorkflowNodes(parsed.definition as Record<string, unknown>);
           if (validationError) return this.reply(res, 400, { error: validationError });
           const workflow = await this.workflowRunner.createWorkflow(
-            body.name, body.definition ?? {}, body.templateId,
+            parsed.name, parsed.definition as Record<string, unknown>, parsed.templateId,
           );
           return this.reply(res, 201, { workflow });
         }
@@ -534,7 +598,9 @@ export class ConsensusToolsServer {
         const wfId = decodeURIComponent(cronMatch[1]!);
         if (method === "POST") {
           const body = await this.readJson(req);
-          const schedule = await this.cronScheduler.register(wfId, body.cronExpression);
+          const parsed = this.parseBody(cronRegisterInputSchema, { ...body, workflowId: wfId }, res);
+          if (!parsed) return;
+          const schedule = await this.cronScheduler.register(wfId, parsed.cronExpression);
           return this.reply(res, 201, schedule);
         }
         if (method === "DELETE") {
@@ -884,6 +950,16 @@ export class ConsensusToolsServer {
       try { await this.engine.recordError?.(msg, { path: req.url, method: req.method }); } catch { /* ignore */ }
       return this.reply(res, 500, { error: msg });
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private parseBody<T>(schema: { safeParse(data: unknown): { success: true; data: T } | { success: false; error: { issues: unknown[] } } }, body: Record<string, unknown>, res: http.ServerResponse): T | null {
+    const result = schema.safeParse(body);
+    if (!result.success) {
+      this.reply(res, 400, { error: "Validation failed", details: result.error.issues });
+      return null;
+    }
+    return result.data;
   }
 
   private async readJson(req: http.IncomingMessage): Promise<Record<string, any>> {

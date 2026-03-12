@@ -1,3 +1,4 @@
+import { workflowCreateInputSchema, cronRegisterInputSchema } from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 export const tools = [
@@ -69,13 +70,17 @@ export async function handle(
         if (!ctx.workflowRunner) {
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Workflow runner is not configured" }) }],
+            content: [{ type: "text", text: "Workflow runner is not configured" }],
           };
         }
+        const parsed = workflowCreateInputSchema.safeParse(args);
+        if (!parsed.success) {
+          return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
+        }
         const workflow = await ctx.workflowRunner.createWorkflow(
-          args.name as string,
-          (args.definition as Record<string, unknown>) ?? {},
-          args.templateId as string | undefined,
+          parsed.data.name,
+          parsed.data.definition as Record<string, unknown>,
+          parsed.data.templateId,
         );
         return { content: [{ type: "text", text: JSON.stringify(workflow) }] };
       }
@@ -84,7 +89,7 @@ export async function handle(
         if (!ctx.workflowRunner) {
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Workflow runner is not configured" }) }],
+            content: [{ type: "text", text: "Workflow runner is not configured" }],
           };
         }
         const run = await ctx.workflowRunner.run(args.workflowId as string);
@@ -95,7 +100,7 @@ export async function handle(
         if (!ctx.workflowRunner) {
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Workflow runner is not configured" }) }],
+            content: [{ type: "text", text: "Workflow runner is not configured" }],
           };
         }
         const workflows = await ctx.workflowRunner.listWorkflows();
@@ -106,12 +111,16 @@ export async function handle(
         if (!ctx.cronScheduler) {
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Cron scheduler is not configured" }) }],
+            content: [{ type: "text", text: "Cron scheduler is not configured" }],
           };
         }
+        const parsed = cronRegisterInputSchema.safeParse(args);
+        if (!parsed.success) {
+          return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
+        }
         const schedule = await ctx.cronScheduler.register(
-          args.workflowId as string,
-          args.cronExpression as string,
+          parsed.data.workflowId,
+          parsed.data.cronExpression,
         );
         return { content: [{ type: "text", text: JSON.stringify(schedule) }] };
       }
@@ -120,7 +129,7 @@ export async function handle(
         if (!ctx.cronScheduler) {
           return {
             isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Cron scheduler is not configured" }) }],
+            content: [{ type: "text", text: "Cron scheduler is not configured" }],
           };
         }
         const schedules = await ctx.cronScheduler.list();
@@ -128,10 +137,10 @@ export async function handle(
       }
 
       default:
-        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }] };
+        return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

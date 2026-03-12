@@ -37,17 +37,26 @@ export interface ClientOptions {
   baseUrl: string;
   accessToken: string;
   logger?: { warn?: (...args: unknown[]) => void };
+  retry?: { maxAttempts?: number; backoffMs?: number };
+  timeout?: number;
 }
 
 export class ConsensusToolsClient {
   private readonly baseUrl: string;
   private readonly accessToken: string;
   private readonly logger?: { warn?: (...args: unknown[]) => void };
+  private readonly retryConfig: { maxAttempts: number; backoffMs: number };
+  private readonly timeout: number;
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.baseUrl;
     this.accessToken = opts.accessToken;
     this.logger = opts.logger;
+    this.retryConfig = {
+      maxAttempts: opts.retry?.maxAttempts ?? 3,
+      backoffMs: opts.retry?.backoffMs ?? 200,
+    };
+    this.timeout = opts.timeout ?? 30_000;
   }
 
   async postJob(agentId: string, input: JobPostInput): Promise<Job> {
@@ -96,20 +105,50 @@ export class ConsensusToolsClient {
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (this.accessToken) headers.authorization = `Bearer ${this.accessToken}`;
 
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let lastError: Error | undefined;
 
-    if (!res.ok) {
-      const text = await res.text();
-      this.logger?.warn?.(`consensus-tools: network request failed (status=${res.status}, path=${path})`);
-      throw new Error(`Network error ${res.status}: ${text || res.statusText}`);
+    for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), this.timeout);
+
+        const res = await fetch(url, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+
+        if (!res.ok) {
+          const text = await res.text();
+          // Don't retry 4xx — these are client errors
+          if (res.status >= 400 && res.status < 500) {
+            throw new Error(`Client error ${res.status}: ${text || res.statusText}`);
+          }
+          // 5xx: retry
+          lastError = new Error(`Server error ${res.status}: ${text || res.statusText}`);
+          this.logger?.warn?.(`consensus-tools: request failed (status=${res.status}, attempt=${attempt}/${this.retryConfig.maxAttempts})`);
+        } else {
+          const text = await res.text();
+          if (!text) return null as T;
+          return JSON.parse(text) as T;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith("Client error")) {
+          throw err;
+        }
+        lastError = err instanceof Error ? err : new Error(String(err));
+        this.logger?.warn?.(`consensus-tools: request failed (attempt=${attempt}/${this.retryConfig.maxAttempts}): ${lastError.message}`);
+      }
+
+      // Exponential backoff before retry
+      if (attempt < this.retryConfig.maxAttempts) {
+        const delay = this.retryConfig.backoffMs * Math.pow(2, attempt - 1);
+        await new Promise((r) => setTimeout(r, delay));
+      }
     }
 
-    const text = await res.text();
-    if (!text) return null as T;
-    return JSON.parse(text) as T;
+    throw lastError ?? new Error("Request failed after retries");
   }
 }

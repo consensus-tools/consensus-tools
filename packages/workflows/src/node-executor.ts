@@ -671,7 +671,9 @@ export class NodeExecutor {
     if (this.deps.notifications) {
       const approval = await this.deps.hitlTracker?.getPendingApproval(ids.runId);
       if (approval) {
-        await this.deps.notifications.sendApprovalPrompt(approval).catch(() => {});
+        await this.deps.notifications.sendApprovalPrompt(approval).catch((err) => {
+          console.error("[workflow] Failed to send approval notification:", err);
+        });
       }
     }
 

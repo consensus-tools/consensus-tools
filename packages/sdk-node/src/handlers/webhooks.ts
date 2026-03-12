@@ -191,7 +191,9 @@ async function handleChatMessage(
   metadataRunId?: string,
 ): Promise<HandlerResult> {
   // Fire-and-forget chat workflow trigger
-  tryChatWorkflowTrigger(ctx, adapter, text, userId, channel).catch(() => {});
+  tryChatWorkflowTrigger(ctx, adapter, text, userId, channel).catch((err) => {
+    console.error("[webhook] Chat workflow trigger failed:", err);
+  });
 
   // Extract runId for HITL approval
   let runId = extractRunIdFromText(text);
@@ -395,7 +397,9 @@ export async function handleGenericChatWebhook(
 
   // Fire chat trigger if text present
   if (text) {
-    tryChatWorkflowTrigger(ctx, adapter, text, userId).catch(() => {});
+    tryChatWorkflowTrigger(ctx, adapter, text, userId).catch((err) => {
+      console.error("[webhook] Chat workflow trigger failed:", err);
+    });
   }
 
   const runId = body["runId"] as string | undefined;

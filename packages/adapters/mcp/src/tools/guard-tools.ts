@@ -1,3 +1,4 @@
+import { guardEvaluateInputSchema as guardInputZod } from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 const guardEvaluateInputSchema = {
@@ -226,21 +227,26 @@ export async function handle(
     const guardType = GUARD_TYPE_MAP[name];
     const action = args.action as { type: string; payload: Record<string, unknown> } | undefined;
 
-    const input = {
-      boardId: args.boardId as string,
-      runId: args.runId as string | undefined,
-      agentId: args.agentId as string | undefined,
+    const rawInput = {
+      boardId: args.boardId,
+      runId: args.runId,
+      agentId: args.agentId,
       action: {
         type: guardType ?? action?.type ?? "evaluate",
         payload: action?.payload ?? {},
       },
-      policyPack: args.policyPack as string | undefined,
+      policyPack: args.policyPack,
     };
 
-    const result = await ctx.guardEngine.evaluate(input);
+    const parsed = guardInputZod.safeParse(rawInput);
+    if (!parsed.success) {
+      return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
+    }
+
+    const result = await ctx.guardEngine.evaluate(parsed.data);
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

@@ -17,17 +17,21 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/core": "workspace:*",
     "@consensus-tools/sdk-client": "workspace:*",
     "@consensus-tools/telemetry": "workspace:*",
-    "commander": "^13.0.0"
+    "commander": "^13.0.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
   },
   "files": ["dist", "src", "bin"],
   "author": "consensus-tools <https://github.com/consensus-tools>",

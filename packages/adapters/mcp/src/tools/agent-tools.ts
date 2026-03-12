@@ -1,3 +1,4 @@
+import { agentConfigSchema } from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 export const tools = [
@@ -61,14 +62,11 @@ export async function handle(
   try {
     switch (name) {
       case "agent.register": {
-        const agent = await ctx.agentRegistry.createAgent({
-          id: args.id as string,
-          name: args.name as string,
-          kind: args.kind as "internal" | "external",
-          scopes: (args.scopes as string[]) ?? [],
-          apiKeyHash: args.apiKeyHash as string | undefined,
-          metadata: (args.metadata as Record<string, unknown>) ?? {},
-        });
+        const parsed = agentConfigSchema.safeParse(args);
+        if (!parsed.success) {
+          return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
+        }
+        const agent = await ctx.agentRegistry.createAgent(parsed.data);
         return { content: [{ type: "text", text: JSON.stringify(agent) }] };
       }
 
@@ -78,28 +76,28 @@ export async function handle(
       }
 
       case "agent.suspend": {
-        if (!args.id) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "id is required" }) }] };
+        if (!args.id) return { isError: true, content: [{ type: "text", text: "id is required" }] };
         const agent = await ctx.agentRegistry.suspendAgent(args.id as string);
         if (!agent) {
-          return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Agent not found: ${args.id}` }) }] };
+          return { isError: true, content: [{ type: "text", text: `Agent not found: ${args.id}` }] };
         }
         return { content: [{ type: "text", text: JSON.stringify(agent) }] };
       }
 
       case "agent.activate": {
-        if (!args.id) return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "id is required" }) }] };
+        if (!args.id) return { isError: true, content: [{ type: "text", text: "id is required" }] };
         const agent = await ctx.agentRegistry.activateAgent(args.id as string);
         if (!agent) {
-          return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Agent not found: ${args.id}` }) }] };
+          return { isError: true, content: [{ type: "text", text: `Agent not found: ${args.id}` }] };
         }
         return { content: [{ type: "text", text: JSON.stringify(agent) }] };
       }
 
       default:
-        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }] };
+        return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: message }) }] };
+    return { isError: true, content: [{ type: "text", text: message }] };
   }
 }

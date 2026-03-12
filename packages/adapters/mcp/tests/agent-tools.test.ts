@@ -55,8 +55,7 @@ describe("agent tools", () => {
   it("unknown tool returns isError", async () => {
     const result = await handle("agent.unknown", {}, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("Unknown tool");
+    expect(result.content[0].text).toContain("Unknown tool");
   });
 
   it("propagates errors from registry", async () => {
@@ -65,7 +64,6 @@ describe("agent tools", () => {
       id: "a1", name: "Agent", kind: "internal", scopes: [],
     }, ctx);
     expect((result as any).isError).toBe(true);
-    const data = parseContent(result);
-    expect(data.error).toContain("Duplicate ID");
+    expect(result.content[0].text).toContain("Duplicate ID");
   });
 });

@@ -1,6 +1,7 @@
 import { existsSync, promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { z } from "zod";
 
 export interface ConsensusCliConfig {
   agentId?: string;
@@ -11,6 +12,16 @@ export interface ConsensusCliConfig {
   };
   defaults: { policy: string; reward: number; stake: number; leaseSeconds: number };
 }
+
+export const consensusCliConfigSchema = z.object({
+  agentId: z.string().optional(),
+  activeBoard: z.enum(["local", "remote"]),
+  boards: z.object({
+    local: z.object({ type: z.literal("local"), root: z.string(), jobsPath: z.string(), ledgerPath: z.string() }),
+    remote: z.object({ type: z.literal("remote"), url: z.string(), boardId: z.string(), auth: z.object({ type: z.literal("apiKey"), apiKeyEnv: z.string() }) }),
+  }),
+  defaults: z.object({ policy: z.string(), reward: z.number(), stake: z.number(), leaseSeconds: z.number() }),
+});
 
 export const defaultConsensusCliConfig: ConsensusCliConfig = {
   activeBoard: "remote",
@@ -36,7 +47,12 @@ function resolveCliConfigPath(cwd: string = process.cwd()): string {
 export async function loadCliConfig(cwd?: string): Promise<ConsensusCliConfig> {
   try {
     const raw = await fs.readFile(resolveCliConfigPath(cwd), "utf8");
-    return JSON.parse(raw) as ConsensusCliConfig;
+    const parsed = consensusCliConfigSchema.safeParse(JSON.parse(raw));
+    if (!parsed.success) {
+      console.warn("[cli] WARNING: Config file is malformed, falling back to defaults:", parsed.error.issues.map((i) => i.message).join(", "));
+      return JSON.parse(JSON.stringify(defaultConsensusCliConfig));
+    }
+    return parsed.data;
   } catch {
     return JSON.parse(JSON.stringify(defaultConsensusCliConfig));
   }
