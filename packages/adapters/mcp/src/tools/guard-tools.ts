@@ -21,6 +21,45 @@ const guardEvaluateInputSchema = {
   required: ["boardId", "action"],
 };
 
+// ── Policy Assignment Tools ────────────────────────────────────────
+
+const policyTools = [
+  {
+    name: "policy.assign",
+    description:
+      "Assign a guard policy to a board with weighting mode and quorum settings. Upserts — if a policy is already assigned to the board, it is replaced.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        boardId: { type: "string", description: "Board ID to assign policy to" },
+        policyId: { type: "string", description: "Policy ID to assign" },
+        participants: {
+          type: "array",
+          description: "Participant IDs included in this policy",
+          items: { type: "string" },
+        },
+        weightingMode: {
+          type: "string",
+          enum: ["static", "reputation", "hybrid"],
+          description: "Vote weighting mode (default: hybrid)",
+        },
+        quorum: { type: "number", description: "Quorum threshold 0-1" },
+      },
+      required: ["boardId", "policyId", "participants", "quorum"],
+    },
+  },
+  {
+    name: "policy.list",
+    description: "List all policy assignments, optionally filtered by board ID.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        boardId: { type: "string", description: "Optional board ID to filter by" },
+      },
+    },
+  },
+];
+
 function makeGuardTool(
   name: string,
   description: string,
@@ -56,6 +95,7 @@ function makeGuardTool(
 }
 
 export const tools = [
+  ...policyTools,
   {
     name: "guard.evaluate",
     description:
@@ -224,6 +264,43 @@ export async function handle(
   ctx: McpContext,
 ): Promise<{ content: [{ type: "text"; text: string }] } | { isError: true; content: [{ type: "text"; text: string }] }> {
   try {
+    // ── Policy tools ────────────────────────────────────────
+    if (name === "policy.assign") {
+      const boardId = String(args.boardId || "");
+      const policyId = String(args.policyId || "");
+      const participants = Array.isArray(args.participants) ? (args.participants as string[]) : [];
+      const weightingMode = String(args.weightingMode || "hybrid");
+      const quorum = Number(args.quorum ?? 0.7);
+
+      if (!boardId || !policyId) {
+        return { isError: true, content: [{ type: "text", text: "boardId and policyId are required" }] };
+      }
+
+      await ctx.storage.update((state) => {
+        const existing = state.policyAssignments.findIndex((p) => p.boardId === boardId);
+        const assignment = { boardId, policyId, participants, weightingMode: weightingMode as "static" | "reputation" | "hybrid", quorum };
+        if (existing >= 0) {
+          state.policyAssignments[existing] = assignment;
+        } else {
+          state.policyAssignments.push(assignment);
+        }
+      });
+
+      const state = await ctx.storage.getState();
+      const assigned = state.policyAssignments.find((p) => p.boardId === boardId);
+      return { content: [{ type: "text", text: JSON.stringify(assigned) }] };
+    }
+
+    if (name === "policy.list") {
+      const state = await ctx.storage.getState();
+      const boardId = args.boardId ? String(args.boardId) : undefined;
+      const results = boardId
+        ? state.policyAssignments.filter((p) => p.boardId === boardId)
+        : state.policyAssignments;
+      return { content: [{ type: "text", text: JSON.stringify(results) }] };
+    }
+
+    // ── Guard tools ─────────────────────────────────────────
     const guardType = GUARD_TYPE_MAP[name];
     const action = args.action as { type: string; payload: Record<string, unknown> } | undefined;
 

@@ -10,6 +10,7 @@ export const ledgerEntryTypeSchema = z.enum([
   "SLASH",
   "ADJUST",
   "ESCROW_MINT",
+  "WORKFLOW_FEE",
 ]);
 export type LedgerEntryType = z.infer<typeof ledgerEntryTypeSchema>;
 

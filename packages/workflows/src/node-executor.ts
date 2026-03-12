@@ -513,16 +513,22 @@ export class NodeExecutor {
         reasons.push(`REWRITE escalated to BLOCK: risk ${result.combinedRisk.toFixed(3)} exceeds blockAboveRisk ${blockAboveRisk}`);
       }
 
-      // Emit resolution scores to audit
+      // Emit resolution scores to audit + persist guardResult, resolution, ledger
+      const guardReason = `${guardType} consensus: ${result.tally.yes}/${result.tally.voterCount} YES votes`;
+      const riskRounded = Math.round(result.combinedRisk * 1000) / 1000;
+      const yesRatioRounded = Math.round(result.weightedYesRatio * 1000) / 1000;
+      const now = nowIso();
+
       await this.deps.storage.update((s) => {
+        // Audit events
         s.audit.push({
           id: newId("audit"),
-          at: nowIso(),
+          at: now,
           type: "RISK_SCORE",
           details: {
             runId: ids.runId,
             boardId: ids.boardId,
-            risk_score: Math.round(result.combinedRisk * 1000) / 1000,
+            risk_score: riskRounded,
             decision: finalDecision,
             guard_type: guardType,
             voter_count: result.tally.voterCount,
@@ -531,17 +537,17 @@ export class NodeExecutor {
             rewrite_count: result.tally.rewrite,
             quorum_threshold: quorum,
             risk_threshold: riskThreshold,
-            weighted_yes_ratio: Math.round(result.weightedYesRatio * 1000) / 1000,
+            weighted_yes_ratio: yesRatioRounded,
           },
         });
         s.audit.push({
           id: newId("audit"),
-          at: nowIso(),
+          at: now,
           type: "CONSENSUS_QUORUM",
           details: {
             runId: ids.runId,
             boardId: ids.boardId,
-            quorum_score: Math.round(result.weightedYesRatio * 1000) / 1000,
+            quorum_score: yesRatioRounded,
             quorum_met: result.quorumMet,
             total_voters: result.tally.voterCount,
             total_weight: Math.round(result.tally.totalWeight * 1000) / 1000,
@@ -551,23 +557,70 @@ export class NodeExecutor {
             risk_threshold: riskThreshold,
           },
         });
+        const finalDecisionAuditId = newId("audit");
         s.audit.push({
-          id: newId("audit"),
-          at: nowIso(),
+          id: finalDecisionAuditId,
+          at: now,
           type: "FINAL_DECISION",
           details: {
             runId: ids.runId,
             boardId: ids.boardId,
             decision: finalDecision,
-            reason: `${guardType} consensus: ${result.tally.yes}/${result.tally.voterCount} YES votes`,
-            risk_score: Math.round(result.combinedRisk * 1000) / 1000,
+            reason: guardReason,
+            risk_score: riskRounded,
             guard_type: guardType,
             consensus_meta: {
               quorumMet: result.quorumMet,
-              weightedYesRatio: Math.round(result.weightedYesRatio * 1000) / 1000,
+              weightedYesRatio: yesRatioRounded,
               voterCount: result.tally.voterCount,
             },
           },
+        });
+
+        // Persist guard result (mirrors GuardEngine.persistAuditEvents)
+        s.guardResults.push({
+          decision: finalDecision as "ALLOW" | "BLOCK" | "REWRITE" | "REQUIRE_HUMAN",
+          reason: guardReason,
+          risk_score: riskRounded,
+          audit_id: finalDecisionAuditId,
+          votes: weightedVotes.map((v) => ({
+            evaluator: v.evaluator,
+            vote: v.vote,
+            reason: v.reason,
+            risk: v.risk,
+          })),
+          guard_type: guardType as "send_email" | "code_merge" | "publish" | "support_reply" | "agent_action" | "deployment" | "permission_escalation",
+          weighted_yes: yesRatioRounded,
+        });
+
+        // Persist resolution for workflow consensus
+        s.resolutions.push({
+          jobId: "",
+          runId: ids.runId,
+          boardId: ids.boardId,
+          resolvedAt: now,
+          winners: [],
+          winningSubmissionIds: [],
+          payouts: [],
+          slashes: [],
+          consensusTrace: {
+            tally: result.tally,
+            quorumMet: result.quorumMet,
+            weightedYesRatio: result.weightedYesRatio,
+            weightingMode,
+          },
+          finalArtifact: null,
+          auditLog: [`workflow_guard:${ids.runId}`, `decision:${finalDecision}`],
+        });
+
+        // Persist ledger entry for workflow consensus fee
+        s.ledger.push({
+          id: newId("ledger"),
+          at: now,
+          type: "WORKFLOW_FEE",
+          agentId: `workflow:${ids.workflowId}`,
+          amount: Number(node.config?.consensusCost ?? 0),
+          reason: `guard_consensus:${ids.runId}:${finalDecision}`,
         });
       });
 

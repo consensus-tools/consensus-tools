@@ -4,6 +4,8 @@ import { z } from "zod";
 
 export const resolutionSchema = z.object({
   jobId: z.string(),
+  runId: z.string().optional(),
+  boardId: z.string().optional(),
   resolvedAt: z.string(),
   winners: z.array(z.string()),
   winningSubmissionIds: z.array(z.string()),
