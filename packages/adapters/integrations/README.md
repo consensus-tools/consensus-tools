@@ -1,9 +1,6 @@
 # @consensus-tools/integrations
 
-External platform adapters for GitHub and Linear in [consensus-tools](https://github.com/consensus-tools/consensus-tools).
-
-[![npm](https://img.shields.io/npm/v/@consensus-tools/integrations)](https://www.npmjs.com/package/@consensus-tools/integrations)
-[![license](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/consensus-tools/consensus-tools/blob/main/LICENSE)
+GitHub and Linear integration adapters for consensus-tools.
 
 ## Install
 
@@ -11,51 +8,29 @@ External platform adapters for GitHub and Linear in [consensus-tools](https://gi
 pnpm add @consensus-tools/integrations
 ```
 
-## What it does
-
-Provides typed adapters for fetching data from GitHub and Linear. Used by workflow nodes to trigger on GitHub PRs, fetch Linear tasks for decomposition, and verify incoming webhooks.
-
-## GitHub
-
-Requires the `gh` CLI to be installed and authenticated.
+## Usage
 
 ```typescript
-import { fetchPullRequest, listOpenPullRequests, verifyWebhookSignature } from "@consensus-tools/integrations";
+import { fetchPullRequest, verifyWebhookSignature } from "@consensus-tools/integrations";
 
-const pr = await fetchPullRequest("owner/repo", 42);
-// pr → { number, title, author, files, diff, ... }
+// Fetch a GitHub PR
+const pr = await fetchPullRequest({ owner: "org", repo: "repo", number: 42, token });
 
-const prs = await listOpenPullRequests("owner/repo");
-
+// Verify GitHub webhook
 const valid = verifyWebhookSignature(payload, signature, secret);
 ```
-
-## Linear
-
-Requires a Linear API key.
 
 ```typescript
 import { createLinearClient } from "@consensus-tools/integrations";
 
-const linear = createLinearClient({ apiKey: "lin_api_..." });
-// linear → { getTask, getUnassignedTasks, getTeamMembers, assignTask, ... }
+const linear = createLinearClient({ apiKey });
 ```
 
-## API
+## What's included
 
-| Export | Description |
-|--------|-------------|
-| `fetchPullRequest(repo, number)` | Fetch PR details including files and diff |
-| `listOpenPullRequests(repo)` | List open PRs for a repository |
-| `verifyWebhookSignature(payload, sig, secret)` | Verify GitHub webhook HMAC signature |
-| `createLinearClient(config)` | Create a typed Linear API client |
-| `PullRequest` | PR type definition |
-| `LinearClient` / `LinearTask` / `LinearTeamMember` | Linear type definitions |
+- **GitHub** — `fetchPullRequest`, `listOpenPullRequests`, `verifyWebhookSignature`
+- **Linear** — `createLinearClient`, `LinearClient`, `LinearTask`
 
-## How it fits
+## Links
 
-Tier 1 package. Depends on `@consensus-tools/schemas`. Used by `workflows` (trigger and action nodes) and `sdk-node` (webhook handlers).
-
-## License
-
-[Apache-2.0](https://github.com/consensus-tools/consensus-tools/blob/main/LICENSE)
+[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)

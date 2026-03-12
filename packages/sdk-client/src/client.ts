@@ -29,7 +29,7 @@ export interface VoteInput {
 }
 
 export interface ResolveInput {
-  manualWinnerAgentIds?: string[];
+  manualWinners?: string[];
   manualSubmissionId?: string;
 }
 

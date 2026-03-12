@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.0.18"
   },
   "files": ["dist", "src", "bin"],
   "author": "consensus-tools <https://github.com/consensus-tools>",
@@ -41,6 +41,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/cli"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "cli", "command-line"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/cli",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

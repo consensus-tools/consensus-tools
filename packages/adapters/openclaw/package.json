@@ -33,6 +33,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/adapters/openclaw"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "openclaw", "plugin"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/openclaw",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

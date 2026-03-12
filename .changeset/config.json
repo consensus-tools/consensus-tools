@@ -1,0 +1,11 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "consensus-tools/consensus-tools" }],
+  "commit": false,
+  "fixed": [],
+  "linked": [["@consensus-tools/*"]],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@consensus-tools/dashboard", "@consensus-tools/local-board"]
+}

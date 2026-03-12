@@ -15,7 +15,7 @@ import type {
 import { newId, nowIso } from "@consensus-tools/core";
 import { listTemplates, getTemplateById } from "@consensus-tools/workflows";
 import type { CredentialManager } from "@consensus-tools/secrets";
-import type { WebhookHandlerContext } from "./handlers/webhook-utils.js";
+import type { WebhookHandlerContext, WorkflowRunner, CronScheduler, ServerDeps } from "./types.js";
 import { handleGitHubWebhook, handleLinearWebhook, handleSlackWebhook, handleTeamsWebhook, handleDiscordWebhook, handleTelegramWebhook, handleGenericChatWebhook } from "./handlers/webhooks.js";
 import { handleChatApprovalReply, handleWorkflowRunApprove } from "./handlers/chat-approval.js";
 import { handleListCredentials, handleUpsertCredential, handleDeleteCredential, handleProviderStatus } from "./handlers/credentials.js";
@@ -23,35 +23,9 @@ import { ToolRegistry } from "./handlers/tool-registry.js";
 import { handleListAdapters, handleInstallAdapter, handleUninstallAdapter } from "./handlers/adapters.js";
 import { SlidingWindowRateLimiter } from "./rate-limiter.js";
 
-/** Minimal interface so we don't need a hard dep on @consensus-tools/workflows at compile time. */
-export interface WorkflowRunner {
-  createWorkflow(name: string, definition: Record<string, unknown>, templateId?: string): Promise<Workflow>;
-  listWorkflows(): Promise<Workflow[]>;
-  run(workflowId: string, opts?: { context?: Record<string, unknown> }): Promise<WorkflowRun>;
-  resume(workflowId: string, runId: string, decision: string, approver: string): Promise<WorkflowRun>;
-}
-
-export interface CronScheduler {
-  register(workflowId: string, cronExpression: string): Promise<CronSchedule>;
-  unregister(workflowId: string): Promise<boolean>;
-  list(): Promise<CronSchedule[]>;
-}
+export type { WorkflowRunner, CronScheduler, ServerDeps };
 
 const MAX_BODY = 1024 * 1024;
-
-export interface ServerDeps {
-  config: ConsensusToolsConfig;
-  engine: JobEngine;
-  ledger: LedgerEngine;
-  storage: IStorage;
-  agentRegistry?: AgentRegistry;
-  guardEngine?: GuardEngine;
-  hitlTracker?: HitlTracker;
-  workflowRunner?: WorkflowRunner;
-  cronScheduler?: CronScheduler;
-  credentialManager?: CredentialManager;
-  logger?: { info?: (...a: unknown[]) => void; warn?: (...a: unknown[]) => void };
-}
 
 const VALID_NODE_TYPES = ["trigger", "agent", "guard", "hitl", "action", "group"];
 
@@ -726,7 +700,7 @@ export class ConsensusToolsServer {
           const boardId = url.searchParams.get("boardId");
           const runId = url.searchParams.get("runId");
           const type = url.searchParams.get("type");
-          const limit = parseInt(url.searchParams.get("limit") || "100", 10);
+          const limit = parseInt(url.searchParams.get("limit") || "100", 10) || 100;
           let events = state.audit;
           if (boardId) events = events.filter((e) => (e.details as Record<string, unknown>)?.boardId === boardId);
           if (runId) events = events.filter((e) => (e.details as Record<string, unknown>)?.runId === runId);
@@ -771,7 +745,7 @@ export class ConsensusToolsServer {
       if (method === "GET" && path === "/api/mcp/audit/search") {
         const state = await this.storage.getState();
         const q = url.searchParams.get("q") || "";
-        const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "50", 10) || 50;
         // Support field-specific search: "type:AGENT_VERDICT", "runId:wfrun_abc", "boardId:workflow-system"
         const fieldMatch = q.match(/^(\w+):(.+)$/);
         const results = state.audit.filter((e) => {
@@ -831,7 +805,9 @@ export class ConsensusToolsServer {
 
       if (method === "POST" && path === "/api/webhooks/slack/events") {
         const rawBody = await this.readRaw(req);
-        const body = JSON.parse(rawBody.toString("utf8") || "{}");
+        let body: Record<string, unknown>;
+        try { body = JSON.parse(rawBody.toString("utf8") || "{}"); }
+        catch { return this.reply(res, 400, { error: "Invalid JSON body" }); }
         const hdrs = req.headers as Record<string, string | undefined>;
         const result = await handleSlackWebhook(webhookCtx, body, hdrs, rawBody);
         return this.reply(res, result.status, result.body);
@@ -846,7 +822,9 @@ export class ConsensusToolsServer {
 
       if (method === "POST" && path === "/api/webhooks/discord/interactions") {
         const rawBody = await this.readRaw(req);
-        const body = JSON.parse(rawBody.toString("utf8") || "{}");
+        let body: Record<string, unknown>;
+        try { body = JSON.parse(rawBody.toString("utf8") || "{}"); }
+        catch { return this.reply(res, 400, { error: "Invalid JSON body" }); }
         const hdrs = req.headers as Record<string, string | undefined>;
         const result = await handleDiscordWebhook(webhookCtx, body, hdrs, rawBody);
         return this.reply(res, result.status, result.body);
@@ -861,7 +839,9 @@ export class ConsensusToolsServer {
 
       const chatAdapterMatch = path.match(/^\/api\/webhooks\/chat\/([^/]+)$/);
       if (method === "POST" && chatAdapterMatch) {
-        const adapter = decodeURIComponent(chatAdapterMatch[1]!);
+        let adapter: string;
+        try { adapter = decodeURIComponent(chatAdapterMatch[1]!); }
+        catch { return this.reply(res, 400, { error: "Invalid adapter name in URL" }); }
         const body = await this.readJson(req);
         const result = await handleGenericChatWebhook(webhookCtx, adapter, body);
         return this.reply(res, result.status, result.body);
@@ -876,7 +856,9 @@ export class ConsensusToolsServer {
 
       const wfRunApproveMatch = path.match(/^\/api\/workflow-runs\/([^/]+)\/approve$/);
       if (method === "POST" && wfRunApproveMatch) {
-        const runId = decodeURIComponent(wfRunApproveMatch[1]!);
+        let runId: string;
+        try { runId = decodeURIComponent(wfRunApproveMatch[1]!); }
+        catch { return this.reply(res, 400, { error: "Invalid run ID in URL" }); }
         const body = await this.readJson(req);
         const result = await handleWorkflowRunApprove(webhookCtx, runId, body);
         return this.reply(res, result.status, result.body);
@@ -946,9 +928,10 @@ export class ConsensusToolsServer {
       return this.reply(res, 404, { error: "Not found" });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      this.logger?.warn?.(`consensus-tools server error: ${msg}`);
+      const status = (err as any)?.statusCode ?? 500;
+      if (status >= 500) this.logger?.warn?.(`consensus-tools server error: ${msg}`);
       try { await this.engine.recordError?.(msg, { path: req.url, method: req.method }); } catch { /* ignore */ }
-      return this.reply(res, 500, { error: msg });
+      return this.reply(res, status, { error: msg });
     }
   }
 
@@ -965,7 +948,9 @@ export class ConsensusToolsServer {
   private async readJson(req: http.IncomingMessage): Promise<Record<string, any>> {
     const raw = await this.readRaw(req);
     const text = raw.toString("utf8");
-    return text ? JSON.parse(text) : {};
+    if (!text) return {};
+    try { return JSON.parse(text); }
+    catch { throw Object.assign(new Error("Invalid JSON body"), { statusCode: 400 }); }
   }
 
   private async readRaw(req: http.IncomingMessage): Promise<Buffer> {

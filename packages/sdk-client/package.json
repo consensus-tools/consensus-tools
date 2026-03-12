@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.0.18"
   },
   "files": ["dist", "src"],
   "author": "consensus-tools <https://github.com/consensus-tools>",
@@ -33,6 +33,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/sdk-client"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "http-client", "sdk"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/sdk-client",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

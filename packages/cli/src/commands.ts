@@ -154,7 +154,7 @@ export function buildProgram(): Command {
       const agentId = resolveAgentId(cfg);
       const client = createRemoteClient(cfg);
       output(await client.resolveJob(agentId, jobId, {
-        manualWinnerAgentIds: opts.winner ? [opts.winner] : undefined,
+        manualWinners: opts.winner ? [opts.winner] : undefined,
         manualSubmissionId: opts.submission,
       }), opts.json);
     });

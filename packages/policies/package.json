@@ -34,6 +34,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/policies"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "resolution", "consensus-policy"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/policies",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

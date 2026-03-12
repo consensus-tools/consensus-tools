@@ -37,6 +37,11 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/workflows"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "dag", "hitl", "cron", "workflow-engine"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/workflows",
+  "bugs": { "url": "https://github.com/consensus-tools/consensus-tools/issues" },
   "publishConfig": {
     "access": "public"
   }

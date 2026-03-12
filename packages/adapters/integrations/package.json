@@ -30,6 +30,11 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/adapters/integrations"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "github", "linear"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
+  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/integrations",
+  "bugs": { "url": "https://github.com/consensus-tools/consensus-tools/issues" },
   "publishConfig": {
     "access": "public"
   }

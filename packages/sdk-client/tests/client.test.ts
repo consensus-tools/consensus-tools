@@ -171,7 +171,7 @@ describe("ConsensusToolsClient", () => {
       vi.stubGlobal("fetch", fetch);
 
       const result = await client.resolveJob("agent-1", "job_1", {
-        manualWinnerAgentIds: ["agent-2"],
+        manualWinners: ["agent-2"],
         manualSubmissionId: "sub_1",
       });
 
@@ -180,7 +180,7 @@ describe("ConsensusToolsClient", () => {
       expect(opts.method).toBe("POST");
       const body = JSON.parse(opts.body);
       expect(body.agentId).toBe("agent-1");
-      expect(body.manualWinnerAgentIds).toEqual(["agent-2"]);
+      expect(body.manualWinners).toEqual(["agent-2"]);
       expect(body.manualSubmissionId).toBe("sub_1");
       expect(result).toEqual(resolution);
     });

@@ -39,6 +39,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/sdk-node"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "http-server", "rest-api", "webhooks"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/sdk-node",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

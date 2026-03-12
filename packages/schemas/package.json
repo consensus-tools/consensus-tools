@@ -35,6 +35,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/schemas"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "zod", "validation", "types"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/schemas",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

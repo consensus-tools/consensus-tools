@@ -20,9 +20,14 @@
     "clean": "turbo clean && rm -rf node_modules",
     "typecheck": "turbo typecheck",
     "dep-check": "depcruise --config .dependency-cruiser.cjs packages apps",
-    "dep-graph": "depcruise --config .dependency-cruiser.cjs --output-type dot packages | dot -T svg > docs/dependency-graph.svg"
+    "dep-graph": "depcruise --config .dependency-cruiser.cjs --output-type dot packages | dot -T svg > docs/dependency-graph.svg",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.30.0",
     "dependency-cruiser": "^16.0.0",
     "tsx": "^4.0.0",
     "turbo": "^2.3.0",

@@ -37,6 +37,9 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/core"
   },
+  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "engine", "jobs", "ledger", "storage"],
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/core",
   "bugs": {
     "url": "https://github.com/consensus-tools/consensus-tools/issues"

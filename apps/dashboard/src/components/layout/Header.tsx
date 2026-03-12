@@ -24,7 +24,7 @@ export function Header() {
         ).length === 0;
         setShowBanner(noWorkflows && noTriggers && noCreds);
       })
-      .catch(() => {});
+      .catch((e) => console.warn('[Header] Failed to check setup status:', e));
   }, [location.pathname]);
 
   return (

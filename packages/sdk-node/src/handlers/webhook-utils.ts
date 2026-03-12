@@ -1,21 +1,9 @@
-import type { Workflow, WorkflowRun, HitlApproval } from "@consensus-tools/schemas";
-import type { IStorage, HitlTracker } from "@consensus-tools/core";
+import type { HitlTracker } from "@consensus-tools/core";
 import type { CredentialProvider } from "@consensus-tools/notifications";
 import type { CredentialManager } from "@consensus-tools/secrets";
-import type { WorkflowRunner } from "../server.js";
+import type { WebhookHandlerContext, HandlerResult } from "../types.js";
 
-export interface WebhookHandlerContext {
-  storage: IStorage;
-  hitlTracker?: HitlTracker;
-  workflowRunner?: WorkflowRunner;
-  credentialManager?: CredentialManager;
-  logger?: { info?: (...a: unknown[]) => void; warn?: (...a: unknown[]) => void };
-}
-
-export interface HandlerResult {
-  status: number;
-  body: unknown;
-}
+export type { WebhookHandlerContext, HandlerResult };
 
 // ── Event-to-source mappers ───────────────────────────────────────
 

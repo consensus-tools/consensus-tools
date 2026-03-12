@@ -118,9 +118,9 @@ export function EventTimeline() {
   }, [sortOrder, runIdFilter]);
 
   useEffect(() => {
-    getRunIds().then(d => setAvailableRunIds(d.runIds || [])).catch(() => {});
+    getRunIds().then(d => setAvailableRunIds(d.runIds || [])).catch((e) => console.warn('[EventTimeline] Failed to fetch run IDs:', e));
     const t = setInterval(() => {
-      getRunIds().then(d => setAvailableRunIds(d.runIds || [])).catch(() => {});
+      getRunIds().then(d => setAvailableRunIds(d.runIds || [])).catch((e) => console.warn('[EventTimeline] Failed to fetch run IDs:', e));
     }, 10000);
     return () => clearInterval(t);
   }, []);
