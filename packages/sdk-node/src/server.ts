@@ -601,28 +601,31 @@ export class ConsensusToolsServer {
       if (path === "/api/mcp/boards") {
         if (method === "GET") {
           const state = await this.storage.getState();
-          // Derive boards from jobs AND audit events (workflow runs use audit boardId)
-          const jobBoardIds = state.jobs.map((j) => j.boardId).filter(Boolean);
-          const auditBoardIds = state.audit
-            .map((e) => (e.details as Record<string, unknown>)?.boardId)
-            .filter(Boolean) as string[];
-          const boardIds = [...new Set([...jobBoardIds, ...auditBoardIds])];
-          const boards = boardIds.map((id) => {
-            const jobCount = state.jobs.filter((j) => j.boardId === id).length;
-            const runIds = new Set(
-              state.audit
-                .filter((e) => (e.details as Record<string, unknown>)?.boardId === id)
-                .map((e) => (e.details as Record<string, unknown>)?.runId)
-                .filter(Boolean),
-            );
-            const firstEvent = state.audit.find((e) => (e.details as Record<string, unknown>)?.boardId === id);
-            return {
-              id,
-              name: id,
-              jobs: jobCount + runIds.size,
-              created_at: state.jobs.find((j) => j.boardId === id)?.createdAt ?? firstEvent?.at ?? "",
-            };
-          });
+          // Single-pass aggregation over audit + jobs
+          const boardMeta = new Map<string, { runIds: Set<string>; firstAt: string }>();
+          for (const e of state.audit) {
+            const d = e.details as Record<string, unknown> | undefined;
+            const bid = d?.boardId as string | undefined;
+            if (!bid) continue;
+            let meta = boardMeta.get(bid);
+            if (!meta) { meta = { runIds: new Set(), firstAt: e.at }; boardMeta.set(bid, meta); }
+            const rid = d?.runId as string | undefined;
+            if (rid) meta.runIds.add(rid);
+          }
+          const jobCounts = new Map<string, number>();
+          const jobFirstCreated = new Map<string, string>();
+          for (const j of state.jobs) {
+            if (!j.boardId) continue;
+            jobCounts.set(j.boardId, (jobCounts.get(j.boardId) ?? 0) + 1);
+            if (!jobFirstCreated.has(j.boardId)) jobFirstCreated.set(j.boardId, j.createdAt);
+            if (!boardMeta.has(j.boardId)) boardMeta.set(j.boardId, { runIds: new Set(), firstAt: j.createdAt });
+          }
+          const boards = [...boardMeta.entries()].map(([id, meta]) => ({
+            id,
+            name: id,
+            jobs: (jobCounts.get(id) ?? 0) + meta.runIds.size,
+            created_at: jobFirstCreated.get(id) ?? meta.firstAt,
+          }));
           return this.reply(res, 200, { boards });
         }
         if (method === "POST") {
@@ -973,11 +976,14 @@ export class ConsensusToolsServer {
 
   private async readRaw(req: http.IncomingMessage): Promise<Buffer> {
     const chunks: Buffer[] = [];
+    let totalLength = 0;
     for await (const chunk of req) {
-      chunks.push(Buffer.from(chunk as Buffer));
-      if (Buffer.concat(chunks).length > MAX_BODY) throw new Error("Payload too large");
+      const buf = Buffer.from(chunk as Buffer);
+      totalLength += buf.length;
+      if (totalLength > MAX_BODY) throw Object.assign(new Error("Payload too large"), { statusCode: 413 });
+      chunks.push(buf);
     }
-    return Buffer.concat(chunks);
+    return Buffer.concat(chunks, totalLength);
   }
 
   private reply(res: http.ServerResponse, status: number, body: unknown): void {
