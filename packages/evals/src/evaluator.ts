@@ -4,11 +4,14 @@ import type { AgentPersona } from "./personas.js";
 export interface AiEvaluatorConfig {
   model?: string;
   apiKey?: string;
+  /** Set to true to allow deterministic fallback when no API key is available.
+   *  Without this flag, evaluateWithAiSdk will throw if no key is configured. */
+  allowDeterministicFallback?: boolean;
 }
 
 /**
  * Evaluate a guard action using LLM-based agent personas.
- * Falls back to deterministic evaluation when no API key is configured.
+ * Throws if no API key is configured unless allowDeterministicFallback is true.
  */
 export async function evaluateWithAiSdk(
   input: GuardEvaluateInput,
@@ -18,6 +21,12 @@ export async function evaluateWithAiSdk(
   const apiKey = config.apiKey || process.env["OPENAI_API_KEY"];
 
   if (!apiKey) {
+    if (!config.allowDeterministicFallback) {
+      throw new Error(
+        "consensus-tools/evals: No API key configured (set OPENAI_API_KEY or pass apiKey in config). " +
+        "To use deterministic fallback instead, pass { allowDeterministicFallback: true }.",
+      );
+    }
     return deterministicFallback(input, personas);
   }
 
@@ -49,7 +58,8 @@ VOTE: <YES|NO|REWRITE> | RISK: <0.0-1.0> | REASON: <brief explanation>`;
     }
 
     return votes;
-  } catch {
+  } catch (err) {
+    if (!config.allowDeterministicFallback) throw err;
     return deterministicFallback(input, personas);
   }
 }

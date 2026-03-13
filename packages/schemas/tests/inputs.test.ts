@@ -14,21 +14,21 @@ describe("jobPostInputSchema", () => {
   it("should accept valid input", () => {
     const result = jobPostInputSchema.safeParse({
       title: "Summarize document",
-      rewardAmount: 100,
+      reward: 100,
       mode: "SUBMISSION",
     });
     expect(result.success).toBe(true);
   });
 
   it("should reject missing title", () => {
-    const result = jobPostInputSchema.safeParse({ rewardAmount: 50 });
+    const result = jobPostInputSchema.safeParse({ reward: 50 });
     expect(result.success).toBe(false);
   });
 
   it("should reject negative reward", () => {
     const result = jobPostInputSchema.safeParse({
       title: "Task",
-      rewardAmount: -10,
+      reward: -10,
     });
     expect(result.success).toBe(false);
   });

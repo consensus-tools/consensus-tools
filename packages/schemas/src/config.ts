@@ -10,6 +10,9 @@ export const consensusToolsConfigSchema = z.object({
     storage: z.object({
       kind: z.enum(["sqlite", "json"]),
       path: z.string(),
+      maxAuditEntries: z.number().optional(),
+      maxLedgerEntries: z.number().optional(),
+      maxGuardResults: z.number().optional(),
     }),
     server: z.object({
       enabled: z.boolean(),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { majorityVote, weightedVoteSimple, weightedReputation } from "../src/vote-based.js";
+import { majorityVote, weightedVoteSimple, weightedReputation } from "../src/index.js";
 import { makeJob, makeSubmission, makeVote, makeInput } from "./helpers.js";
 
 function voteJob(type: string, quorum?: number) {

@@ -15,7 +15,18 @@ export { HitlTracker } from "./engine/hitl-tracker.js";
 export type { NotificationDispatcher, HitlTrackerOptions } from "./engine/hitl-tracker.js";
 
 // ── Resolve ─────────────────────────────────────────────────────────
-export { resolveConsensus } from "./resolve/resolve.js";
+export {
+  resolveConsensus,
+  firstSubmissionWins,
+  highestConfidenceSingle,
+  approvalVote,
+  ownerPick,
+  trustedArbiter,
+  topKSplit,
+  majorityVote,
+  weightedVoteSimple,
+  weightedReputation,
+} from "./resolve/resolve.js";
 
 // ── Board ───────────────────────────────────────────────────────────
 export { LocalBoard } from "./board/board.js";
@@ -25,7 +36,7 @@ export { LedgerEngine } from "./ledger/ledger.js";
 export { computeBalances, getBalance, ensureNonNegative } from "./ledger/rules.js";
 
 // ── Storage ─────────────────────────────────────────────────────────
-export type { IStorage } from "./storage/interface.js";
+export type { IStorage, StorageCaps } from "./storage/interface.js";
 export { defaultState } from "./storage/interface.js";
 export { createStorage } from "./storage/factory.js";
 export { JsonStorage } from "./storage/json.js";

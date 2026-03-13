@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { firstSubmissionWins } from "../src/first-submission-wins.js";
+import { firstSubmissionWins } from "../src/index.js";
 import { makeJob, makeSubmission, makeInput } from "./helpers.js";
 
 describe("firstSubmissionWins", () => {

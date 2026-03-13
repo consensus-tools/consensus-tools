@@ -29,14 +29,11 @@ export interface JobFilters {
 export interface JobPostInput {
   title: string;
   description?: string;
-  desc?: string;
   inputRef?: string;
   inputs?: Record<string, unknown>;
   mode?: "SUBMISSION" | "VOTING";
   policyKey?: string;
   policyConfigJson?: Record<string, unknown>;
-  rewardAmount?: number;
-  stakeAmount?: number;
   currency?: string;
   opensAt?: string;
   closesAt?: string;
@@ -103,7 +100,7 @@ export class JobEngine {
 
   async postJob(agentId: string, input: JobPostInput): Promise<Job> {
     const now = nowIso();
-    const description = input.description ?? input.desc ?? "";
+    const description = input.description ?? "";
     const policyFromKey = input.policyKey ? this.config.local.consensusPolicies?.[input.policyKey] : undefined;
     const policyFromJson = (input.policyConfigJson ?? {}) as Partial<ConsensusPolicyConfig>;
     const consensusPolicy: ConsensusPolicyConfig = {
@@ -117,7 +114,6 @@ export class JobEngine {
       boardId: input.boardId,
       creatorPrincipalId: agentId,
       title: input.title,
-      desc: input.desc ?? description,
       description,
       inputRef: input.inputRef,
       createdAt: now,
@@ -134,10 +130,8 @@ export class JobEngine {
       requiredCapabilities: input.requiredCapabilities ?? [],
       inputs: input.inputs ?? {},
       constraints: input.constraints ?? {},
-      reward: input.reward ?? input.rewardAmount ?? this.config.local.jobDefaults.reward,
-      rewardAmount: input.rewardAmount ?? input.reward ?? this.config.local.jobDefaults.reward,
-      stakeRequired: input.stakeRequired ?? input.stakeAmount ?? this.config.local.jobDefaults.stakeRequired,
-      stakeAmount: input.stakeAmount ?? input.stakeRequired ?? this.config.local.jobDefaults.stakeRequired,
+      reward: input.reward ?? this.config.local.jobDefaults.reward,
+      stakeRequired: input.stakeRequired ?? this.config.local.jobDefaults.stakeRequired,
       currency: input.currency ?? "CREDITS",
       maxParticipants: input.maxParticipants ?? this.config.local.jobDefaults.maxParticipants,
       minParticipants: input.minParticipants ?? this.config.local.jobDefaults.minParticipants,
@@ -165,36 +159,36 @@ export class JobEngine {
   }
 
   async listJobs(filters: JobFilters = {}): Promise<Job[]> {
-    const state = await this.storage.getState();
-    const updated = this.applyExpiry(state);
-    if (updated) await this.storage.saveState(state);
-    return state.jobs.filter((job) => {
-      if (filters.status && job.status !== filters.status) return false;
-      if (filters.tag && !job.tags.includes(filters.tag)) return false;
-      if (filters.mine && job.createdByAgentId !== filters.mine) return false;
-      return true;
-    });
+    return (await this.storage.update((state) => {
+      this.applyExpiry(state);
+      return state.jobs.filter((job) => {
+        if (filters.status && job.status !== filters.status) return false;
+        if (filters.tag && !job.tags.includes(filters.tag)) return false;
+        if (filters.mine && job.createdByAgentId !== filters.mine) return false;
+        return true;
+      });
+    })).result;
   }
 
   async getJob(jobId: string): Promise<Job | undefined> {
-    const state = await this.storage.getState();
-    const updated = this.applyExpiry(state);
-    if (updated) await this.storage.saveState(state);
-    return state.jobs.find((job) => job.id === jobId);
+    return (await this.storage.update((state) => {
+      this.applyExpiry(state);
+      return state.jobs.find((job) => job.id === jobId);
+    })).result;
   }
 
   async getStatus(
     jobId: string,
   ): Promise<{ job?: Job; claims: Assignment[]; submissions: Submission[]; resolution?: Resolution }> {
-    const state = await this.storage.getState();
-    const updated = this.applyExpiry(state);
-    if (updated) await this.storage.saveState(state);
-    return {
-      job: state.jobs.find((job) => job.id === jobId),
-      claims: state.claims.filter((claim) => claim.jobId === jobId),
-      submissions: state.submissions.filter((sub) => sub.jobId === jobId),
-      resolution: state.resolutions.find((res) => res.jobId === jobId),
-    };
+    return (await this.storage.update((state) => {
+      this.applyExpiry(state);
+      return {
+        job: state.jobs.find((job) => job.id === jobId),
+        claims: state.claims.filter((claim) => claim.jobId === jobId),
+        submissions: state.submissions.filter((sub) => sub.jobId === jobId),
+        resolution: state.resolutions.find((res) => res.jobId === jobId),
+      };
+    })).result;
   }
 
   async claimJob(agentId: string, jobId: string, input: ClaimInput): Promise<Assignment> {
@@ -423,15 +417,14 @@ export class JobEngine {
         const votes = state.votes.filter((v) => v.jobId === jobId);
         const bids = state.bids.filter((b) => b.jobId === jobId);
 
-        const reputation = (agent: string) => {
-          let score = 1;
-          for (const entry of state.ledger) {
-            if (entry.agentId !== agent) continue;
-            if (entry.type === "PAYOUT") score += entry.amount;
-            if (entry.type === "SLASH") score += entry.amount;
+        // Pre-compute reputation scores in a single pass over the ledger
+        const reputationMap = new Map<string, number>();
+        for (const entry of state.ledger) {
+          if (entry.type === "PAYOUT" || entry.type === "SLASH") {
+            reputationMap.set(entry.agentId, (reputationMap.get(entry.agentId) ?? 1) + entry.amount);
           }
-          return Math.max(0.1, score);
-        };
+        }
+        const reputation = (agent: string) => Math.max(0.1, reputationMap.get(agent) ?? 1);
 
         const consensus = this.resolver({
           job,

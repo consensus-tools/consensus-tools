@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { highestConfidenceSingle } from "../src/highest-confidence-single.js";
+import { highestConfidenceSingle } from "../src/index.js";
 import { makeJob, makeSubmission, makeInput } from "./helpers.js";
 
 describe("highestConfidenceSingle", () => {

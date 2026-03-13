@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createPolicyRegistry, createRegistryResolver } from "../src/registry.js";
-import { ownerPick } from "../src/owner-pick.js";
-import { trustedArbiter } from "../src/trusted-arbiter.js";
-import { topKSplit } from "../src/top-k-split.js";
+import { createPolicyRegistry, createRegistryResolver, ownerPick, trustedArbiter, topKSplit } from "../src/index.js";
 import { makeJob, makeSubmission, makeInput } from "./helpers.js";
 
 describe("createPolicyRegistry", () => {
@@ -79,7 +76,7 @@ describe("trustedArbiter", () => {
   it("returns awaiting_arbiter when no manual selection", () => {
     const result = trustedArbiter(makeInput());
     expect(result.winners).toEqual([]);
-    expect(result.consensusTrace.mode).toBe("awaiting_arbiter");
+    expect(result.consensusTrace.reason).toBe("awaiting_arbiter");
   });
 });
 

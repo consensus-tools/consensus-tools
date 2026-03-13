@@ -104,7 +104,7 @@ export class NodeExecutor {
       case "action":
         return this.executeAction(node, context, ids);
       default:
-        return { ok: true };
+        throw new Error(`Unknown workflow node type: ${(node as WorkflowNode).type}`);
     }
   }
 
@@ -270,6 +270,7 @@ export class NodeExecutor {
     const votes = await evaluateWithAiSdk(evalInput, personas, {
       model,
       apiKey: this.deps.credentials?.get("openai", "api_key") ?? undefined,
+      allowDeterministicFallback: true,
     });
 
     // Compute weighted risk

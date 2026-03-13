@@ -1,16 +1,18 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { Mutex } from "../util/locks.js";
-import { defaultState } from "./interface.js";
+import { defaultState, applyStorageCaps, type StorageCaps } from "./interface.js";
 import type { IStorage } from "./interface.js";
 import type { StorageState } from "@consensus-tools/schemas";
 
 export class JsonStorage implements IStorage {
   private readonly filePath: string;
   private readonly mutex = new Mutex();
+  private readonly caps: StorageCaps;
 
-  constructor(filePath: string) {
+  constructor(filePath: string, caps?: StorageCaps) {
     this.filePath = filePath;
+    this.caps = caps ?? {};
   }
 
   async init(): Promise<void> {
@@ -47,6 +49,7 @@ export class JsonStorage implements IStorage {
     return this.mutex.runExclusive(async () => {
       const state = await this.getState();
       const result = await fn(state);
+      applyStorageCaps(state, this.caps);
       await this.saveState(state);
       return { state, result };
     });

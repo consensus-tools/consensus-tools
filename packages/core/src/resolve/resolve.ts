@@ -1,22 +1,20 @@
-import type { ConsensusPolicyType, ConsensusInput, ConsensusResult, Job, Submission, Vote } from "@consensus-tools/schemas";
+import type { ConsensusPolicyType, ConsensusInput, ConsensusResult } from "@consensus-tools/schemas";
 
 /**
  * Default built-in policy resolver. Dispatches to the correct resolution
- * logic based on job.consensusPolicy.type. This is the resolver used when
- * no custom PolicyResolver is provided to the JobEngine.
- *
- * For individual policy implementations extracted into standalone modules,
- * see @consensus-tools/policies.
+ * logic based on job.consensusPolicy.type. This is the canonical
+ * implementation — @consensus-tools/policies re-exports these functions
+ * and adds a pluggable registry wrapper.
  */
 export function resolveConsensus(input: ConsensusInput): ConsensusResult {
   const policy = input.job.consensusPolicy.type as ConsensusPolicyType;
 
   if (policy === "TRUSTED_ARBITER") {
-    return resolveManual(input, policy);
+    return trustedArbiter(input);
   }
 
   if (policy === "OWNER_PICK") {
-    return resolveManual(input, policy, "no_owner_selection");
+    return ownerPick(input);
   }
 
   if (!input.submissions.length) {
@@ -24,41 +22,39 @@ export function resolveConsensus(input: ConsensusInput): ConsensusResult {
   }
 
   if (policy === "FIRST_SUBMISSION_WINS") {
-    const sorted = [...input.submissions].sort((a, b) => Date.parse(a.submittedAt) - Date.parse(b.submittedAt));
-    const winner = sorted[0]!;
-    return {
-      winners: [winner.agentId],
-      winningSubmissionIds: [winner.id],
-      consensusTrace: { policy, method: "first_submission" },
-      finalArtifact: winner.artifacts,
-    };
+    return firstSubmissionWins(input);
   }
 
   if (policy === "HIGHEST_CONFIDENCE_SINGLE") {
-    return resolveHighestConfidence(input, policy);
+    return highestConfidenceSingle(input);
   }
 
   if (policy === "APPROVAL_VOTE") {
-    return resolveApprovalVote(input, policy);
+    return approvalVote(input);
   }
 
   if (policy === "TOP_K_SPLIT") {
-    return resolveTopK(input, policy);
+    return topKSplit(input);
   }
 
   // MAJORITY_VOTE, WEIGHTED_VOTE_SIMPLE, WEIGHTED_REPUTATION — generic vote-based
-  return resolveVoteBased(input, policy);
+  if (policy === "MAJORITY_VOTE") return majorityVote(input);
+  if (policy === "WEIGHTED_VOTE_SIMPLE") return weightedVoteSimple(input);
+  return weightedReputation(input);
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────
+// ── Shared Helpers ──────────────────────────────────────────────────
 
-function findArtifact(input: ConsensusInput, submissionId?: string): Record<string, unknown> | null {
+export function findArtifact(input: ConsensusInput, submissionId?: string): Record<string, unknown> | null {
   if (!submissionId) return null;
   const match = input.submissions.find((sub) => sub.id === submissionId);
   return match?.artifacts || null;
 }
 
-function resolveManual(input: ConsensusInput, policy: string, emptyReason = "awaiting_arbiter"): ConsensusResult {
+// ── Individual Policy Functions ─────────────────────────────────────
+
+export function trustedArbiter(input: ConsensusInput): ConsensusResult {
+  const policy = "TRUSTED_ARBITER";
   if (input.manualWinnerAgentIds && input.manualWinnerAgentIds.length) {
     return {
       winners: input.manualWinnerAgentIds,
@@ -70,12 +66,49 @@ function resolveManual(input: ConsensusInput, policy: string, emptyReason = "awa
   return {
     winners: [],
     winningSubmissionIds: [],
-    consensusTrace: { policy, reason: emptyReason },
+    consensusTrace: { policy, reason: "awaiting_arbiter" },
     finalArtifact: null,
   };
 }
 
-function resolveHighestConfidence(input: ConsensusInput, policy: string): ConsensusResult {
+export function ownerPick(input: ConsensusInput): ConsensusResult {
+  const policy = "OWNER_PICK";
+  if (input.manualWinnerAgentIds && input.manualWinnerAgentIds.length) {
+    return {
+      winners: input.manualWinnerAgentIds,
+      winningSubmissionIds: input.manualSubmissionId ? [input.manualSubmissionId] : [],
+      consensusTrace: { policy, mode: "manual" },
+      finalArtifact: findArtifact(input, input.manualSubmissionId),
+    };
+  }
+  return {
+    winners: [],
+    winningSubmissionIds: [],
+    consensusTrace: { policy, reason: "no_owner_selection" },
+    finalArtifact: null,
+  };
+}
+
+export function firstSubmissionWins(input: ConsensusInput): ConsensusResult {
+  const policy = "FIRST_SUBMISSION_WINS";
+  if (!input.submissions.length) {
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "no_submissions" }, finalArtifact: null };
+  }
+  const sorted = [...input.submissions].sort((a, b) => Date.parse(a.submittedAt) - Date.parse(b.submittedAt));
+  const winner = sorted[0]!;
+  return {
+    winners: [winner.agentId],
+    winningSubmissionIds: [winner.id],
+    consensusTrace: { policy, method: "first_submission" },
+    finalArtifact: winner.artifacts,
+  };
+}
+
+export function highestConfidenceSingle(input: ConsensusInput): ConsensusResult {
+  const policy = "HIGHEST_CONFIDENCE_SINGLE";
+  if (!input.submissions.length) {
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "no_submissions" }, finalArtifact: null };
+  }
   const minConfidence = input.job.consensusPolicy.minConfidence ?? 0;
   const sorted = [...input.submissions]
     .filter((sub) => sub.confidence >= minConfidence)
@@ -102,7 +135,8 @@ function resolveHighestConfidence(input: ConsensusInput, policy: string): Consen
   };
 }
 
-function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusResult {
+export function approvalVote(input: ConsensusInput): ConsensusResult {
+  const policy = "APPROVAL_VOTE";
   const quorum = input.job.consensusPolicy.quorum;
   const minScore = input.job.consensusPolicy.minScore ?? 1;
   const minMargin = input.job.consensusPolicy.minMargin ?? 0;
@@ -110,13 +144,17 @@ function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusRe
   const weightMode = input.job.consensusPolicy.approvalVote?.weightMode ?? "equal";
   const settlement = input.job.consensusPolicy.approvalVote?.settlement ?? "immediate";
 
-  if (settlement === "oracle" && input.manualWinnerAgentIds && input.manualWinnerAgentIds.length) {
+  if (settlement === "oracle" && input.manualWinnerAgentIds?.length) {
     return {
       winners: input.manualWinnerAgentIds,
       winningSubmissionIds: input.manualSubmissionId ? [input.manualSubmissionId] : [],
       consensusTrace: { policy, settlement, mode: "manual" },
       finalArtifact: findArtifact(input, input.manualSubmissionId),
     };
+  }
+
+  if (!input.submissions.length) {
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "no_submissions" }, finalArtifact: null };
   }
 
   const scores: Record<string, number> = {};
@@ -135,11 +173,9 @@ function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusRe
   for (const vote of votes) {
     const sid = vote.submissionId ?? (vote.targetType === "SUBMISSION" ? vote.targetId : undefined);
     if (!sid) continue;
-
     let weight = 1;
     if (weightMode === "explicit") weight = vote.weight ?? 1;
     if (weightMode === "reputation") weight = input.reputation(vote.agentId);
-
     const s = Math.max(-1, Math.min(1, vote.score ?? 0));
     scores[sid] = (scores[sid] || 0) + s * weight;
     voteCounts[sid] = (voteCounts[sid] || 0) + 1;
@@ -160,12 +196,7 @@ function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusRe
   const margin = second ? best!.score - second.score : best?.score ?? 0;
 
   if (!best || best.votes === 0) {
-    return {
-      winners: [],
-      winningSubmissionIds: [],
-      consensusTrace: { policy, settlement, reason: "no_votes", scores, voteCounts },
-      finalArtifact: null,
-    };
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, settlement, reason: "no_votes", scores, voteCounts }, finalArtifact: null };
   }
 
   if (best.score < minScore || margin < minMargin) {
@@ -178,19 +209,11 @@ function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusRe
   }
 
   if (settlement === "oracle" || tieBreak === "arbiter") {
-    if (input.manualWinnerAgentIds && input.manualWinnerAgentIds.length) {
+    if (input.manualWinnerAgentIds?.length) {
       return {
         winners: input.manualWinnerAgentIds,
         winningSubmissionIds: input.manualSubmissionId ? [input.manualSubmissionId] : [],
-        consensusTrace: {
-          policy,
-          settlement,
-          mode: "manual",
-          recommendedSubmissionId: best.sub.id,
-          recommendedAgentId: best.sub.agentId,
-          scores,
-          voteCounts,
-        },
+        consensusTrace: { policy, settlement, mode: "manual", recommendedSubmissionId: best.sub.id, recommendedAgentId: best.sub.agentId, scores, voteCounts },
         finalArtifact: findArtifact(input, input.manualSubmissionId),
       };
     }
@@ -210,7 +233,11 @@ function resolveApprovalVote(input: ConsensusInput, policy: string): ConsensusRe
   };
 }
 
-function resolveTopK(input: ConsensusInput, policy: string): ConsensusResult {
+export function topKSplit(input: ConsensusInput): ConsensusResult {
+  const policy = "TOP_K_SPLIT";
+  if (!input.submissions.length) {
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "no_submissions" }, finalArtifact: null };
+  }
   const ordering = input.job.consensusPolicy.ordering ?? "confidence";
   const topK = Math.max(1, input.job.consensusPolicy.topK ?? 2);
   const scores: Record<string, number> = {};
@@ -236,15 +263,6 @@ function resolveTopK(input: ConsensusInput, policy: string): ConsensusResult {
     })
     .slice(0, topK);
 
-  if (!ranked.length) {
-    return {
-      winners: [],
-      winningSubmissionIds: [],
-      consensusTrace: { policy, ordering, topK, reason: "no_submissions" },
-      finalArtifact: null,
-    };
-  }
-
   return {
     winners: ranked.map((entry) => entry.submission.agentId),
     winningSubmissionIds: ranked.map((entry) => entry.submission.id),
@@ -253,43 +271,34 @@ function resolveTopK(input: ConsensusInput, policy: string): ConsensusResult {
   };
 }
 
-function resolveVoteBased(input: ConsensusInput, policy: string): ConsensusResult {
+function voteBased(
+  input: ConsensusInput,
+  policy: string,
+  getWeight: (vote: { weight?: number; score?: number; agentId: string }, rep: number) => number,
+): ConsensusResult {
+  if (!input.submissions.length) {
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "no_submissions" }, finalArtifact: null };
+  }
+
   const quorum = input.job.consensusPolicy.quorum;
   if (quorum && input.votes.length < quorum) {
-    return {
-      winners: [],
-      winningSubmissionIds: [],
-      consensusTrace: { policy, reason: "quorum_not_met", quorum, votes: input.votes.length },
-      finalArtifact: null,
-    };
+    return { winners: [], winningSubmissionIds: [], consensusTrace: { policy, reason: "quorum_not_met", quorum, votes: input.votes.length }, finalArtifact: null };
   }
 
   const scores: Record<string, number> = {};
   const voteCounts: Record<string, number> = {};
 
   for (const vote of input.votes) {
-    let weight = 1;
-    if (policy === "WEIGHTED_REPUTATION") {
-      weight = input.reputation(vote.agentId);
-    } else if (policy === "WEIGHTED_VOTE_SIMPLE") {
-      weight = vote.weight ?? vote.score ?? 1;
-    }
-    if (vote.submissionId) {
-      scores[vote.submissionId] = (scores[vote.submissionId] || 0) + (vote.score ?? 1) * weight;
-      voteCounts[vote.submissionId] = (voteCounts[vote.submissionId] || 0) + 1;
-    }
+    if (!vote.submissionId) continue;
+    const weight = getWeight(vote, input.reputation(vote.agentId));
+    scores[vote.submissionId] = (scores[vote.submissionId] || 0) + (vote.score ?? 1) * weight;
+    voteCounts[vote.submissionId] = (voteCounts[vote.submissionId] || 0) + 1;
   }
 
   const best = input.submissions
-    .map((sub) => ({
-      submission: sub,
-      score: scores[sub.id] || 0,
-      votes: voteCounts[sub.id] || 0,
-    }))
+    .map((sub) => ({ submission: sub, score: scores[sub.id] || 0, votes: voteCounts[sub.id] || 0 }))
     .sort((a, b) => {
-      if (b.score === a.score) {
-        return Date.parse(a.submission.submittedAt) - Date.parse(b.submission.submittedAt);
-      }
+      if (b.score === a.score) return Date.parse(a.submission.submittedAt) - Date.parse(b.submission.submittedAt);
       return b.score - a.score;
     })[0]!;
 
@@ -299,4 +308,16 @@ function resolveVoteBased(input: ConsensusInput, policy: string): ConsensusResul
     consensusTrace: { policy, scores, voteCounts },
     finalArtifact: best.submission.artifacts,
   };
+}
+
+export function majorityVote(input: ConsensusInput): ConsensusResult {
+  return voteBased(input, "MAJORITY_VOTE", () => 1);
+}
+
+export function weightedVoteSimple(input: ConsensusInput): ConsensusResult {
+  return voteBased(input, "WEIGHTED_VOTE_SIMPLE", (vote) => vote.weight ?? vote.score ?? 1);
+}
+
+export function weightedReputation(input: ConsensusInput): ConsensusResult {
+  return voteBased(input, "WEIGHTED_REPUTATION", (_vote, rep) => rep);
 }

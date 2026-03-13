@@ -115,6 +115,18 @@ await board.init();
 const job = await board.postJob('agent-1', { title: 'Review PR', description: '...' });
 ```
 
+## Removed Field Aliases
+
+The following deprecated field aliases have been removed from the `Job` type and `JobPostInput`:
+
+| Removed Field | Use Instead |
+|---------------|-------------|
+| `Job.desc` | `Job.description` |
+| `Job.rewardAmount` | `Job.reward` |
+| `Job.stakeAmount` | `Job.stakeRequired` |
+
+If your code references `rewardAmount` or `stakeAmount` on job post inputs, rename them to `reward` and `stakeRequired` respectively.
+
 ## Deprecation
 
 The `@consensus-tools/consensus-tools@0.2.0` package is deprecated. It will not receive further updates. Use the new scoped packages instead.

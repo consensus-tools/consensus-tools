@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { approvalVote } from "../src/approval-vote.js";
+import { approvalVote } from "../src/index.js";
 import { makeJob, makeSubmission, makeVote, makeInput } from "./helpers.js";
 
 function makeApprovalJob(overrides: Record<string, unknown> = {}) {

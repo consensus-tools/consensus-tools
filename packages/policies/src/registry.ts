@@ -1,11 +1,15 @@
 import type { ConsensusPolicyType, PolicyResolver } from "@consensus-tools/schemas";
-import { firstSubmissionWins } from "./first-submission-wins.js";
-import { highestConfidenceSingle } from "./highest-confidence-single.js";
-import { approvalVote } from "./approval-vote.js";
-import { ownerPick } from "./owner-pick.js";
-import { trustedArbiter } from "./trusted-arbiter.js";
-import { topKSplit } from "./top-k-split.js";
-import { majorityVote, weightedVoteSimple, weightedReputation } from "./vote-based.js";
+import {
+  firstSubmissionWins,
+  highestConfidenceSingle,
+  approvalVote,
+  ownerPick,
+  trustedArbiter,
+  topKSplit,
+  majorityVote,
+  weightedVoteSimple,
+  weightedReputation,
+} from "@consensus-tools/core";
 
 /** Map of built-in policy type → resolver function. */
 export type PolicyRegistry = Map<ConsensusPolicyType, PolicyResolver>;

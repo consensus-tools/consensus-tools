@@ -146,54 +146,6 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  examples/background-worker:
-    dependencies:
-      '@consensus-tools/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@consensus-tools/policies':
-        specifier: workspace:*
-        version: link:../../packages/policies
-      '@consensus-tools/schemas':
-        specifier: workspace:*
-        version: link:../../packages/schemas
-      '@consensus-tools/telemetry':
-        specifier: workspace:*
-        version: link:../../packages/telemetry
-
-  examples/mcp-server:
-    dependencies:
-      '@consensus-tools/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@consensus-tools/mcp':
-        specifier: workspace:*
-        version: link:../../packages/adapters/mcp
-      '@consensus-tools/policies':
-        specifier: workspace:*
-        version: link:../../packages/policies
-      '@consensus-tools/schemas':
-        specifier: workspace:*
-        version: link:../../packages/schemas
-
-  examples/next-api-route:
-    dependencies:
-      '@consensus-tools/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@consensus-tools/policies':
-        specifier: workspace:*
-        version: link:../../packages/policies
-      '@consensus-tools/schemas':
-        specifier: workspace:*
-        version: link:../../packages/schemas
-
-  examples/openclaw-plugin:
-    dependencies:
-      '@consensus-tools/openclaw':
-        specifier: workspace:*
-        version: link:../../packages/adapters/openclaw
-
   packages/adapters/integrations:
     dependencies:
       '@consensus-tools/schemas':

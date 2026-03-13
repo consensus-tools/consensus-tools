@@ -132,18 +132,10 @@ export class HitlTracker {
 
       // Send warning at 75% threshold
       if (!entry.warningSentAt && elapsedSec >= entry.timeoutSec * WARNING_THRESHOLD) {
-        await this.storage.update((state) => {
-          const a = state.hitlApprovals.find((x) => x.id === entry.id);
-          if (a) a.warningSentAt = nowIso();
-        });
-
-        if (this.notifications) {
-          await this.notifications.sendWarning(entry, Math.max(0, remaining)).catch((err) => {
-            this.logger?.warn?.("[hitl] Failed to send warning", err);
-          });
-        }
-
-        await this.storage.update((state) => {
+        const warned = (await this.storage.update((state) => {
+          const a = state.hitlApprovals.find((x) => x.id === entry.id && x.status === "pending");
+          if (!a) return false;
+          a.warningSentAt = nowIso();
           state.audit.push({
             id: newId("audit"),
             at: nowIso(),
@@ -157,17 +149,24 @@ export class HitlTracker {
               votesRequired: entry.requiredVotes,
             },
           });
-        });
+          return true;
+        })).result;
+
+        if (warned && this.notifications) {
+          await this.notifications.sendWarning(entry, Math.max(0, remaining)).catch((err) => {
+            this.logger?.warn?.("[hitl] Failed to send warning", err);
+          });
+        }
       }
 
       // Deadline expired — auto-resolve
       if (elapsedSec >= entry.timeoutSec) {
         const decision = entry.autoDecisionOnExpiry;
 
-        await this.storage.update((state) => {
-          const a = state.hitlApprovals.find((x) => x.id === entry.id);
-          if (a) a.status = "expired";
-
+        const expired = (await this.storage.update((state) => {
+          const a = state.hitlApprovals.find((x) => x.id === entry.id && x.status === "pending");
+          if (!a) return false;
+          a.status = "expired";
           state.audit.push({
             id: newId("audit"),
             at: nowIso(),
@@ -180,18 +179,21 @@ export class HitlTracker {
               votesRequired: entry.requiredVotes,
             },
           });
-        });
+          return true;
+        })).result;
 
-        if (this.notifications) {
-          await this.notifications.sendExpired(entry, decision).catch((err) => {
-            this.logger?.warn?.("[hitl] Failed to send expiry notification", err);
-          });
-        }
+        if (expired) {
+          if (this.notifications) {
+            await this.notifications.sendExpired(entry, decision).catch((err) => {
+              this.logger?.warn?.("[hitl] Failed to send expiry notification", err);
+            });
+          }
 
-        if (this.onExpiry) {
-          await this.onExpiry(entry, decision).catch((err) => {
-            this.logger?.warn?.("[hitl] onExpiry callback failed", err);
-          });
+          if (this.onExpiry) {
+            await this.onExpiry(entry, decision).catch((err) => {
+              this.logger?.warn?.("[hitl] onExpiry callback failed", err);
+            });
+          }
         }
       }
     }

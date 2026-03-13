@@ -1,16 +1,18 @@
 import { createRequire } from "node:module";
 import { Mutex } from "../util/locks.js";
-import { defaultState } from "./interface.js";
+import { defaultState, applyStorageCaps, type StorageCaps } from "./interface.js";
 import type { IStorage } from "./interface.js";
 import type { StorageState } from "@consensus-tools/schemas";
 
 export class SqliteStorage implements IStorage {
   private readonly filePath: string;
   private readonly mutex = new Mutex();
+  private readonly caps: StorageCaps;
   private db: any;
 
-  constructor(filePath: string) {
+  constructor(filePath: string, caps?: StorageCaps) {
     this.filePath = filePath;
+    this.caps = caps ?? {};
   }
 
   async init(): Promise<void> {
@@ -46,6 +48,7 @@ export class SqliteStorage implements IStorage {
     return this.mutex.runExclusive(async () => {
       const state = await this.getState();
       const result = await fn(state);
+      applyStorageCaps(state, this.caps);
       await this.saveState(state);
       return { state, result };
     });
