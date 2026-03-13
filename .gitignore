@@ -9,3 +9,4 @@ _legacy_mcp/
 *.tgz
 .DS_Store
 .claude/
+.worktrees/
