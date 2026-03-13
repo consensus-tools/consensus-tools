@@ -33,7 +33,7 @@ async function main() {
   const engine = new JobEngine(storage, ledger, config, undefined, resolver);
   const guardEngine = new GuardEngine({ storage });
   const hitlTracker = new HitlTracker({ storage });
-  const workflowRunner = new WorkflowRunner(storage, { storage, guardEngine, hitlTracker });
+  const workflowRunner = new WorkflowRunner(storage, { storage, guardEngine, hitlTracker, jobEngine: engine });
   const credentialManager = new CredentialManager("consensus-tools-local-dev");
 
   const server = new ConsensusToolsServer({

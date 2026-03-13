@@ -9,6 +9,7 @@ import type { IStorage, GuardEngineOptions } from "@consensus-tools/core";
 import {
   GuardEngine,
   HitlTracker,
+  JobEngine,
   type NotificationDispatcher,
   newId,
   nowIso,
@@ -24,6 +25,7 @@ export interface NodeExecutorDeps {
   hitlTracker?: HitlTracker;
   notifications?: NotificationDispatcher;
   credentials?: CredentialProvider;
+  jobEngine?: JobEngine;
 }
 
 /** Minimal credential lookup — matches @consensus-tools/notifications CredentialProvider */
@@ -501,6 +503,28 @@ export class NodeExecutor {
         };
       });
 
+      // Post a job for this guard's consensus decision
+      let guardJobId = "";
+      if (this.deps.jobEngine) {
+        const guardJob = await this.deps.jobEngine.postJob("system", {
+          title: node.label || node.id,
+          boardId: ids.boardId,
+          tags: ["guard", guardType],
+          inputs: { workflowId: ids.workflowId, runId: ids.runId, guardNodeId: node.id },
+          mode: "SUBMISSION",
+        });
+        guardJobId = guardJob.id;
+
+        // Record agent verdicts as submissions on the guard's job
+        for (const v of weightedVotes) {
+          await this.deps.jobEngine.submitJob(v.evaluator, guardJobId, {
+            summary: v.reason,
+            confidence: v.confidence,
+            artifacts: { vote: v.vote, risk: v.risk },
+          });
+        }
+      }
+
       // Use the 3-step weighted decision model from @consensus-tools/guards
       const result = computeDecision(weightedVotes, policy, weightingMode);
 
@@ -593,9 +617,15 @@ export class NodeExecutor {
           weighted_yes: yesRatioRounded,
         });
 
+        // Resolve the guard's job
+        if (guardJobId) {
+          const guardJob = s.jobs.find((j) => j.id === guardJobId);
+          if (guardJob) guardJob.status = "RESOLVED";
+        }
+
         // Persist resolution for workflow consensus
         s.resolutions.push({
-          jobId: "",
+          jobId: guardJobId,
           runId: ids.runId,
           boardId: ids.boardId,
           resolvedAt: now,

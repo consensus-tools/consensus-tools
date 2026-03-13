@@ -145,14 +145,23 @@ export class ToolRegistry {
     // Board/run/audit tools — delegate to storage
     if (name === "board.list") {
       const state = await this.storage.getState();
-      const boardIds = [...new Set(state.jobs.map((j) => j.boardId).filter(Boolean))];
-      return { boards: boardIds.map((id) => ({ id })) };
+      const boardIds = new Set<string>();
+      for (const j of state.jobs) { if (j.boardId) boardIds.add(j.boardId); }
+      for (const e of state.audit) {
+        const bid = (e.details as Record<string, unknown>)?.boardId as string | undefined;
+        if (bid) boardIds.add(bid);
+      }
+      return { boards: [...boardIds].map((id) => ({ id })) };
     }
     if (name === "board.get") {
       const state = await this.storage.getState();
       const boardId = input.id as string;
       const jobs = state.jobs.filter((j) => j.boardId === boardId);
-      return { board: { id: boardId, jobs: jobs.length }, jobs };
+      const participants = state.participants?.filter((p) => p.boardId === boardId) ?? [];
+      const runs = state.workflowRuns?.filter((r) =>
+        state.workflows?.some((w) => w.id === r.workflowId && (w.definition as Record<string, unknown>)?.boardId === boardId),
+      ) ?? [];
+      return { board: { id: boardId, jobs: jobs.length, participants: participants.length, runs: runs.length }, jobs, participants, runs };
     }
     if (name === "run.get") {
       const state = await this.storage.getState();

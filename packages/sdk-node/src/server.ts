@@ -614,13 +614,17 @@ export class ConsensusToolsServer {
         if (method === "POST") {
           const body = await this.readJson(req);
           const boardId = body.name ?? body.id ?? newId("board");
-          const job = await this.engine.postJob("system", {
-            title: `Board: ${boardId}`,
-            boardId,
-            tag: "board-init",
-            inputs: { name: body.name, personaCount: body.personaCount },
-          } as JobPostInput);
-          return this.reply(res, 201, { id: boardId, job });
+          // Record board creation in audit trail (no orphan seed job)
+          await this.storage.update((s) => {
+            s.audit.push({
+              id: newId("audit"),
+              at: nowIso(),
+              type: "board_created",
+              actorAgentId: "system",
+              details: { boardId, name: body.name, personaCount: body.personaCount },
+            });
+          });
+          return this.reply(res, 201, { id: boardId });
         }
       }
 
