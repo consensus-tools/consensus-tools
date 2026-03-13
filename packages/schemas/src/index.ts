@@ -201,4 +201,8 @@ export {
   type WorkflowCreateInput,
   cronRegisterInputSchema,
   type CronRegisterInput,
+  participantCreateInputSchema,
+  type ParticipantCreateInput,
+  consensusVoteInputSchema,
+  type ConsensusVoteInput,
 } from "./inputs.js";

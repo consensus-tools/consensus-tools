@@ -82,6 +82,32 @@ export const resolveInputSchema = z.object({
 });
 export type ResolveInput = z.infer<typeof resolveInputSchema>;
 
+// ── Participant Create Input ──────────────────────────────────────
+
+export const participantCreateInputSchema = z.object({
+  boardId: z.string().min(1, "boardId is required"),
+  subjectType: z.enum(["agent", "human"]).default("agent"),
+  subjectId: z.string().min(1, "subjectId is required"),
+  role: z.string().default("voter"),
+  weight: z.number().min(0).default(1),
+  reputation: z.number().min(0).default(50),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type ParticipantCreateInput = z.infer<typeof participantCreateInputSchema>;
+
+// ── Consensus Vote Input ──────────────────────────────────────────
+
+export const consensusVoteInputSchema = z.object({
+  boardId: z.string().min(1, "boardId is required"),
+  runId: z.string().min(1, "runId is required"),
+  participantId: z.string().min(1, "participantId is required"),
+  decision: z.enum(["YES", "NO", "REWRITE"]),
+  confidence: z.number().min(0).max(1).default(1),
+  rationale: z.string().default(""),
+  idempotencyKey: z.string().optional(),
+});
+export type ConsensusVoteInput = z.infer<typeof consensusVoteInputSchema>;
+
 // ── Workflow Create Input ──────────────────────────────────────────
 
 export const workflowCreateInputSchema = z.object({

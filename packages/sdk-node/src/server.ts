@@ -1,4 +1,5 @@
 import http from "node:http";
+import crypto from "node:crypto";
 import type { ConsensusToolsConfig, GuardEvaluateInput, Participant, AgentConfig, Workflow, WorkflowRun, CronSchedule, PolicyAssignment, ConsensusVote } from "@consensus-tools/schemas";
 import {
   parseHumanApprovalYesNo, policyAssignmentSchema,
@@ -6,6 +7,7 @@ import {
   voteInputSchema, resolveInputSchema, guardEvaluateInputSchema,
   humanApprovalRequestSchema, agentConfigSchema,
   workflowCreateInputSchema, cronRegisterInputSchema, consensusVoteSchema,
+  participantCreateInputSchema, consensusVoteInputSchema,
 } from "@consensus-tools/schemas";
 import { tallyVotes, computeEffectiveWeight } from "@consensus-tools/guards";
 import type {
@@ -133,7 +135,10 @@ export class ConsensusToolsServer {
 
       if (this.config.local.server.authToken) {
         const auth = req.headers.authorization || "";
-        if (auth !== `Bearer ${this.config.local.server.authToken}`) {
+        const expected = `Bearer ${this.config.local.server.authToken}`;
+        const authBuf = Buffer.from(auth);
+        const expectedBuf = Buffer.from(expected);
+        if (authBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(authBuf, expectedBuf)) {
           return this.reply(res, 401, { error: "Unauthorized" });
         }
       }
@@ -313,16 +318,18 @@ export class ConsensusToolsServer {
         }
         if (method === "POST") {
           const body = await this.readJson(req);
+          const parsed = this.parseBody(participantCreateInputSchema, body, res);
+          if (!parsed) return;
           const participant: Participant = {
-            id: body.id ?? newId("part"),
-            boardId: body.boardId,
-            subjectType: body.subjectType ?? "agent",
-            subjectId: body.subjectId,
-            role: body.role ?? "voter",
-            weight: body.weight ?? 1,
-            reputation: body.reputation ?? 50,
+            id: newId("part"),
+            boardId: parsed.boardId,
+            subjectType: parsed.subjectType,
+            subjectId: parsed.subjectId,
+            role: parsed.role,
+            weight: parsed.weight,
+            reputation: parsed.reputation,
             status: "active",
-            metadata: body.metadata ?? {},
+            metadata: parsed.metadata,
             createdAt: nowIso(),
           };
           await this.storage.update((state) => { state.participants.push(participant); });
@@ -433,15 +440,17 @@ export class ConsensusToolsServer {
       // ── Consensus votes ──────────────────────────────────────
       if (method === "POST" && path === "/api/votes") {
         const body = await this.readJson(req);
+        const parsed = this.parseBody(consensusVoteInputSchema, body, res);
+        if (!parsed) return;
         const vote: ConsensusVote = {
           id: newId("cvote"),
-          boardId: body.boardId,
-          runId: body.runId,
-          participantId: body.participantId,
-          decision: body.decision,
-          confidence: body.confidence ?? 1,
-          rationale: body.rationale ?? "",
-          idempotencyKey: body.idempotencyKey ?? `${body.runId}:${body.participantId}`,
+          boardId: parsed.boardId,
+          runId: parsed.runId,
+          participantId: parsed.participantId,
+          decision: parsed.decision,
+          confidence: parsed.confidence,
+          rationale: parsed.rationale,
+          idempotencyKey: parsed.idempotencyKey ?? `${parsed.runId}:${parsed.participantId}`,
           createdAt: nowIso(),
         };
         await this.storage.update((state) => { state.consensusVotes.push(vote); });
