@@ -30,28 +30,23 @@ export function makeMockCtx(overrides: Partial<McpContext> = {}): McpContext {
       recordVoteReceived: vi.fn().mockResolvedValue({ complete: false, total: 1, required: 2 }),
       resolveApproval: vi.fn().mockResolvedValue(undefined),
     } as any,
-    storage: {
-      getState: vi.fn().mockResolvedValue({
-        jobs: [],
-        bids: [],
-        claims: [],
-        submissions: [],
-        votes: [],
-        resolutions: [],
-        ledger: [],
-        audit: [],
-        errors: [],
-        agents: [],
-        participants: [],
-        workflows: [],
-        workflowRuns: [],
-        cronSchedules: [],
-        hitlApprovals: [],
-        guardResults: [],
-      }),
-      update: vi.fn(),
-      init: vi.fn(),
-    } as any,
+    storage: (() => {
+      const stateData: Record<string, unknown[]> = {
+        jobs: [], bids: [], claims: [], submissions: [], votes: [],
+        resolutions: [], ledger: [], audit: [], errors: [], agents: [],
+        participants: [], workflows: [], workflowRuns: [], cronSchedules: [],
+        hitlApprovals: [], guardResults: [], policyAssignments: [],
+        consensusVotes: [],
+      };
+      return {
+        getState: vi.fn().mockImplementation(async () => ({ ...stateData })),
+        update: vi.fn().mockImplementation(async (fn: (state: any) => void) => {
+          fn(stateData);
+          return { state: stateData, result: undefined };
+        }),
+        init: vi.fn(),
+      };
+    })() as any,
     agentId: "test-agent",
     ...overrides,
   };
