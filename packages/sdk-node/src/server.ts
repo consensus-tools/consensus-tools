@@ -375,7 +375,12 @@ export class ConsensusToolsServer {
 
         // Match by apiKeyHash — caller should send the hash, or we compare directly
         const agents = await this.agentRegistry.listAgents();
-        const agent = agents.find((a) => a.apiKeyHash === key && a.status === "active");
+        const keyBuf = Buffer.from(key);
+        const agent = agents.find((a) => {
+          if (a.status !== "active" || !a.apiKeyHash) return false;
+          const hashBuf = Buffer.from(a.apiKeyHash);
+          return keyBuf.length === hashBuf.length && crypto.timingSafeEqual(keyBuf, hashBuf);
+        });
         if (!agent) return this.reply(res, 401, { error: "Invalid or missing x-agent-key" });
 
         const body = await this.readJson(req);
@@ -453,11 +458,11 @@ export class ConsensusToolsServer {
           idempotencyKey: parsed.idempotencyKey ?? `${parsed.runId}:${parsed.participantId}`,
           createdAt: nowIso(),
         };
-        await this.storage.update((state) => { state.consensusVotes.push(vote); });
-        // Aggregate using guards voting utilities
-        const state = await this.storage.getState();
-        const runVotes = state.consensusVotes.filter((v) => v.runId === body.runId);
-        const aggregate = this.aggregateConsensusVotes(runVotes, body.boardId, state);
+        const aggregate = (await this.storage.update((state) => {
+          state.consensusVotes.push(vote);
+          const runVotes = state.consensusVotes.filter((v) => v.runId === parsed.runId);
+          return this.aggregateConsensusVotes(runVotes, parsed.boardId, state);
+        })).result;
         return this.reply(res, 200, { vote, aggregate });
       }
 

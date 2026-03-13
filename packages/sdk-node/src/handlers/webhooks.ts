@@ -365,8 +365,10 @@ export async function handleTelegramWebhook(
   if (ctx.credentialManager && headers) {
     const secretToken = ctx.credentialManager.get("telegram", "secret_token");
     if (secretToken) {
-      const provided = headers["x-telegram-bot-api-secret-token"] ?? "";
-      if (provided !== secretToken) {
+      const provided = String(headers["x-telegram-bot-api-secret-token"] ?? "");
+      const providedBuf = Buffer.from(provided);
+      const expectedBuf = Buffer.from(secretToken);
+      if (providedBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(providedBuf, expectedBuf)) {
         return { status: 401, body: { error: "Invalid Telegram secret token" } };
       }
     }
