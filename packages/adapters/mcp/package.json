@@ -3,6 +3,9 @@
   "version": "0.3.0",
   "description": "Model Context Protocol server adapter for consensus-tools",
   "type": "module",
+  "bin": {
+    "consensus-tools-mcp": "./bin/cli.js"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -33,7 +36,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "bin"
   ],
   "author": "consensus-tools <https://github.com/consensus-tools>",
   "license": "Apache-2.0",

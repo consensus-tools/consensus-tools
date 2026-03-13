@@ -1,7 +1,11 @@
 /**
  * Standalone MCP stdio entry point.
- * Run with: node dist/entry.js
+ * Run with: npx @consensus-tools/mcp
  */
+import { mkdirSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+
 import { LocalBoard, AgentRegistry, GuardEngine, HitlTracker, createStorage } from "@consensus-tools/core";
 import { createGuardEvaluatorRegistry } from "@consensus-tools/guards";
 import { WorkflowRunner, CronScheduler, prMergeGuardTemplate, linearTaskDecompTemplate, cronAutoAssignTemplate } from "@consensus-tools/workflows";
@@ -9,12 +13,23 @@ import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { startMcpServer } from "./server.js";
 import type { McpContext } from "./context.js";
 
+function resolveStoragePath(): string {
+  if (process.env.CONSENSUS_STORAGE_PATH) return process.env.CONSENSUS_STORAGE_PATH;
+  const base = process.env.XDG_DATA_HOME || join(homedir(), ".local", "share");
+  return join(base, "consensus-tools", "state.json");
+}
+
 async function main() {
+  const storagePath = resolveStoragePath();
+  mkdirSync(dirname(storagePath), { recursive: true });
+
+  const agentId = process.env.CONSENSUS_AGENT_ID || "mcp-agent";
+
   const config: ConsensusToolsConfig = {
     mode: "local",
     local: {
-      storage: { kind: "json", path: "./data/consensus-state.json" },
-      server: { enabled: true, host: "127.0.0.1", port: 4010, authToken: "" },
+      storage: { kind: "json", path: storagePath },
+      server: { enabled: false, host: "127.0.0.1", port: 4010, authToken: "" },
       jobDefaults: {
         reward: 100,
         stakeRequired: 10,
@@ -37,7 +52,7 @@ async function main() {
     },
     agentIdentity: {
       agentIdSource: "manual",
-      manualAgentId: "mcp-agent",
+      manualAgentId: agentId,
     },
     safety: {
       requireOptionalToolsOptIn: false,
@@ -67,7 +82,7 @@ async function main() {
     guardEngine,
     hitlTracker,
     storage,
-    agentId: "mcp-agent",
+    agentId,
     workflowRunner,
     cronScheduler,
   };

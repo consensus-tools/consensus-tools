@@ -22,6 +22,43 @@ const server = createMcpServer({
 await startMcpServer(server);
 ```
 
+## Claude Code Integration
+
+Add to your `.claude/settings.local.json`:
+
+```json
+{
+  "mcpServers": {
+    "consensus-tools": {
+      "command": "npx",
+      "args": ["@consensus-tools/mcp"]
+    }
+  }
+}
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CONSENSUS_STORAGE_PATH` | `~/.local/share/consensus-tools/state.json` | Path to the JSON state file |
+| `CONSENSUS_AGENT_ID` | `mcp-agent` | Agent identity for consensus operations |
+
+```json
+{
+  "mcpServers": {
+    "consensus-tools": {
+      "command": "npx",
+      "args": ["@consensus-tools/mcp"],
+      "env": {
+        "CONSENSUS_STORAGE_PATH": "/path/to/state.json",
+        "CONSENSUS_AGENT_ID": "my-agent"
+      }
+    }
+  }
+}
+```
+
 ## What's included
 
 - **`createMcpServer`** — creates an MCP server with consensus-tools capabilities
