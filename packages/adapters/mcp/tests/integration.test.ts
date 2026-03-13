@@ -9,6 +9,9 @@ import {
 } from "@consensus-tools/core";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { handle } from "../src/tools/consensus-tools.js";
+import { handle as handleAgent } from "../src/tools/agent-tools.js";
+import { handle as handleGuard } from "../src/tools/guard-tools.js";
+import { handle as handleBoard } from "../src/tools/board-tools.js";
 import type { McpContext } from "../src/context.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -157,5 +160,68 @@ describe("MCP adapter integration (real engine)", () => {
     expect(data.job.id).toBe(job.id);
     expect(data.claims).toBeDefined();
     expect(data.submissions).toBeDefined();
+  });
+});
+
+describe("Agent tools integration (real registry)", () => {
+  it("agent.register creates and returns agent", async () => {
+    const result = await handleAgent("agent.register", {
+      id: "integ-agent-1",
+      name: "Integration Agent",
+      kind: "internal",
+      scopes: ["send_email"],
+    }, ctx);
+    expect((result as any).isError).toBeUndefined();
+    const data = parseContent(result);
+    expect(data.id).toBe("integ-agent-1");
+    expect(data.name).toBe("Integration Agent");
+  });
+
+  it("agent.list returns the registered agent", async () => {
+    const result = await handleAgent("agent.list", {}, ctx);
+    const data = parseContent(result);
+    expect(data.agents.length).toBeGreaterThan(0);
+    expect(data.agents.some((a: any) => a.id === "integ-agent-1")).toBe(true);
+  });
+
+  it("agent.suspend then activate round-trips", async () => {
+    const suspendResult = await handleAgent("agent.suspend", { id: "integ-agent-1" }, ctx);
+    expect((suspendResult as any).isError).toBeUndefined();
+    const suspended = parseContent(suspendResult);
+    expect(suspended.status).toBe("suspended");
+
+    const activateResult = await handleAgent("agent.activate", { id: "integ-agent-1" }, ctx);
+    expect((activateResult as any).isError).toBeUndefined();
+    const activated = parseContent(activateResult);
+    expect(activated.status).toBe("active");
+  });
+});
+
+describe("Board tools integration (real storage)", () => {
+  it("board.list returns boards that have jobs", async () => {
+    const result = await handleBoard("board.list", {}, ctx);
+    const data = parseContent(result);
+    expect(data.boards).toBeDefined();
+  });
+
+  it("audit.search returns events", async () => {
+    const result = await handleBoard("audit.search", {}, ctx);
+    expect((result as any).isError).toBeUndefined();
+    const data = parseContent(result);
+    expect(data.events).toBeDefined();
+    expect(data.count).toBeDefined();
+  });
+});
+
+describe("Guard tools integration (real guard engine)", () => {
+  it("guard.evaluate returns a decision with real engine", async () => {
+    const result = await handleGuard("guard.evaluate", {
+      boardId: "integ-board",
+      action: { type: "agent_action", payload: { toolName: "test_tool" } },
+    }, ctx);
+    expect((result as any).isError).toBeUndefined();
+    const data = parseContent(result);
+    expect(data.decision).toBeDefined();
+    expect(["ALLOW", "DENY", "ESCALATE"]).toContain(data.decision);
   });
 });
