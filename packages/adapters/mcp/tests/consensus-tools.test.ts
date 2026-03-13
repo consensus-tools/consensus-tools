@@ -63,4 +63,29 @@ describe("consensus tools", () => {
     expect((result as any).isError).toBe(true);
     expect(result.content[0].text).toContain("Job failed");
   });
+
+  it("consensus_submit returns isError when jobId missing", async () => {
+    const result = await handle("consensus_submit", { summary: "test" }, ctx);
+    expect((result as any).isError).toBe(true);
+    expect(result.content[0].text).toContain("jobId");
+  });
+
+  it("consensus_vote returns isError when jobId missing", async () => {
+    const result = await handle("consensus_vote", { score: 5 }, ctx);
+    expect((result as any).isError).toBe(true);
+    expect(result.content[0].text).toContain("jobId");
+  });
+
+  it("consensus_status returns isError when jobId missing", async () => {
+    const result = await handle("consensus_status", {}, ctx);
+    expect((result as any).isError).toBe(true);
+    expect(result.content[0].text).toContain("jobId");
+  });
+
+  it("consensus_post_job returns validation error when title missing", async () => {
+    const result = await handle("consensus_post_job", { description: "No title" }, ctx);
+    expect((result as any).isError).toBe(true);
+    const data = parseContent(result);
+    expect(data.error).toBe("Validation failed");
+  });
 });

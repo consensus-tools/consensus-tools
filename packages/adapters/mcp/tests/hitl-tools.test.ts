@@ -69,4 +69,27 @@ describe("hitl tools", () => {
     const result = await handle("human.unknown", {}, ctx);
     expect((result as any).isError).toBe(true);
   });
+
+  it("human.approve returns validation error when runId missing", async () => {
+    const result = await handle("human.approve", {
+      replyText: "YES", idempotencyKey: "k1",
+    }, ctx);
+    expect((result as any).isError).toBe(true);
+  });
+
+  it("human.approve returns validation error when replyText missing", async () => {
+    const result = await handle("human.approve", {
+      runId: "r1", idempotencyKey: "k1",
+    }, ctx);
+    expect((result as any).isError).toBe(true);
+  });
+
+  it("human.approve propagates errors from hitlTracker", async () => {
+    (ctx.hitlTracker.recordVoteReceived as any).mockRejectedValue(new Error("Tracker down"));
+    const result = await handle("human.approve", {
+      runId: "r1", replyText: "YES", idempotencyKey: "k1",
+    }, ctx);
+    expect((result as any).isError).toBe(true);
+    expect(result.content[0].text).toContain("Tracker down");
+  });
 });
