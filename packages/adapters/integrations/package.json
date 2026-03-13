@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/integrations",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "External platform adapters (GitHub, Linear) for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,10 @@
   "devDependencies": {
     "typescript": "^5.7.0"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "author": "consensus-tools <https://github.com/consensus-tools>",
   "license": "Apache-2.0",
   "repository": {
@@ -30,11 +33,22 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/adapters/integrations"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "github", "linear"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "github",
+    "linear"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/integrations",
-  "bugs": { "url": "https://github.com/consensus-tools/consensus-tools/issues" },
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
   "publishConfig": {
     "access": "public"
   }

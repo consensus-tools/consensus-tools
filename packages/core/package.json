@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Protocol engine, ledger, storage, and resolution primitives for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,10 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "author": "consensus-tools <https://github.com/consensus-tools>",
   "license": "Apache-2.0",
   "repository": {
@@ -37,8 +40,19 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/core"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "engine", "jobs", "ledger", "storage"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "engine",
+    "jobs",
+    "ledger",
+    "storage"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/core",
   "bugs": {

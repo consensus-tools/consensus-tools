@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/workflows",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Workflow execution engine and cron scheduler for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,7 +29,10 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "author": "consensus-tools <https://github.com/consensus-tools>",
   "license": "Apache-2.0",
   "repository": {
@@ -37,11 +40,24 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/workflows"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "dag", "hitl", "cron", "workflow-engine"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "dag",
+    "hitl",
+    "cron",
+    "workflow-engine"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/workflows",
-  "bugs": { "url": "https://github.com/consensus-tools/consensus-tools/issues" },
+  "bugs": {
+    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+  },
   "publishConfig": {
     "access": "public"
   }

@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/guards",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Guard evaluation engine — deterministic evaluators, voting, and decision logic",
   "type": "module",
   "main": "./dist/index.js",
@@ -36,8 +36,18 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/guards"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "voting", "quorum", "decision"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "voting",
+    "quorum",
+    "decision"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/guards",
   "bugs": {

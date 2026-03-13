@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "CLI for consensus-tools — init, manage jobs, view traces",
   "type": "module",
   "main": "./dist/index.js",
@@ -33,7 +33,11 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
-  "files": ["dist", "src", "bin"],
+  "files": [
+    "dist",
+    "src",
+    "bin"
+  ],
   "author": "consensus-tools <https://github.com/consensus-tools>",
   "license": "Apache-2.0",
   "repository": {
@@ -41,8 +45,17 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/cli"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "cli", "command-line"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "cli",
+    "command-line"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/cli",
   "bugs": {

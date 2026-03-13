@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Model Context Protocol server adapter for consensus-tools",
   "type": "module",
   "bin": {
@@ -46,8 +46,17 @@
     "url": "https://github.com/consensus-tools/consensus-tools.git",
     "directory": "packages/adapters/mcp"
   },
-  "keywords": ["consensus", "multi-agent", "ai-agents", "consensus-tools", "model-context-protocol", "mcp"],
-  "engines": { "node": ">=20.0.0" },
+  "keywords": [
+    "consensus",
+    "multi-agent",
+    "ai-agents",
+    "consensus-tools",
+    "model-context-protocol",
+    "mcp"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
   "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/mcp",
   "bugs": {

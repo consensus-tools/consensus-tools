@@ -1,0 +1,72 @@
+{
+  "jobs": [
+    {
+      "id": "job_edb2b526-c3a0-4310-9003-0ae1c409750f",
+      "boardId": "workflow-system",
+      "creatorPrincipalId": "system",
+      "title": "Board: workflow-system",
+      "desc": "",
+      "description": "",
+      "createdAt": "2026-03-13T04:00:30.983Z",
+      "expiresAt": "2026-03-14T04:00:30.983Z",
+      "opensAt": "2026-03-13T04:00:30.983Z",
+      "closesAt": "2026-03-14T04:00:30.983Z",
+      "createdByAgentId": "system",
+      "mode": "SUBMISSION",
+      "tags": [],
+      "priority": 0,
+      "requiredCapabilities": [],
+      "inputs": {
+        "name": "workflow-system"
+      },
+      "constraints": {},
+      "reward": 10,
+      "rewardAmount": 10,
+      "stakeRequired": 1,
+      "stakeAmount": 1,
+      "currency": "CREDITS",
+      "maxParticipants": 3,
+      "minParticipants": 1,
+      "consensusPolicy": {
+        "type": "FIRST_SUBMISSION_WINS"
+      },
+      "slashingPolicy": {
+        "enabled": false,
+        "slashPercent": 0,
+        "slashFlat": 0
+      },
+      "escrowPolicy": {
+        "type": "mint"
+      },
+      "status": "OPEN"
+    }
+  ],
+  "bids": [],
+  "claims": [],
+  "submissions": [],
+  "votes": [],
+  "resolutions": [],
+  "ledger": [],
+  "audit": [
+    {
+      "id": "audit_a0ca5d0c-e473-460c-b7fb-6bfc6d4ad6ea",
+      "at": "2026-03-13T04:00:30.983Z",
+      "type": "job_posted",
+      "jobId": "job_edb2b526-c3a0-4310-9003-0ae1c409750f",
+      "actorAgentId": "system",
+      "details": {
+        "title": "Board: workflow-system"
+      }
+    }
+  ],
+  "errors": [],
+  "agents": [],
+  "participants": [],
+  "workflows": [],
+  "workflowRuns": [],
+  "cronSchedules": [],
+  "hitlApprovals": [],
+  "guardResults": [],
+  "policyAssignments": [],
+  "consensusVotes": []
+}
