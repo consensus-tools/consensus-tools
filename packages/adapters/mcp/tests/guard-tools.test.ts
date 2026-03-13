@@ -84,3 +84,68 @@ describe("guard tools", () => {
     );
   });
 });
+
+describe("policy tools", () => {
+  it("policy.assign creates a new assignment", async () => {
+    const result = await handle("policy.assign", {
+      boardId: "b1",
+      policyId: "pol-1",
+      participants: ["agent-a", "agent-b"],
+      quorum: 0.7,
+    }, ctx);
+    expect((result as any).isError).toBeUndefined();
+    const data = parseContent(result);
+    expect(data.boardId).toBe("b1");
+    expect(data.policyId).toBe("pol-1");
+    expect(data.participants).toEqual(["agent-a", "agent-b"]);
+  });
+
+  it("policy.assign returns isError when boardId missing", async () => {
+    const result = await handle("policy.assign", {
+      policyId: "pol-1",
+      participants: [],
+      quorum: 0.5,
+    }, ctx);
+    expect((result as any).isError).toBe(true);
+  });
+
+  it("policy.assign returns isError when policyId missing", async () => {
+    const result = await handle("policy.assign", {
+      boardId: "b1",
+      participants: [],
+      quorum: 0.5,
+    }, ctx);
+    expect((result as any).isError).toBe(true);
+  });
+
+  it("policy.assign defaults weightingMode to hybrid", async () => {
+    const result = await handle("policy.assign", {
+      boardId: "b1",
+      policyId: "pol-1",
+      participants: [],
+      quorum: 0.5,
+    }, ctx);
+    const data = parseContent(result);
+    expect(data.weightingMode).toBe("hybrid");
+  });
+
+  it("policy.list returns all assignments", async () => {
+    // First assign a policy
+    await handle("policy.assign", {
+      boardId: "b1",
+      policyId: "pol-1",
+      participants: ["a"],
+      quorum: 0.5,
+    }, ctx);
+    const result = await handle("policy.list", {}, ctx);
+    const data = parseContent(result);
+    expect(Array.isArray(data)).toBe(true);
+  });
+
+  it("policy.list filters by boardId", async () => {
+    const result = await handle("policy.list", { boardId: "nonexistent" }, ctx);
+    const data = parseContent(result);
+    expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(0);
+  });
+});
