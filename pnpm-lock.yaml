@@ -96,6 +96,9 @@ importers:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.21.0)
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       '@types/react':
         specifier: ^18.3.11
         version: 18.3.28
@@ -139,6 +142,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/workflows
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       tsx:
         specifier: ^4.0.0
         version: 4.21.0
@@ -231,6 +237,9 @@ importers:
         specifier: workspace:*
         version: link:../../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -259,6 +268,9 @@ importers:
         specifier: ^1.0.0
         version: 1.27.1(zod@3.25.76)
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -272,6 +284,9 @@ importers:
         specifier: workspace:*
         version: link:../../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -291,6 +306,9 @@ importers:
         specifier: workspace:*
         version: link:../../sdk-client
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -328,6 +346,9 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -348,6 +369,9 @@ importers:
         specifier: ^9.4.3
         version: 9.6.0
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -361,6 +385,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -371,6 +398,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -387,6 +417,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -400,6 +433,9 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -413,6 +449,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -444,6 +483,9 @@ importers:
         specifier: workspace:*
         version: link:../workflows
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -457,6 +499,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -482,6 +527,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -504,6 +552,9 @@ importers:
         specifier: workspace:*
         version: link:../schemas
     devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
