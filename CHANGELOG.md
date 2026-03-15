@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 2026-03-15
+
+### Added
+- CS Guard Demo (`examples/cs-demo`): interactive customer service guard pipeline with scenario generation, agent response drafting, multi-guard consensus evaluation, HITL approval via Slack-style dialog, reputation tracking with slash/payout mechanics, and real-time SSE telemetry stream
+- Four risk tiers (low/medium/high/critical) with configurable guard count, quorum, and HITL thresholds
+- Rewrite loop: guards can request agent response revisions up to 2x before escalating to HITL
+- Flag-bad-response flow: slash guards who approved responses later flagged as bad
+
+### Fixed
+- Center column scroll layout: sections expand to fit content (min 220px), only center column scrolls while left/right columns stay static
+- HITL approval now returns scenario from server instead of fragile DOM scraping with wrong CSS selector
+- XSS in tier card rendering replaced inline onclick with event delegation
+- Bad Response button and Export button margin/alignment
+- Missing `ledger.payout` telemetry emission in HITL APPROVE path
+
+### Changed
+- Default guard reputation from 1000 to 100
+
 ## 0.3.0 — 2026-03-13
 
 Complete monorepo restructuring from the monolithic `@consensus-tools/consensus-tools@0.2.0` into 16 focused packages across 5 tiers.
