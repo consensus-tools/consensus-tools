@@ -1,5 +1,15 @@
 # @consensus-tools/openclaw
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/core@0.5.0
+  - @consensus-tools/policies@0.5.0
+  - @consensus-tools/schemas@0.5.0
+  - @consensus-tools/sdk-client@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes

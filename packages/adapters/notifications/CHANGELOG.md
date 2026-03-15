@@ -1,5 +1,12 @@
 # @consensus-tools/notifications
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/schemas@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
