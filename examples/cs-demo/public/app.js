@@ -36,13 +36,17 @@ function renderTiers(tiers) {
   list.innerHTML = tiers
     .map(
       (t) => `
-    <div class="tier-card ${t.id === selectedTier ? "selected" : ""}" data-tier="${t.id}" onclick="window.selectTier('${t.id}')">
-      <div class="tier-name">${t.name}</div>
+    <div class="tier-card ${t.id === selectedTier ? "selected" : ""}" data-tier="${escapeHtml(t.id)}">
+      <div class="tier-name">${escapeHtml(t.name)}</div>
       <div class="tier-meta">${t.guardCount} guards | threshold ${(t.riskThreshold * 100).toFixed(0)}%</div>
     </div>
   `
     )
     .join("");
+  list.addEventListener("click", (e) => {
+    const card = e.target.closest(".tier-card");
+    if (card) window.selectTier(card.dataset.tier);
+  });
 }
 
 window.selectTier = function (tier) {

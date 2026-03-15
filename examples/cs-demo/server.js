@@ -273,6 +273,7 @@ app.post("/api/hitl-respond", async (req, res) => {
       emit("job.resolved", runId, { step: "hitl-approve" });
       for (const vote of run.guardResult.votes) {
         guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 1;
+        emit("ledger.payout", runId, { amount: 1, guardName: vote.evaluator, newBalance: guardReputation[vote.evaluator] });
       }
     } else if (decision === "REJECT") {
       run.decision = "BLOCK";
