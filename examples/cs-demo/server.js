@@ -34,7 +34,7 @@ let runs = {};
 function initGuardRep() {
   const personas = ["security-analyst", "compliance-officer", "operations-engineer", "legal-reviewer", "cx-quality"];
   guardReputation = {};
-  for (const id of personas) guardReputation[id] = 1000;
+  for (const id of personas) guardReputation[id] = 100;
 }
 initGuardRep();
 
@@ -146,7 +146,7 @@ app.post("/api/run", async (req, res) => {
       run.resolved = true;
       run.allowVotes = guardResult.votes;
       for (const vote of guardResult.votes) {
-        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 1;
+        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) + 1;
         emit("ledger.payout", runId, { amount: 1, guardName: vote.evaluator, newBalance: guardReputation[vote.evaluator] });
       }
     } else if (guardResult.decision === "REQUIRE_HUMAN") {
@@ -218,7 +218,7 @@ async function handleRewrite(run, mdl) {
     if (newGuardResult.decision === "ALLOW") {
       run.allowVotes = newGuardResult.votes;
       for (const vote of newGuardResult.votes) {
-        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 1;
+        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) + 1;
         emit("ledger.payout", run.id, { amount: 1, guardName: vote.evaluator, newBalance: guardReputation[vote.evaluator] });
       }
       return {
@@ -240,10 +240,10 @@ async function handleRewrite(run, mdl) {
   // Slash guards who kept voting YES on content that needed rewrites
   for (const vote of lastGuardResult.votes) {
     if (vote.vote === "YES") {
-      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) - 5;
+      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) - 5;
       emit("ledger.slash", run.id, { amount: 5, guardName: vote.evaluator, reason: "missed_issues_in_rewrite", newBalance: guardReputation[vote.evaluator] });
     } else {
-      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 3;
+      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) + 3;
       emit("ledger.payout", run.id, { amount: 3, guardName: vote.evaluator, newBalance: guardReputation[vote.evaluator] });
     }
   }
@@ -272,7 +272,7 @@ app.post("/api/hitl-respond", async (req, res) => {
       run.allowVotes = run.guardResult.votes;
       emit("job.resolved", runId, { step: "hitl-approve" });
       for (const vote of run.guardResult.votes) {
-        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 1;
+        guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) + 1;
         emit("ledger.payout", runId, { amount: 1, guardName: vote.evaluator, newBalance: guardReputation[vote.evaluator] });
       }
     } else if (decision === "REJECT") {
@@ -325,10 +325,10 @@ app.post("/api/flag-bad", (req, res) => {
   for (const vote of votesToSlash) {
     if (vote.vote === "YES") {
       // Revoke the +1 from clean consensus and slash -10
-      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) - 11;
+      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) - 11;
       emit("ledger.slash", runId, { amount: 11, guardName: vote.evaluator, reason: "approved_bad_response", newBalance: guardReputation[vote.evaluator] });
     } else {
-      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 1000) + 5;
+      guardReputation[vote.evaluator] = (guardReputation[vote.evaluator] ?? 100) + 5;
       emit("ledger.payout", runId, { amount: 5, guardName: vote.evaluator, reason: "correctly_flagged", newBalance: guardReputation[vote.evaluator] });
     }
   }

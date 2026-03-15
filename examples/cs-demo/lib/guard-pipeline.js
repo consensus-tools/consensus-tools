@@ -92,7 +92,7 @@ export async function runGuards(response, scenario, riskTier, guardReputation, m
     ...v,
     weight: 1,
     confidence: 1 - v.risk,
-    reputation: guardReputation[v.evaluator] ?? 1000,
+    reputation: guardReputation[v.evaluator] ?? 100,
   }));
 
   const policy = {

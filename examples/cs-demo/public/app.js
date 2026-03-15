@@ -507,9 +507,9 @@ async function refreshReputation() {
 
   panel.innerHTML = reps
     .map((r) => {
-      const delta = r.reputation - 1000;
+      const delta = r.reputation - 100;
       const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
-      const repClass = r.reputation < 900 ? "rep-low" : r.reputation > 1000 ? "rep-high" : "rep-normal";
+      const repClass = r.reputation < 90 ? "rep-low" : r.reputation > 100 ? "rep-high" : "rep-normal";
       return `
         <div class="rep-card">
           <div class="rep-name">${r.guardName}</div>
