@@ -1,5 +1,24 @@
 # @consensus-tools/cli
 
+## 0.5.0
+
+### Minor Changes
+
+- feat: CS guard demo with scroll layout and HITL fixes
+
+  - CS Guard Demo: interactive customer service guard pipeline with scenario generation, agent response drafting, multi-guard consensus, HITL approval, reputation tracking, and real-time SSE telemetry
+  - Fix XSS in tier card rendering, HITL approval server-side scenario return, scroll layout, and missing telemetry emission
+  - Default guard reputation changed from 1000 to 100
+  - Add missing @types/node to packages using Node APIs
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/core@0.5.0
+  - @consensus-tools/schemas@0.5.0
+  - @consensus-tools/sdk-client@0.5.0
+  - @consensus-tools/telemetry@0.5.0
+
 ## 0.4.0
 
 ### Minor Changes
