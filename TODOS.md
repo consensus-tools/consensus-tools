@@ -61,3 +61,35 @@
 **Context:** The notifications package has 5 chat adapters (Slack, Teams, Discord, Telegram, webhook) with no test coverage. The integrations package wraps GitHub CLI and Linear API.
 
 **Depends on:** Nothing, but testing evals should happen after the `allowDeterministicFallback` change (shipped in this PR).
+
+---
+
+## T5: Skill guard demo — audit log export command
+
+**What:** Add `tsx main.ts --export-audit` flag to skill-guard-demo that pretty-prints the ndjson audit trail for debugging.
+
+**Why:** After a confusing demo run, the raw `.data/skill-guard-audit.ndjson` file has all the data but is hard to scan. A formatted view showing rounds → proposals → votes → decisions → settlements would make debugging trivial.
+
+**Pros:** Quick to build (~30 lines), reuses existing audit data, valuable for demo presentations.
+
+**Cons:** Low priority — users can `cat audit.ndjson | jq` for now.
+
+**Context:** The ndjson audit log was added as part of the skill-guard-demo implementation. Each line is a JSON object with `ts`, `event`, and event-specific fields. Events: `demo.start`, `proposal`, `guard.decision`, `guard.rewrite`, `judge`, `settlement`, `skill.written`, `demo.complete`.
+
+**Depends on:** Skill guard demo (examples/skill-guard-demo).
+
+---
+
+## T6: Skill guard demo — compare mode for regression testing
+
+**What:** Add `tsx main.ts --compare <baseline.json>` that runs the demo, saves scores, and diffs against a previous baseline.
+
+**Why:** Validates the demo's core thesis: iterative consensus-driven improvement actually works. A regression test would show judge score deltas across runs and flag quality drops.
+
+**Pros:** Makes the demo self-validating. Uses existing audit log data. Natural follow-up to the eval patterns in consensus-gstack-evals.
+
+**Cons:** Medium effort — needs baseline file format, score extraction from audit log, diff rendering.
+
+**Context:** The demo already shows score progression per skill in the final summary. This TODO would formalize that into a saveable/comparable format. The gstack-evals repo has a similar pattern: `test/fixtures/eval-baselines.json` pinning LLM judge scores.
+
+**Depends on:** T5 (audit log export) for the data format, though could also read directly from ndjson.
