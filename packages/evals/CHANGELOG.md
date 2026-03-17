@@ -4,13 +4,14 @@
 
 ### Minor Changes
 
-- Add consensusEval, ReputationTracker, and score validation to @consensus-tools/evals.
+- You can now run multi-agent A/B evaluations where specialized agents score two document versions and a reputation-weighted composite picks the winner.
 
-  - `consensusEval()` — multi-agent A/B comparative evaluation with reputation-weighted composite scoring
-  - `ReputationTracker` — persistent reputation tracking with settleEval, settleRound, and pluggable ReputationStorage interface
-  - `validateScore()`, `validateJudgeScore()` — robust 1-5 score validation
-  - `weightedComposite()` — reputation-weighted score aggregation
-  - Types: JudgeScore, AgentEvalScore, ConsensusEvalResult, ReputationDelta, ReputationState, ReputationStorage, PromptBuilder
+  - `consensusEval()` — run N agents, each scoring both versions on clarity/completeness/actionability, then aggregate with reputation weighting
+  - `ReputationTracker` — track agent reputation across rounds with ±4 symmetric settlement and pluggable persistence via `ReputationStorage`
+  - `validateScore()`, `validateJudgeScore()` — safely parse LLM-generated scores (NaN, strings, out-of-range all default to 2)
+  - `weightedComposite()` — standalone utility for reputation-weighted score averaging
+  - New types: `JudgeScore`, `AgentEvalScore`, `ConsensusEvalResult`, `ReputationDelta`, `ReputationState`, `ReputationStorage`, `PromptBuilder`
+  - 44 tests across 3 test files (validation, reputation, consensus-eval)
 
 ## 0.5.0
 

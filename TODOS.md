@@ -48,19 +48,19 @@
 
 ---
 
-## T4: Add tests for evals, integrations, and notifications packages
+## T4: Add tests for integrations and notifications packages
 
-**What:** Unit tests with mocked external dependencies (LLM API via ai SDK, GitHub CLI, Slack/Discord/Teams/Telegram APIs).
+**What:** Unit tests with mocked external dependencies (GitHub CLI, Slack/Discord/Teams/Telegram APIs).
 
-**Why:** Three packages with zero test coverage. The `evals` package now throws by default without an API key, making it especially important to test both the throw path and the opt-in fallback path.
+**Why:** Two packages with zero test coverage.
 
-**Pros:** Catches regressions in adapter-layer code. Validates the `allowDeterministicFallback` behavior.
+**Pros:** Catches regressions in adapter-layer code.
 
 **Cons:** Requires extensive mocking of external services; these are thin wrappers so ROI is lower than core tests.
 
-**Context:** The notifications package has 5 chat adapters (Slack, Teams, Discord, Telegram, webhook) with no test coverage. The integrations package wraps GitHub CLI and Linear API.
+**Context:** The notifications package has 5 chat adapters (Slack, Teams, Discord, Telegram, webhook) with no test coverage. The integrations package wraps GitHub CLI and Linear API. **Evals package now has 44 tests (validation, reputation, consensus-eval) — completed in v0.6.0.**
 
-**Depends on:** Nothing, but testing evals should happen after the `allowDeterministicFallback` change (shipped in this PR).
+**Depends on:** Nothing.
 
 ---
 
