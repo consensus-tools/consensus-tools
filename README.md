@@ -123,7 +123,7 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 |---------|-------------|
 | [`@consensus-tools/guards`](packages/guards) | 7 guard types with three-step weighted decision model: risk threshold, quorum check, final verdict |
 | [`@consensus-tools/telemetry`](packages/telemetry) | Traces, events, and buffered sinks for observability |
-| [`@consensus-tools/evals`](packages/evals) | LLM-based multi-persona evaluation with 3 default reviewers and deterministic fallback |
+| [`@consensus-tools/evals`](packages/evals) | Multi-agent evaluation — single-model eval, multi-agent A/B consensus eval with reputation-weighted scoring, and score validation |
 | [`@consensus-tools/integrations`](packages/adapters/integrations) | External platform adapters for GitHub and Linear |
 | [`@consensus-tools/notifications`](packages/adapters/notifications) | Approval prompts and timeout warnings via Slack, Teams, Discord, Telegram, webhooks |
 | [`@consensus-tools/sdk-client`](packages/sdk-client) | HTTP client for remote board API |
@@ -166,6 +166,8 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 | [`mcp-server`](examples/mcp-server) | MCP server for LLM agents |
 | [`background-worker`](examples/background-worker) | Long-running worker polling for jobs |
 | [`openclaw-plugin`](examples/openclaw-plugin) | OpenClaw plugin configuration |
+| [`cs-demo`](examples/cs-demo) | Interactive customer service guard pipeline with HITL approval and reputation tracking |
+| [`skill-guard-demo`](examples/skill-guard-demo) | Multi-agent SKILL.md authoring with diff guards, consensus eval, and reputation settlement |
 
 ## Getting Started
 
