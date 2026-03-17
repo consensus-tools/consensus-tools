@@ -21,3 +21,15 @@ export { consensusEval, weightedComposite, parseABResponse, type ConsensusEvalOp
 
 // New: reputation
 export { ReputationTracker } from "./reputation.js";
+
+// New: proposer
+export {
+  proposeImprovement,
+  buildProposerSystemPrompt,
+  buildProposerUserPrompt,
+  computeSimpleDiff,
+  selectProposer,
+  type Proposal,
+  type ProposerConfig,
+  type LLMCaller,
+} from "./proposer.js";
