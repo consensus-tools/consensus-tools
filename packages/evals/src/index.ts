@@ -1,2 +1,23 @@
+// Existing exports (preserved)
 export { evaluateWithAiSdk, type AiEvaluatorConfig } from "./evaluator.js";
 export { generatePersonas, respawnPersona, type AgentPersona } from "./personas.js";
+
+// New: types
+export type {
+  JudgeScore,
+  AgentEvalScore,
+  ConsensusEvalResult,
+  ReputationDelta,
+  ReputationState,
+  ReputationStorage,
+  PromptBuilder,
+} from "./types.js";
+
+// New: validation
+export { validateScore, validateJudgeScore } from "./validation.js";
+
+// New: consensus eval
+export { consensusEval, weightedComposite, parseABResponse, type ConsensusEvalOptions } from "./consensus-eval.js";
+
+// New: reputation
+export { ReputationTracker } from "./reputation.js";
