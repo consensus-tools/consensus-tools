@@ -1,6 +1,6 @@
 // Existing exports (preserved)
 export { evaluateWithAiSdk, type AiEvaluatorConfig } from "./evaluator.js";
-export { generatePersonas, respawnPersona, type AgentPersona } from "./personas.js";
+export { generatePersonas, generateSkillReviewPersonas, respawnPersona, type AgentPersona } from "./personas.js";
 
 // New: types
 export type {
@@ -33,3 +33,9 @@ export {
   type ProposerConfig,
   type LLMCaller,
 } from "./proposer.js";
+
+// New: vote parser
+export { parseVote, type ParsedVote, type AgentWithRep } from "./vote-parser.js";
+
+// New: guard prompt
+export { buildDiffGuardPrompt } from "./guard-prompt.js";
