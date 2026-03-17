@@ -1,5 +1,11 @@
 # example-mcp-server
 
+## 0.0.2
+
+### Patch Changes
+
+- @consensus-tools/mcp@0.6.0
+
 ## 0.0.1
 
 ### Patch Changes

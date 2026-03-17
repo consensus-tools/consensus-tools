@@ -1,5 +1,12 @@
 # example-cs-demo
 
+## 2.0.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/evals@0.6.0
+
 ## 2.0.1
 
 ### Patch Changes

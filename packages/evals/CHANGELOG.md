@@ -1,5 +1,17 @@
 # @consensus-tools/evals
 
+## 0.6.0
+
+### Minor Changes
+
+- Add consensusEval, ReputationTracker, and score validation to @consensus-tools/evals.
+
+  - `consensusEval()` — multi-agent A/B comparative evaluation with reputation-weighted composite scoring
+  - `ReputationTracker` — persistent reputation tracking with settleEval, settleRound, and pluggable ReputationStorage interface
+  - `validateScore()`, `validateJudgeScore()` — robust 1-5 score validation
+  - `weightedComposite()` — reputation-weighted score aggregation
+  - Types: JudgeScore, AgentEvalScore, ConsensusEvalResult, ReputationDelta, ReputationState, ReputationStorage, PromptBuilder
+
 ## 0.5.0
 
 ### Minor Changes

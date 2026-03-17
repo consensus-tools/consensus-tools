@@ -1,5 +1,12 @@
 # @consensus-tools/workflows
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/evals@0.6.0
+
 ## 0.5.0
 
 ### Minor Changes

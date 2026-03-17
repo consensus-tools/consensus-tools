@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/evals",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "LLM-based guard evaluation with agent personas",
   "type": "module",
   "main": "./dist/index.js",
