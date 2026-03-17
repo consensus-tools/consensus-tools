@@ -74,7 +74,7 @@ const approved = parseHumanApprovalYesNo("yes"); // true
 | Vote | `voteTargetTypeSchema`, `voteSchema` | `VoteTargetType`, `Vote` |
 | Resolution | `resolutionSchema` | `Resolution` |
 | Ledger | `ledgerEntryTypeSchema`, `ledgerEntrySchema` | `LedgerEntryType`, `LedgerEntry` |
-| Guard | `guardTypeSchema`, `guardDecisionSchema`, `guardVoteValueSchema`, `guardVoteSchema`, `weightedGuardVoteSchema`, `guardPolicySchema`, `guardEvaluateInputSchema`, `guardEvaluateRequestSchema`, `guardResultSchema`, `weightingModeSchema`, `humanApprovalRequestSchema` | Matching types + `VoteTally`, `parseHumanApprovalYesNo` |
+| Guard | `guardTypeSchema`, `guardDecisionSchema`, `guardVoteValueSchema`, `guardVoteSchema`, `weightedGuardVoteSchema`, `guardPolicySchema`, `guardEvaluateInputSchema`, `guardEvaluateRequestSchema`, `guardResultSchema`, `weightingModeSchema`, `humanApprovalRequestSchema`, `parseHumanApprovalYesNo` (function) | Matching types + `VoteTally` |
 | Agent | `agentKindSchema`, `agentStatusSchema`, `agentSchema`, `agentConfigSchema` | `AgentKind`, `AgentStatus`, `Agent`, `AgentConfig` |
 | Participant | `participantSubjectTypeSchema`, `participantStatusSchema`, `participantSchema` | `ParticipantSubjectType`, `ParticipantStatus`, `Participant` |
 | Workflow | `workflowStatusSchema`, `workflowSchema`, `workflowRunSchema`, `cronScheduleSchema` | `WorkflowStatus`, `Workflow`, `WorkflowRun`, `CronSchedule` |

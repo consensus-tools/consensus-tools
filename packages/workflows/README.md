@@ -94,17 +94,28 @@ cron.stop();
 
 ## Exports
 
-| Export | Description |
-|---|---|
-| `WorkflowRunner` | Create, run, resume workflows with checkpoint persistence |
-| `NodeExecutor` | Execute individual nodes in a workflow graph |
-| `validateWorkflowDefinition` | Validate a workflow definition before execution |
-| `CronScheduler` | IStorage-backed cron scheduling with dedup |
-| `shouldRunNow(expr)` | Check if a 5-field cron expression matches now |
-| `prMergeGuardTemplate` | Template: GitHub PR merge guard |
-| `linearTaskDecompTemplate` | Template: Linear task decomposition |
-| `cronAutoAssignTemplate` | Template: Cron auto-assign subtasks |
-| `listTemplates()` / `getTemplateById(id)` | Discover built-in templates |
+| Export | Kind | Description |
+|---|---|---|
+| `WorkflowRunner` | Class | Create, run, resume workflows with checkpoint persistence |
+| `NodeExecutor` | Class | Execute individual nodes in a workflow graph |
+| `validateWorkflowDefinition` | Function | Validate a workflow definition before execution |
+| `CronScheduler` | Class | IStorage-backed cron scheduling with dedup |
+| `shouldRunNow(expr)` | Function | Check if a 5-field cron expression matches now |
+| `prMergeGuardTemplate` | Const | Template: GitHub PR merge guard |
+| `linearTaskDecompTemplate` | Const | Template: Linear task decomposition |
+| `cronAutoAssignTemplate` | Const | Template: Cron auto-assign subtasks |
+| `listTemplates()` / `getTemplateById(id)` | Function | Discover built-in templates |
+| `WorkflowTemplate` | Type | Template definition with id, name, steps, and handler |
+| `WorkflowStepHandler` | Type | Handler function for template-based workflow steps |
+| `WorkflowContext` | Type | Context passed to step handlers (workflowId, runId, storage, cursor) |
+| `WorkflowStepResult` | Type | Step result with status (`completed` / `failed` / `waiting`) |
+| `NodeExecutorDeps` | Type | Dependencies for `NodeExecutor` constructor |
+| `CredentialProvider` | Type | Credential provider interface for node execution |
+| `WorkflowNode` | Type | Single node in a workflow graph definition |
+| `WorkflowDefinition` | Type | Full workflow definition with nodes array |
+| `NodeExecIds` | Type | IDs context passed to node execution (boardId, runId, workflowId) |
+| `NodeOutput` | Type | Output from a single node execution |
+| `TemplateDefinition` | Type | Metadata for a built-in template |
 
 ## Links
 

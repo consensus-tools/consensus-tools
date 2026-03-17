@@ -85,14 +85,17 @@ await saveCliConfig(cfg);
 
 ## Exports
 
-| Export | Description |
-|---|---|
-| `buildProgram()` | Returns a Commander `Command` with all CLI commands |
-| `loadCliConfig()` / `saveCliConfig(cfg)` | Read/write CLI configuration |
-| `getConfigValue(cfg, key)` / `setConfigValue(cfg, key, val)` | Dot-path config access |
-| `resolveRemoteBaseUrl(url, boardId)` | Build the full remote API URL |
-| `defaultConsensusCliConfig` | Default config object |
-| `renderTable(rows, columns)` | Format tabular output |
+| Export | Kind | Description |
+|---|---|---|
+| `buildProgram()` | Function | Returns a Commander `Command` with all CLI commands |
+| `loadCliConfig()` / `saveCliConfig(cfg)` | Function | Read/write CLI configuration |
+| `getConfigValue(cfg, key)` / `setConfigValue(cfg, key, val)` | Function | Dot-path config access |
+| `parseValue(raw)` | Function | Parse a raw string into a typed value (number, boolean, or string) |
+| `resolveRemoteBaseUrl(url, boardId)` | Function | Build the full remote API URL |
+| `defaultConsensusCliConfig` | Const | Default config object |
+| `renderTable(rows, columns)` | Function | Format tabular output |
+| `ConsensusCliConfig` | Type | CLI configuration object type |
+| `ColumnDef` | Type | Column definition for `renderTable` (`{ key, label?, align? }`) |
 
 ## Environment Variables
 

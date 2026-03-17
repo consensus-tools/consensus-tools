@@ -25,8 +25,8 @@ const server = new ConsensusToolsServer({
   storage,
 });
 
-server.listen(3000);
-// Consensus API running at http://localhost:3000
+await server.start();
+// Consensus API running on host:port from config
 ```
 
 ## Full Setup with Workflows and Webhooks
@@ -54,7 +54,7 @@ const server = new ConsensusToolsServer({
   cronScheduler,
 });
 
-server.listen(9888);
+await server.start();
 ```
 
 ## API Endpoints
@@ -92,7 +92,7 @@ The server exposes REST endpoints for all consensus-tools operations:
 
 | Export | Description |
 |---|---|
-| `ConsensusToolsServer` | HTTP server class -- call `.listen(port)` to start |
+| `ConsensusToolsServer` | HTTP server class -- call `.start()` to listen and `.stop()` to shut down |
 | `ServerDeps` | Configuration object type for the server constructor |
 | `WorkflowRunner` | Minimal workflow runner interface (for type compatibility) |
 | `CronScheduler` | Minimal cron scheduler interface |
