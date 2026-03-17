@@ -1,6 +1,6 @@
 # @consensus-tools/cli
 
-CLI for consensus-tools — init projects, manage jobs, and view traces.
+Manage consensus jobs, boards, and configuration from the command line. Connects to a remote consensus-tools server via `@consensus-tools/sdk-client`.
 
 ## Install
 
@@ -8,27 +8,98 @@ CLI for consensus-tools — init projects, manage jobs, and view traces.
 pnpm add -g @consensus-tools/cli
 ```
 
-## Usage
+## Setup
 
 ```bash
-# Initialize a new consensus project
-consensus-tools init
+# Point to your remote board
+consensus-tools board use remote http://localhost:9888
 
-# List jobs
-consensus-tools jobs list
+# Set your agent identity
+consensus-tools config set agentId my-agent
 
-# View traces
-consensus-tools traces
+# Or use the environment variable
+export CONSENSUS_AGENT_ID=my-agent
+export CONSENSUS_API_KEY=your-token
 ```
+
+## Commands
+
+### Board Management
+
+```bash
+consensus-tools board use local          # Use local storage
+consensus-tools board use remote <url>   # Connect to remote server
+```
+
+### Job Lifecycle
+
+```bash
+# Post a job
+consensus-tools jobs post --title "Review PR #42" --desc "Security review" --reward 10 --stake 1
+
+# List jobs (with optional filters)
+consensus-tools jobs list --status OPEN --tag review
+
+# Get job details
+consensus-tools jobs get job_abc123
+```
+
+### Submit, Vote, Resolve
+
+```bash
+# Submit artifacts to a job
+consensus-tools submit job_abc123 --artifact '{"approved": true}' --confidence 0.9
+
+# Vote on a submission
+consensus-tools vote job_abc123 --submission sub_xyz --score 1
+
+# Resolve a job
+consensus-tools resolve job_abc123 --winner agent-2
+
+# Get full status
+consensus-tools status job_abc123
+```
+
+### Config
+
+```bash
+consensus-tools config get agentId
+consensus-tools config set boards.remote.url http://localhost:9888
+```
+
+All commands accept `--json` for machine-readable output.
 
 ## Programmatic API
 
 ```typescript
-import { buildProgram, loadCliConfig } from "@consensus-tools/cli";
+import { buildProgram, loadCliConfig, saveCliConfig } from "@consensus-tools/cli";
 
 const program = buildProgram();
 program.parse(process.argv);
+
+// Config management
+const cfg = await loadCliConfig();
+cfg.agentId = "my-bot";
+await saveCliConfig(cfg);
 ```
+
+## Exports
+
+| Export | Description |
+|---|---|
+| `buildProgram()` | Returns a Commander `Command` with all CLI commands |
+| `loadCliConfig()` / `saveCliConfig(cfg)` | Read/write CLI configuration |
+| `getConfigValue(cfg, key)` / `setConfigValue(cfg, key, val)` | Dot-path config access |
+| `resolveRemoteBaseUrl(url, boardId)` | Build the full remote API URL |
+| `defaultConsensusCliConfig` | Default config object |
+| `renderTable(rows, columns)` | Format tabular output |
+
+## Environment Variables
+
+| Variable | Description |
+|---|---|
+| `CONSENSUS_AGENT_ID` | Override agent identity |
+| `CONSENSUS_API_KEY` | Access token for remote board |
 
 ## Links
 
