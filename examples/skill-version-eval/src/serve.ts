@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { listRepos, listSkills, listVersions, fetchSkillAt } from "./fetcher.js";
-import { runVersionEval } from "./eval-runner.js";
+import { runVersionEval, runDiffGuard } from "./eval-runner.js";
 
 const PORT = 3456;
 const DATA_DIR = path.join(import.meta.dir, "..", ".data", "runs");
@@ -153,6 +153,47 @@ Bun.serve({
         return jsonResponse(runs);
       } catch {
         return jsonResponse([]);
+      }
+    }
+
+    // API: run diff guard (optional, triggered by button)
+    if (pathname === "/api/diff-guard" && req.method === "POST") {
+      if (isRunning) {
+        return jsonResponse({ error: "An evaluation is already running" }, 409);
+      }
+
+      let body: any;
+      try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
+
+      const { repo, skill, versionA, versionB, model, proposalId } = body;
+      if (!repo || !skill || !versionA || !versionB || !model || !proposalId) {
+        return jsonResponse({ error: "Missing required fields" }, 400);
+      }
+
+      const repoInfo = listRepos().find((r) => r.label === repo);
+      if (!repoInfo) return jsonResponse({ error: `Unknown repo: ${repo}` }, 400);
+
+      isRunning = true;
+      try {
+        const contentA = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionA);
+        const contentB = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionB);
+        if (!contentA || !contentB) {
+          return jsonResponse({ error: "Could not fetch one or both versions" }, 404);
+        }
+
+        console.log(`Running diff guard: ${skill} ${versionA} vs ${versionB}...`);
+        const result = await runDiffGuard(skill, contentA, contentB, model as any, proposalId);
+
+        // Save alongside the eval run
+        ensureDataDir();
+        const guardFile = path.join(DATA_DIR, `guard-${result.id}.json`);
+        fs.writeFileSync(guardFile, JSON.stringify(result, null, 2));
+
+        return jsonResponse(result);
+      } catch (err: any) {
+        return jsonResponse({ error: err.message || "Diff guard failed" }, 500);
+      } finally {
+        isRunning = false;
       }
     }
 

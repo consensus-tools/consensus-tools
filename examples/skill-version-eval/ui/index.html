@@ -6,151 +6,95 @@
   <title>Skill Version Eval</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: #0d1117;
-      color: #c9d1d9;
-      min-height: 100vh;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
     h1 { font-size: 1.4rem; font-weight: 600; color: #e6edf3; }
     h2 { font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin-bottom: 12px; }
-    h3 { font-size: 0.95rem; font-weight: 600; color: #e6edf3; }
-
+    h3 { font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-
-    header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 24px; border-bottom: 1px solid #30363d;
-      background: #161b22;
-    }
-    header .tag {
-      font-size: 0.7rem; background: #388bfd22; color: #388bfd;
-      padding: 2px 8px; border-radius: 12px; font-weight: 500;
-    }
+    header { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #30363d; background: #161b22; }
+    header .tag { font-size: 0.7rem; background: #388bfd22; color: #388bfd; padding: 2px 8px; border-radius: 12px; }
+    .mono { font-family: "SF Mono", Monaco, monospace; }
 
     /* Controls */
-    .controls {
-      background: #161b22; border: 1px solid #30363d; border-radius: 8px;
-      padding: 20px; margin-bottom: 24px;
-    }
-    .control-row {
-      display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
-    }
+    .controls { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .control-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; }
-    .control-group label {
-      font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    select, button {
-      background: #0d1117; color: #c9d1d9; border: 1px solid #30363d;
-      border-radius: 6px; padding: 8px 12px; font-size: 0.85rem;
-      min-width: 160px; cursor: pointer;
-    }
+    .control-group label { font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    select, button { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; min-width: 140px; cursor: pointer; }
     select:focus, button:focus { outline: none; border-color: #388bfd; }
     optgroup { color: #8b949e; font-style: normal; }
-    option { color: #c9d1d9; }
-
-    .btn-run {
-      background: #238636; border-color: #238636; color: #fff;
-      font-weight: 600; min-width: 120px; transition: background 0.15s;
-    }
+    .btn-run { background: #238636; border-color: #238636; color: #fff; font-weight: 600; min-width: 120px; }
     .btn-run:hover:not(:disabled) { background: #2ea043; }
     .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .status-text {
-      font-size: 0.8rem; color: #8b949e; align-self: center; min-width: 200px;
-    }
+    .status-text { font-size: 0.8rem; color: #8b949e; align-self: center; min-width: 200px; }
     .status-text.error { color: #f85149; }
 
-    /* Results */
-    .results-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px;
-    }
-    .result-count { font-size: 0.8rem; color: #8b949e; }
-
-    .card {
-      background: #161b22; border: 1px solid #30363d; border-radius: 8px;
-      margin-bottom: 16px; overflow: hidden;
-    }
-    .card-header {
-      display: flex; align-items: center; gap: 10px; padding: 14px 18px;
-      cursor: pointer; user-select: none; flex-wrap: wrap;
-    }
+    /* Cards */
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .card-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; user-select: none; flex-wrap: wrap; }
     .card-header:hover { background: #1c2129; }
-    .card-header .arrow {
-      font-size: 0.7rem; color: #8b949e; transition: transform 0.2s;
-      margin-right: 4px;
-    }
+    .card-header .arrow { font-size: 0.7rem; color: #8b949e; transition: transform 0.2s; margin-right: 4px; }
     .card.open .card-header .arrow { transform: rotate(90deg); }
-    .card-header .skill-name { font-weight: 600; color: #e6edf3; }
-    .card-header .versions { font-size: 0.8rem; color: #8b949e; }
-    .card-header .model-tag {
-      font-size: 0.7rem; padding: 2px 8px; border-radius: 12px;
-      background: #30363d; color: #8b949e;
-    }
+    .card-body { display: none; padding: 0 18px 18px; }
+    .card.open .card-body { display: block; }
 
-    .badge {
-      font-size: 0.7rem; font-weight: 600; padding: 2px 10px;
-      border-radius: 12px; text-transform: uppercase; letter-spacing: 0.3px;
-    }
+    /* Badges */
+    .badge { font-size: 0.7rem; font-weight: 600; padding: 2px 10px; border-radius: 12px; }
+    .badge-a { background: #388bfd22; color: #388bfd; }
+    .badge-b { background: #a371f722; color: #a371f7; }
+    .badge-tie { background: #30363d; color: #8b949e; }
+    .badge-single { background: #388bfd22; color: #388bfd; border: 1px solid #388bfd44; }
+    .badge-consensus { background: #a371f722; color: #a371f7; border: 1px solid #a371f744; }
+    .badge-agree { background: #23863622; color: #3fb950; }
+    .badge-disagree { background: #da363322; color: #f85149; }
     .badge-allow { background: #23863622; color: #238636; }
     .badge-block { background: #da363322; color: #da3633; }
     .badge-rewrite { background: #d2992222; color: #d29922; }
     .badge-human { background: #8957e522; color: #8957e5; }
-    .badge-agree { background: #23863622; color: #3fb950; }
-    .badge-disagree { background: #da363322; color: #f85149; }
-    .badge-single { background: #388bfd22; color: #388bfd; }
-    .badge-consensus { background: #a371f722; color: #a371f7; }
-
     .badge-yes { background: #23863622; color: #3fb950; }
     .badge-no { background: #da363322; color: #f85149; }
+    .model-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: #30363d; color: #8b949e; }
+    .meta-text { font-size: 0.78rem; color: #484f58; }
 
-    .card-body { display: none; padding: 0 18px 18px; }
-    .card.open .card-body { display: block; }
-
-    /* Diff preview */
-    .diff-preview {
-      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
-      padding: 12px; font-family: "SF Mono", Monaco, monospace; font-size: 0.75rem;
-      line-height: 1.6; max-height: 440px; overflow-y: auto; margin-bottom: 16px;
-      white-space: pre-wrap; word-break: break-word;
-    }
+    /* Diff */
+    .diff-preview { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: "SF Mono", monospace; font-size: 0.75rem; line-height: 1.6; max-height: 440px; overflow-y: auto; margin-bottom: 16px; white-space: pre-wrap; word-break: break-word; }
     .diff-add { color: #3fb950; }
     .diff-del { color: #f85149; }
-    .diff-ctx { color: #8b949e; }
 
-    /* Side by side */
-    .panels {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-    }
+    /* Score panels */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 800px) { .panels { grid-template-columns: 1fr; } }
+    .panel { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; }
+    .panel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 
-    .panel {
-      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
-      padding: 14px;
-    }
-    .panel-header {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-    .panel-stat {
-      font-size: 0.75rem; color: #8b949e;
-    }
-    .panel-stat span { color: #e6edf3; font-weight: 500; }
+    /* Score bars */
+    .score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; }
+    .score-label { width: 110px; color: #8b949e; }
+    .score-bar { flex: 1; height: 14px; background: #21262d; border-radius: 3px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .score-val { width: 30px; text-align: right; font-family: "SF Mono", monospace; font-weight: 600; color: #e6edf3; }
+    .score-avg { font-size: 1.4rem; font-weight: 700; color: #e6edf3; margin-bottom: 4px; }
+    .score-avg-label { font-size: 0.72rem; color: #8b949e; margin-bottom: 10px; }
+    .version-scores { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
+    .version-scores:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .version-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 
-    .vote-row {
-      display: flex; align-items: center; gap: 8px; padding: 6px 0;
-      border-top: 1px solid #21262d; font-size: 0.8rem;
-    }
-    .vote-row:first-child { border-top: none; }
-    .vote-name { font-weight: 500; color: #e6edf3; min-width: 120px; }
-    .vote-risk { color: #8b949e; font-size: 0.75rem; }
-    .vote-reason { color: #8b949e; font-size: 0.75rem; flex: 1; }
+    /* Agent breakdown */
+    .agent-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid #21262d; font-size: 0.78rem; }
+    .agent-row:first-child { border-top: none; }
+    .agent-name { min-width: 130px; color: #8b949e; }
+    .agent-scores { color: #e6edf3; font-family: "SF Mono", monospace; font-size: 0.75rem; }
+    .agent-reasoning { flex: 1; color: #484f58; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .empty-state {
-      text-align: center; padding: 60px 20px; color: #484f58;
-    }
+    /* Diff guard */
+    .guard-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #30363d; }
+    .btn-guard { background: #30363d; border-color: #30363d; color: #c9d1d9; font-size: 0.8rem; min-width: auto; padding: 6px 14px; }
+    .btn-guard:hover:not(:disabled) { background: #484f58; }
+    .guard-vote { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.8rem; border-top: 1px solid #21262d; }
+    .guard-vote:first-child { border-top: none; }
+    .guard-reason { flex: 1; color: #8b949e; font-size: 0.75rem; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #484f58; }
     .empty-state h3 { color: #484f58; margin-bottom: 8px; }
   </style>
 </head>
@@ -173,11 +117,11 @@
         </div>
         <div class="control-group">
           <label>Version A</label>
-          <select id="versionASelect"><option value="">Select repo first</option></select>
+          <select id="versionASelect"><option value="">Select repo</option></select>
         </div>
         <div class="control-group">
           <label>Version B</label>
-          <select id="versionBSelect"><option value="">Select repo first</option></select>
+          <select id="versionBSelect"><option value="">Select repo</option></select>
         </div>
         <div class="control-group">
           <label>Model</label>
@@ -194,254 +138,259 @@
       </div>
     </div>
 
-    <div class="results-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <h2>Results</h2>
-      <span class="result-count" id="resultCount"></span>
+      <span class="meta-text" id="resultCount"></span>
     </div>
-    <div id="resultsContainer">
-      <div class="empty-state">
-        <h3>No results yet</h3>
-        <p>Select versions and run an eval to get started.</p>
-      </div>
+    <div id="results">
+      <div class="empty-state"><h3>No results yet</h3><p>Select two versions and run an eval.</p></div>
     </div>
   </div>
 
-  <script>
-    const $ = (sel) => document.querySelector(sel);
-    const repoSelect = $("#repoSelect");
-    const skillSelect = $("#skillSelect");
-    const versionASelect = $("#versionASelect");
-    const versionBSelect = $("#versionBSelect");
-    const modelSelect = $("#modelSelect");
-    const runBtn = $("#runBtn");
-    const statusText = $("#statusText");
-    const resultsContainer = $("#resultsContainer");
-    const resultCount = $("#resultCount");
+<script>
+const $ = s => document.querySelector(s);
+let repos = [], runs = [];
+const openCards = new Set();
+const openGuards = new Set();
 
-    let repos = [];
-    let runs = [];
-    let openCards = new Set(); // track which cards are open by proposalId
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  if (!res.ok) { const b = await res.json().catch(()=>({})); throw new Error(b.error || `HTTP ${res.status}`); }
+  return res.json();
+}
 
-    async function fetchJSON(url, opts) {
-      const res = await fetch(url, opts);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `HTTP ${res.status}`);
-      }
-      return res.json();
-    }
+// ── Controls ──
+async function loadRepos() {
+  repos = await api('/api/repos');
+  $('#repoSelect').innerHTML = repos.map(r => `<option value="${r.label}" data-owner="${r.owner}" data-repo="${r.repo}">${r.label}</option>`).join('');
+  if (repos.length) onRepoChange();
+}
 
-    async function loadRepos() {
-      try {
-        repos = await fetchJSON("/api/repos");
-        repoSelect.innerHTML = repos.map(r =>
-          `<option value="${r.label}" data-owner="${r.owner}" data-repo="${r.repo}">${r.label}</option>`
-        ).join("");
-        if (repos.length) onRepoChange();
-      } catch (e) {
-        repoSelect.innerHTML = `<option value="">Error loading repos</option>`;
-      }
-    }
-
-    async function onRepoChange() {
-      const label = repoSelect.value;
-      const repo = repos.find(r => r.label === label);
-      if (!repo) return;
-
-      // Load skills
-      try {
-        const skills = await fetchJSON(`/api/skills?repo=${label}`);
-        skillSelect.innerHTML = skills.map(s => `<option value="${s}">${s}</option>`).join("");
-      } catch {
-        skillSelect.innerHTML = `<option value="">Error</option>`;
-      }
-
-      // Load versions
-      try {
-        const versions = await fetchJSON(`/api/versions?owner=${repo.owner}&repo=${repo.repo}`);
-        const buildOpts = (v) => {
-          let html = "";
-          if (v.branches.length) {
-            html += `<optgroup label="Branches">`;
-            html += v.branches.map(b => `<option value="${b}">${b}</option>`).join("");
-            html += `</optgroup>`;
-          }
-          if (v.tags.length) {
-            html += `<optgroup label="Tags">`;
-            html += v.tags.map(t => `<option value="${t}">${t}</option>`).join("");
-            html += `</optgroup>`;
-          }
-          return html || `<option value="">No versions found</option>`;
-        };
-        versionASelect.innerHTML = buildOpts(versions);
-        versionBSelect.innerHTML = buildOpts(versions);
-        // Default version B to second option if available
-        if (versionBSelect.options.length > 1) {
-          versionBSelect.selectedIndex = 1;
-        }
-      } catch {
-        versionASelect.innerHTML = `<option value="">Error</option>`;
-        versionBSelect.innerHTML = `<option value="">Error</option>`;
-      }
-    }
-
-    repoSelect.addEventListener("change", onRepoChange);
-
-    runBtn.addEventListener("click", async () => {
-      const repo = repoSelect.value;
-      const skill = skillSelect.value;
-      const versionA = versionASelect.value;
-      const versionB = versionBSelect.value;
-      const model = modelSelect.value;
-
-      if (!repo || !skill || !versionA || !versionB) {
-        statusText.textContent = "Please select all fields";
-        statusText.className = "status-text error";
-        return;
-      }
-      if (versionA === versionB) {
-        statusText.textContent = "Versions must be different";
-        statusText.className = "status-text error";
-        return;
-      }
-
-      runBtn.disabled = true;
-      statusText.textContent = "Running eval... this may take 30-60s";
-      statusText.className = "status-text";
-
-      try {
-        const result = await fetchJSON("/api/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ repo, skill, versionA, versionB, model }),
-        });
-        statusText.textContent = "Eval complete!";
-        loadRuns();
-      } catch (e) {
-        statusText.textContent = e.message;
-        statusText.className = "status-text error";
-      } finally {
-        runBtn.disabled = false;
-      }
-    });
-
-    function decisionBadge(decision) {
-      const d = (decision || "").toUpperCase();
-      if (d === "ALLOW" || d === "YES") return `<span class="badge badge-allow">${d}</span>`;
-      if (d === "BLOCK" || d === "NO") return `<span class="badge badge-block">${d}</span>`;
-      if (d.includes("REWRITE")) return `<span class="badge badge-rewrite">${d}</span>`;
-      if (d.includes("HUMAN")) return `<span class="badge badge-human">${d}</span>`;
-      return `<span class="badge">${d}</span>`;
-    }
-
-    function voteBadge(vote) {
-      const v = (vote || "").toUpperCase();
-      if (v === "YES") return `<span class="badge badge-yes">YES</span>`;
-      if (v === "NO") return `<span class="badge badge-no">NO</span>`;
-      if (v === "REWRITE") return `<span class="badge badge-rewrite">REWRITE</span>`;
-      return `<span class="badge">${v}</span>`;
-    }
-
-    function colorizeDiff(diff) {
-      return diff.split("\n").map(line => {
-        if (line.startsWith("+")) return `<span class="diff-add">${esc(line)}</span>`;
-        if (line.startsWith("-")) return `<span class="diff-del">${esc(line)}</span>`;
-        return `<span class="diff-ctx">${esc(line)}</span>`;
-      }).join("\n");
-    }
-
-    function esc(s) {
-      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    function renderPanel(result, modeLabel, badgeClass) {
-      const voteRows = (result.votes || []).map(v => `
-        <div class="vote-row">
-          <span class="vote-name">${esc(v.agentName)}</span>
-          ${voteBadge(v.vote)}
-          <span class="vote-risk">risk: ${v.risk.toFixed(2)}</span>
-          <span class="vote-reason">${esc(v.reason || "")}</span>
-        </div>
-      `).join("");
-
-      return `
-        <div class="panel">
-          <div class="panel-header">
-            <span class="badge ${badgeClass}">${modeLabel}</span>
-            ${decisionBadge(result.decision)}
-          </div>
-          <div class="panel-stat">Risk: <span>${result.combinedRisk.toFixed(3)}</span></div>
-          <div class="panel-stat">Yes ratio: <span>${result.weightedYesRatio.toFixed(2)}</span></div>
-          <div class="panel-stat">Quorum: <span>${result.quorumMet ? "met" : "not met"}</span></div>
-          <div class="panel-stat">Duration: <span>${(result.durationMs / 1000).toFixed(1)}s</span></div>
-          <div style="margin-top:10px">${voteRows}</div>
-        </div>
-      `;
-    }
-
-    function renderRuns() {
-      if (!runs.length) {
-        resultsContainer.innerHTML = `
-          <div class="empty-state">
-            <h3>No results yet</h3>
-            <p>Select versions and run an eval to get started.</p>
-          </div>`;
-        resultCount.textContent = "";
-        return;
-      }
-
-      resultCount.textContent = `${runs.length} run${runs.length === 1 ? "" : "s"}`;
-
-      resultsContainer.innerHTML = runs.map((run, i) => {
-        const s = run.single;
-        const c = run.consensus;
-        const agree = s.decision === c.decision;
-        const pid = s.proposalId || i;
-        const isOpen = openCards.has(pid);
-
-        return `
-          <div class="card${isOpen ? " open" : ""}" data-pid="${pid}">
-            <div class="card-header" onclick="toggleCard('${pid}')">
-              <span class="arrow">&#9654;</span>
-              <span class="skill-name">${esc(s.skill)}</span>
-              <span class="versions">${esc(s.versionA)} &rarr; ${esc(s.versionB)}</span>
-              <span class="model-tag">${esc(s.model)}</span>
-              <span class="badge ${agree ? "badge-agree" : "badge-disagree"}">${agree ? "AGREE" : "DISAGREE"}</span>
-            </div>
-            <div class="card-body">
-              <h3 style="margin-bottom:8px">Diff Preview</h3>
-              <div class="diff-preview">${colorizeDiff(s.fullDiff || s.diffSummary || "")}</div>
-              <div class="panels">
-                ${renderPanel(s, "Single", "badge-single")}
-                ${renderPanel(c, "Consensus", "badge-consensus")}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    window.toggleCard = function(pid) {
-      if (openCards.has(pid)) {
-        openCards.delete(pid);
-      } else {
-        openCards.add(pid);
-      }
-      const card = document.querySelector(`.card[data-pid="${pid}"]`);
-      if (card) card.classList.toggle("open");
+async function onRepoChange() {
+  const label = $('#repoSelect').value;
+  const repo = repos.find(r => r.label === label);
+  if (!repo) return;
+  try {
+    const skills = await api(`/api/skills?repo=${label}`);
+    $('#skillSelect').innerHTML = skills.map(s => `<option value="${s}">${s}</option>`).join('');
+  } catch { $('#skillSelect').innerHTML = '<option value="">Error</option>'; }
+  try {
+    const v = await api(`/api/versions?owner=${repo.owner}&repo=${repo.repo}`);
+    const opts = (sel) => {
+      let h = '';
+      if (v.branches?.length) h += `<optgroup label="Branches">${v.branches.map(b => `<option value="${b}">${b}</option>`).join('')}</optgroup>`;
+      if (v.tags?.length) h += `<optgroup label="Tags">${v.tags.map(t => `<option value="${t}">${t}</option>`).join('')}</optgroup>`;
+      sel.innerHTML = h || '<option value="">None</option>';
     };
+    opts($('#versionASelect'));
+    opts($('#versionBSelect'));
+    if ($('#versionBSelect').options.length > 1) $('#versionBSelect').selectedIndex = 1;
+  } catch { $('#versionASelect').innerHTML = $('#versionBSelect').innerHTML = '<option value="">Error</option>'; }
+}
+$('#repoSelect').addEventListener('change', onRepoChange);
 
-    async function loadRuns() {
-      try {
-        runs = await fetchJSON("/api/runs");
-        renderRuns();
-      } catch {}
-    }
-
-    // Init
-    loadRepos();
+$('#runBtn').addEventListener('click', async () => {
+  const repo = $('#repoSelect').value, skill = $('#skillSelect').value;
+  const vA = $('#versionASelect').value, vB = $('#versionBSelect').value, model = $('#modelSelect').value;
+  if (!repo || !skill || !vA || !vB) { showStatus('Select all fields', true); return; }
+  if (vA === vB) { showStatus('Versions must differ', true); return; }
+  $('#runBtn').disabled = true;
+  showStatus('Running eval — single (2 calls) + consensus (10 calls)...');
+  try {
+    await api('/api/run', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({repo, skill, versionA: vA, versionB: vB, model}) });
+    showStatus('Done!');
     loadRuns();
-    setInterval(loadRuns, 5000);
-  </script>
+  } catch (e) { showStatus(e.message, true); }
+  finally { $('#runBtn').disabled = false; }
+});
+
+function showStatus(msg, err) {
+  const el = $('#statusText');
+  el.textContent = msg;
+  el.className = err ? 'status-text error' : 'status-text';
+  if (!err) setTimeout(() => { el.textContent = ''; }, 5000);
+}
+
+// ── Rendering ──
+function scoreColor(v) {
+  if (v >= 4.5) return '#3fb950';
+  if (v >= 3.5) return '#388bfd';
+  if (v >= 2.5) return '#d29922';
+  return '#f85149';
+}
+
+function scoreBar(label, val) {
+  const pct = (val / 5 * 100).toFixed(0);
+  return `<div class="score-row">
+    <span class="score-label">${label}</span>
+    <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;background:${scoreColor(val)}"></div></div>
+    <span class="score-val" style="color:${scoreColor(val)}">${val}</span>
+  </div>`;
+}
+
+function renderVersionScores(label, badgeClass, vs) {
+  return `<div class="version-scores">
+    <div class="version-header">
+      <span class="badge ${badgeClass}">${label}</span>
+      <span class="meta-text">${esc(vs.ref)}</span>
+    </div>
+    <div class="score-avg" style="color:${scoreColor(vs.average)}">${vs.average.toFixed(2)}</div>
+    <div class="score-avg-label">average (clarity + completeness + actionability) / 3</div>
+    ${scoreBar('Clarity', vs.scores.clarity)}
+    ${scoreBar('Completeness', vs.scores.completeness)}
+    ${scoreBar('Actionability', vs.scores.actionability)}
+    <div style="font-size:0.75rem;color:#8b949e;margin-top:6px">${esc(vs.scores.reasoning || '').slice(0, 200)}</div>
+  </div>`;
+}
+
+function renderAgentBreakdown(agents) {
+  if (!agents || !agents.length) return '';
+  return `<div style="margin-top:10px">
+    <h3>Per-Agent Scores</h3>
+    ${agents.map(a => `<div class="agent-row">
+      <span class="agent-name">${esc(a.agentName)}</span>
+      <span class="agent-scores">C:${a.scores.clarity} Co:${a.scores.completeness} A:${a.scores.actionability}</span>
+      <span class="agent-reasoning" title="${esc(a.scores.reasoning)}">${esc(a.scores.reasoning)}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderPanel(result, modeLabel, badgeClass) {
+  const winnerBadge = result.winner === 'A' ? '<span class="badge badge-a">A wins</span>'
+    : result.winner === 'B' ? '<span class="badge badge-b">B wins</span>'
+    : '<span class="badge badge-tie">TIE</span>';
+  const deltaStr = result.delta > 0 ? `+${result.delta.toFixed(2)}` : result.delta.toFixed(2);
+  const deltaColor = result.delta > 0.2 ? '#3fb950' : result.delta < -0.2 ? '#f85149' : '#8b949e';
+
+  return `<div class="panel">
+    <div class="panel-header">
+      <span class="badge ${badgeClass}">${modeLabel}</span>
+      ${winnerBadge}
+      <span style="font-family:monospace;font-size:0.8rem;color:${deltaColor}">delta: ${deltaStr}</span>
+      <span class="meta-text" style="margin-left:auto">${(result.durationMs/1000).toFixed(1)}s</span>
+    </div>
+    ${renderVersionScores('Version A', 'badge-a', result.versionA)}
+    ${renderVersionScores('Version B', 'badge-b', result.versionB)}
+    ${result.mode === 'consensus' ? renderAgentBreakdown(result.versionA.agentResults) : ''}
+  </div>`;
+}
+
+function renderRuns() {
+  if (!runs.length) {
+    $('#results').innerHTML = '<div class="empty-state"><h3>No results yet</h3><p>Select two versions and run an eval.</p></div>';
+    $('#resultCount').textContent = '';
+    return;
+  }
+  $('#resultCount').textContent = `${runs.length} eval${runs.length === 1 ? '' : 's'}`;
+  $('#results').innerHTML = runs.map(run => {
+    const s = run.single, c = run.consensus;
+    const agree = s.winner === c.winner;
+    const pid = s.proposalId;
+    const isOpen = openCards.has(pid);
+    const guardOpen = openGuards.has(pid);
+    const guard = run.diffGuard;
+
+    return `<div class="card${isOpen ? ' open' : ''}" data-pid="${pid}">
+      <div class="card-header" onclick="toggle('${pid}')">
+        <span class="arrow">&#9654;</span>
+        <span style="font-weight:600;color:#e6edf3">${esc(s.skill)}</span>
+        <span class="meta-text">${esc(s.versionA.ref)} → ${esc(s.versionB.ref)}</span>
+        <span class="model-tag">${esc(s.model)}</span>
+        <span class="badge ${agree ? 'badge-agree' : 'badge-disagree'}">${agree ? 'AGREE' : 'DISAGREE'}</span>
+        <span class="badge ${s.winner === 'A' ? 'badge-a' : s.winner === 'B' ? 'badge-b' : 'badge-tie'}">single: ${s.winner}</span>
+        <span class="badge ${c.winner === 'A' ? 'badge-a' : c.winner === 'B' ? 'badge-b' : 'badge-tie'}">consensus: ${c.winner}</span>
+      </div>
+      <div class="card-body">
+        <h3>Diff (for reference)</h3>
+        <div class="diff-preview">${colorizeDiff(s.fullDiff || s.diffSummary || '')}</div>
+        <div class="panels">
+          ${renderPanel(s, 'Single (1 judge)', 'badge-single')}
+          ${renderPanel(c, 'Consensus (5 judges)', 'badge-consensus')}
+        </div>
+        <div class="guard-section">
+          ${guard
+            ? renderGuardResult(guard)
+            : `<button class="btn-guard" onclick="runGuard('${pid}', event)" id="guard-btn-${pid}">Run Diff Guard Analysis</button>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGuardResult(guard) {
+  const decBadge = guard.decision === 'ALLOW' ? 'badge-allow'
+    : guard.decision === 'BLOCK' ? 'badge-block'
+    : guard.decision.includes('REWRITE') ? 'badge-rewrite' : 'badge-human';
+  return `<h3>Diff Guard Analysis</h3>
+    <div style="margin-bottom:8px">
+      <span class="badge ${decBadge}">${guard.decision}</span>
+      <span class="meta-text" style="margin-left:8px">risk: ${guard.combinedRisk.toFixed(2)} | ${(guard.durationMs/1000).toFixed(1)}s</span>
+    </div>
+    ${guard.votes.map(v => {
+      const vc = v.vote === 'YES' ? 'badge-yes' : v.vote === 'NO' ? 'badge-no' : 'badge-rewrite';
+      return `<div class="guard-vote">
+        <span class="agent-name">${esc(v.agentName)}</span>
+        <span class="badge ${vc}">${v.vote}</span>
+        <span style="font-family:monospace;font-size:0.75rem;color:#8b949e">${v.risk.toFixed(2)}</span>
+        <span class="guard-reason">${esc(v.reason)}</span>
+      </div>`;
+    }).join('')}`;
+}
+
+// ── Actions ──
+function toggle(pid) {
+  openCards.has(pid) ? openCards.delete(pid) : openCards.add(pid);
+  const el = document.querySelector(`[data-pid="${pid}"]`);
+  if (el) el.classList.toggle('open');
+}
+
+async function runGuard(pid, event) {
+  event.stopPropagation();
+  const run = runs.find(r => r.single.proposalId === pid);
+  if (!run) return;
+  const btn = $(`#guard-btn-${pid}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+  try {
+    const s = run.single;
+    const repo = $('#repoSelect').value;
+    const guard = await api('/api/diff-guard', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ repo, skill: s.skill, versionA: s.versionA.ref, versionB: s.versionB.ref, model: s.model, proposalId: pid }),
+    });
+    run.diffGuard = guard;
+    renderRuns();
+  } catch (e) {
+    if (btn) { btn.textContent = `Error: ${e.message}`; btn.disabled = false; }
+  }
+}
+
+function colorizeDiff(diff) {
+  return diff.split('\n').map(l => {
+    if (l.startsWith('+')) return `<span class="diff-add">${esc(l)}</span>`;
+    if (l.startsWith('-')) return `<span class="diff-del">${esc(l)}</span>`;
+    return esc(l);
+  }).join('\n');
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Data loading ──
+async function loadRuns() {
+  try {
+    const all = await api('/api/runs');
+    // Merge diff guard results into their parent runs
+    runs = all.map(r => {
+      if (r.single && r.consensus) return r; // already a run pair
+      return r;
+    });
+    renderRuns();
+  } catch {}
+}
+
+loadRepos();
+loadRuns();
+setInterval(loadRuns, 5000);
+</script>
 </body>
 </html>
