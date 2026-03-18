@@ -60,7 +60,7 @@
 
 **Context:** The notifications package has 5 chat adapters (Slack, Teams, Discord, Telegram, webhook) with no test coverage. The integrations package wraps GitHub CLI and Linear API. **Evals package now has 44 tests (validation, reputation, consensus-eval) — completed in v0.6.0.**
 
-**Depends on:** Nothing.
+**Depends on:** Nothing, but testing evals should happen after the `allowDeterministicFallback` change (shipped in this PR).
 
 ---
 
