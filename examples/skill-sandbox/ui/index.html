@@ -282,6 +282,10 @@ async function loadRuns() {
   } catch { /* ignore */ }
 }
 
+const openCards = new Set();
+const openSections = new Set();
+const openAgents = new Set();
+
 function renderRuns(runs) {
   if (!runs.length) {
     resultsDiv.innerHTML = '<div class="empty-state">No sandbox runs yet. Select a skill and click "Run Sandbox".</div>';
@@ -295,9 +299,12 @@ function renderCard(run) {
   const hCountClass = run.hallucinationCount === 0 ? 'zero' : '';
   const dur = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : '';
 
+  const cardId = run.id;
+  const isOpen = openCards.has(cardId);
+
   return `
-  <div class="card" onclick="this.classList.toggle('expanded')">
-    <div class="card-header">
+  <div class="card${isOpen ? ' expanded' : ''}" data-cid="${cardId}">
+    <div class="card-header" onclick="toggleCard('${cardId}')">
       <span class="skill-name">${esc(run.skill)}</span>
       <span class="version-tag">${esc(run.version)}</span>
       <span class="model-tag">${esc(run.model)}</span>
@@ -306,17 +313,19 @@ function renderCard(run) {
       <span class="duration">${dur}</span>
     </div>
     <div class="card-body" onclick="event.stopPropagation()">
-      ${renderRubricSection(run.rubric)}
-      ${renderOutputSection(run.executionOutput)}
-      ${renderCheckSection(run.checkResults, run.decision, run.combinedRisk)}
+      ${renderRubricSection(run.rubric, cardId)}
+      ${renderOutputSection(run.executionOutput, cardId)}
+      ${renderCheckSection(run.checkResults, run.decision, run.combinedRisk, cardId)}
     </div>
   </div>`;
 }
 
-function renderRubricSection(rubric) {
+function renderRubricSection(rubric, cardId) {
   if (!rubric) return '';
+  const secId = cardId + '-rubric';
+  const isOpen = openSections.has(secId);
   return `
-  <div class="section" onclick="this.classList.toggle('expanded'); event.stopPropagation();">
+  <div class="section${isOpen ? ' expanded' : ''}" data-sid="${secId}" onclick="toggleSection('${secId}'); event.stopPropagation();">
     <div class="section-header">Rubric (${rubric.claims?.length || 0} claims, ${rubric.weakPoints?.length || 0} weak points)</div>
     <div class="section-body">
       <h3>Claims</h3>
@@ -329,10 +338,12 @@ function renderRubricSection(rubric) {
   </div>`;
 }
 
-function renderOutputSection(output) {
+function renderOutputSection(output, cardId) {
   if (!output) return '';
+  const secId = cardId + '-output';
+  const isOpen = openSections.has(secId);
   return `
-  <div class="section" onclick="this.classList.toggle('expanded'); event.stopPropagation();">
+  <div class="section${isOpen ? ' expanded' : ''}" data-sid="${secId}" onclick="toggleSection('${secId}'); event.stopPropagation();">
     <div class="section-header">Skill Output (${output.length} chars)</div>
     <div class="section-body">
       <pre class="output">${esc(output)}</pre>
@@ -340,7 +351,7 @@ function renderOutputSection(output) {
   </div>`;
 }
 
-function renderCheckSection(checks, decision, combinedRisk) {
+function renderCheckSection(checks, decision, combinedRisk, cardId) {
   if (!checks || !checks.length) return '';
   const decisionClass = decision === 'approve' ? 'approve' : decision === 'reject' ? 'reject' : 'hitl';
   const riskPct = Math.round((combinedRisk || 0) * 100);
@@ -359,8 +370,10 @@ function renderCheckSection(checks, decision, combinedRisk) {
       </div>
     `).join('');
 
+    const agentKey = (cardId || '') + '-' + cr.agentId;
+    const agentOpen = openAgents.has(agentKey);
     return `
-    <div class="agent-result" onclick="this.classList.toggle('expanded'); event.stopPropagation();">
+    <div class="agent-result${agentOpen ? ' expanded' : ''}" data-aid="${agentKey}" onclick="toggleAgent('${agentKey}'); event.stopPropagation();">
       <div class="agent-header">
         <span class="agent-name">${esc(cr.agentName)}</span>
         <span class="badge ${voteClass}">${cr.vote}</span>
@@ -391,6 +404,10 @@ function renderCheckSection(checks, decision, combinedRisk) {
     </div>
   </div>`;
 }
+
+function toggleCard(id) { openCards.has(id) ? openCards.delete(id) : openCards.add(id); const el = document.querySelector(`[data-cid="${id}"]`); if (el) el.classList.toggle('expanded'); }
+function toggleSection(id) { openSections.has(id) ? openSections.delete(id) : openSections.add(id); const el = document.querySelector(`[data-sid="${id}"]`); if (el) el.classList.toggle('expanded'); }
+function toggleAgent(id) { openAgents.has(id) ? openAgents.delete(id) : openAgents.add(id); const el = document.querySelector(`[data-aid="${id}"]`); if (el) el.classList.toggle('expanded'); }
 
 function esc(s) {
   if (typeof s !== 'string') return '';

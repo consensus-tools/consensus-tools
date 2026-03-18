@@ -220,6 +220,7 @@
 
     let repos = [];
     let runs = [];
+    let openCards = new Set(); // track which cards are open by proposalId
 
     async function fetchJSON(url, opts) {
       const res = await fetch(url, opts);
@@ -395,10 +396,12 @@
         const s = run.single;
         const c = run.consensus;
         const agree = s.decision === c.decision;
+        const pid = s.proposalId || i;
+        const isOpen = openCards.has(pid);
 
         return `
-          <div class="card" data-index="${i}">
-            <div class="card-header" onclick="toggleCard(${i})">
+          <div class="card${isOpen ? " open" : ""}" data-pid="${pid}">
+            <div class="card-header" onclick="toggleCard('${pid}')">
               <span class="arrow">&#9654;</span>
               <span class="skill-name">${esc(s.skill)}</span>
               <span class="versions">${esc(s.versionA)} &rarr; ${esc(s.versionB)}</span>
@@ -418,8 +421,13 @@
       }).join("");
     }
 
-    window.toggleCard = function(i) {
-      const card = document.querySelector(`.card[data-index="${i}"]`);
+    window.toggleCard = function(pid) {
+      if (openCards.has(pid)) {
+        openCards.delete(pid);
+      } else {
+        openCards.add(pid);
+      }
+      const card = document.querySelector(`.card[data-pid="${pid}"]`);
       if (card) card.classList.toggle("open");
     };
 
