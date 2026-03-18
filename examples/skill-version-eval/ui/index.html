@@ -149,7 +149,7 @@
 
 <script>
 const $ = s => document.querySelector(s);
-let repos = [], runs = [];
+let repos = [], runs = [], cachedVersions = null;
 const openCards = new Set();
 const openGuards = new Set();
 
@@ -175,18 +175,54 @@ async function onRepoChange() {
     $('#skillSelect').innerHTML = skills.map(s => `<option value="${s}">${s}</option>`).join('');
   } catch { $('#skillSelect').innerHTML = '<option value="">Error</option>'; }
   try {
-    const v = await api(`/api/versions?owner=${repo.owner}&repo=${repo.repo}`);
-    const opts = (sel) => {
-      let h = '';
-      if (v.branches?.length) h += `<optgroup label="Branches">${v.branches.map(b => `<option value="${b}">${b}</option>`).join('')}</optgroup>`;
-      if (v.tags?.length) h += `<optgroup label="Tags">${v.tags.map(t => `<option value="${t}">${t}</option>`).join('')}</optgroup>`;
-      sel.innerHTML = h || '<option value="">None</option>';
-    };
-    opts($('#versionASelect'));
-    opts($('#versionBSelect'));
-    if ($('#versionBSelect').options.length > 1) $('#versionBSelect').selectedIndex = 1;
+    cachedVersions = await api(`/api/versions?owner=${repo.owner}&repo=${repo.repo}`);
+    populateVersionDropdowns();
   } catch { $('#versionASelect').innerHTML = $('#versionBSelect').innerHTML = '<option value="">Error</option>'; }
 }
+function populateVersionDropdowns() {
+  const v = cachedVersions;
+  if (!v) return;
+  const selA = $('#versionASelect'), selB = $('#versionBSelect');
+  const curA = selA.value, curB = selB.value;
+
+  const buildOpts = (excludeVal) => {
+    let h = '';
+    if (v.tags?.length) {
+      h += '<optgroup label="Tags">';
+      h += v.tags.map(t => {
+        const dis = t.name === excludeVal ? ' disabled style="color:#484f58"' : '';
+        return `<option value="${t.name}"${dis}>${t.name} (${t.sha})</option>`;
+      }).join('');
+      h += '</optgroup>';
+    }
+    if (v.branches?.length) {
+      h += '<optgroup label="Branches">';
+      h += v.branches.map(b => {
+        const dis = b.name === excludeVal ? ' disabled style="color:#484f58"' : '';
+        return `<option value="${b.name}"${dis}>${b.name} (${b.sha})</option>`;
+      }).join('');
+      h += '</optgroup>';
+    }
+    return h || '<option value="">None</option>';
+  };
+
+  selA.innerHTML = buildOpts(curB);
+  selB.innerHTML = buildOpts(curA);
+
+  // Restore selections
+  if (curA) selA.value = curA;
+  if (curB) selB.value = curB;
+
+  // If no selection yet, default B to second option
+  if (!curA && !curB && selB.options.length > 1) {
+    selB.selectedIndex = 1;
+    // Re-populate A to disable the newly selected B value
+    selA.innerHTML = buildOpts(selB.value);
+  }
+}
+
+$('#versionASelect').addEventListener('change', populateVersionDropdowns);
+$('#versionBSelect').addEventListener('change', populateVersionDropdowns);
 $('#repoSelect').addEventListener('change', onRepoChange);
 
 $('#runBtn').addEventListener('click', async () => {

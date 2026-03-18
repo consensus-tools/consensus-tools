@@ -38,42 +38,34 @@ export function listSkills(repoLabel: string): string[] {
   return repo?.skillDirs ?? [];
 }
 
+export interface VersionEntry {
+  name: string;
+  sha: string; // short commit SHA
+}
+
 export function listVersions(
   owner: string,
   repo: string,
-): { tags: string[]; branches: string[] } {
+): { tags: VersionEntry[]; branches: VersionEntry[] } {
   try {
+    // Tags — GitHub returns newest first already
     const tagsOut = execFileSync(
       "gh",
-      [
-        "api",
-        `repos/${owner}/${repo}/tags`,
-        "--jq",
-        ".[].name",
-      ],
+      ["api", `repos/${owner}/${repo}/tags?per_page=30`, "--jq", `[.[] | {name: .name, sha: .commit.sha[:7]}]`],
       { encoding: "utf-8", timeout: 15000 },
     );
-    const tags = tagsOut
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .slice(0, 20);
+    const tags: VersionEntry[] = JSON.parse(tagsOut || "[]");
 
+    // Branches — put main/master first, then alphabetical
     const branchesOut = execFileSync(
       "gh",
-      [
-        "api",
-        `repos/${owner}/${repo}/branches`,
-        "--jq",
-        ".[].name",
-      ],
+      ["api", `repos/${owner}/${repo}/branches?per_page=50`, "--jq", `[.[] | {name: .name, sha: .commit.sha[:7]}]`],
       { encoding: "utf-8", timeout: 15000 },
     );
-    const branches = branchesOut
-      .trim()
-      .split("\n")
-      .filter(Boolean)
-      .slice(0, 20);
+    const rawBranches: VersionEntry[] = JSON.parse(branchesOut || "[]");
+    const mainBranches = rawBranches.filter(b => b.name === "main" || b.name === "master");
+    const otherBranches = rawBranches.filter(b => b.name !== "main" && b.name !== "master");
+    const branches = [...mainBranches, ...otherBranches];
 
     return { tags, branches };
   } catch (err: any) {
