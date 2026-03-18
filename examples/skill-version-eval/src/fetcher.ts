@@ -89,18 +89,14 @@ export function fetchSkillAt(
   ref: string,
 ): string | null {
   try {
-    const path = `${skill}/SKILL.md`;
+    const filePath = `${skill}/SKILL.md`;
     const result = execFileSync(
       "gh",
       [
         "api",
-        `repos/${owner}/${repo}/contents/${path}`,
+        `repos/${owner}/${repo}/contents/${filePath}?ref=${ref}`,
         "-H",
         "Accept: application/vnd.github.raw+json",
-        "--jq",
-        ".",
-        "-F",
-        `ref=${ref}`,
       ],
       { encoding: "utf-8", timeout: 15000 },
     );
