@@ -92,7 +92,7 @@ Bun.serve({
         const contentA = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionA);
         if (!contentA) {
           return jsonResponse(
-            { error: `Could not fetch ${skill}/SKILL.md at ref ${versionA}` },
+            { error: `${skill}/SKILL.md not found at "${versionA}" — this skill may not exist on that branch/tag` },
             404,
           );
         }
@@ -101,7 +101,7 @@ Bun.serve({
         const contentB = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionB);
         if (!contentB) {
           return jsonResponse(
-            { error: `Could not fetch ${skill}/SKILL.md at ref ${versionB}` },
+            { error: `${skill}/SKILL.md not found at "${versionB}" — this skill may not exist on that branch/tag` },
             404,
           );
         }

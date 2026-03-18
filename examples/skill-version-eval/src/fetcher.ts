@@ -90,11 +90,12 @@ export function fetchSkillAt(
 ): string | null {
   try {
     const filePath = `${skill}/SKILL.md`;
+    const encodedRef = encodeURIComponent(ref);
     const result = execFileSync(
       "gh",
       [
         "api",
-        `repos/${owner}/${repo}/contents/${filePath}?ref=${ref}`,
+        `repos/${owner}/${repo}/contents/${filePath}?ref=${encodedRef}`,
         "-H",
         "Accept: application/vnd.github.raw+json",
       ],
