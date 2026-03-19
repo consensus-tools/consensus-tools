@@ -93,3 +93,99 @@
 **Context:** The demo already shows score progression per skill in the final summary. This TODO would formalize that into a saveable/comparable format. The gstack-evals repo has a similar pattern: `test/fixtures/eval-baselines.json` pinning LLM judge scores.
 
 **Depends on:** T5 (audit log export) for the data format, though could also read directly from ndjson.
+
+---
+
+## T7: Guard Playground
+
+**What:** Interactive guard runner with colored vote breakdown and weight tweaking. `pnpm guard:playground --domain code-merge --input examples/sample-pr.json`.
+
+**Why:** Makes guard decisions explorable for debugging and demos. Currently there's no interactive way to see how guards evaluate input.
+
+**Pros:** Quick to build (~30 min), reuses unified GuardHandler, valuable for demos and development.
+
+**Cons:** Low priority — developers can invoke guards programmatically.
+
+**Context:** Depends on guard unification (unified GuardHandler). Should display vote breakdown, risk scores, and allow tweaking persona weights to see how decisions change.
+
+**Depends on:** Guard unification.
+
+---
+
+## T8: Decision Diff
+
+**What:** Replay past guard decisions with different persona weights. `pnpm guard:diff --domain publish --input blog.json --weights '...'`.
+
+**Why:** Makes the consensus system tangible and explorable. Shows how weight changes affect outcomes.
+
+**Pros:** Powerful debugging tool for tuning guard policies.
+
+**Cons:** Medium effort. Requires stored decision history and a replay mechanism.
+
+**Context:** Builds on T7 (Guard Playground). Needs access to historical guard results from storage.
+
+**Depends on:** T7 (Guard Playground) + stored decision history.
+
+---
+
+## T9: Cross-Guard Audit View
+
+**What:** Aggregate view of all guard decisions across domains. `pnpm guard:audit --last 24h` renders a summary table: domain, timestamp, decision, vote split, persona set.
+
+**Why:** First-ever aggregate view of consensus activity. Currently decisions are only visible per-guard.
+
+**Pros:** Quick to build (~30 min), uses existing board read APIs.
+
+**Cons:** Low priority — `jq` on board artifacts gets 80% of the way there.
+
+**Context:** Depends on @consensus-tools/storage being queryable. Uses guardResults from StorageState.
+
+**Depends on:** Storage package extraction.
+
+---
+
+## T10: /consensus-engineer Skill
+
+**What:** Claude Code skill wrapping the full consensus system — evaluate PRs, post jobs, show decision trails, run multi-persona votes.
+
+**Why:** The missing UX layer. All the infrastructure exists but there's no developer-friendly interface.
+
+**Pros:** Makes the entire consensus system accessible through natural language. Design spec at `docs/superpowers/specs/2026-03-18-consensus-engineer-skill-design.md`.
+
+**Cons:** Large effort. Requires understanding of MCP tools, CLI, and guard system.
+
+**Context:** Design spec written as part of guard unification PR. Implementation is a follow-up. Orchestrates 29 MCP tools + GuardHandler + CLI.
+
+**Depends on:** Guard unification (this PR).
+
+---
+
+## T11: Unify Persona Packages
+
+**What:** Merge consensus-persona-engine + consensus-persona-generator + consensus-persona-respawn into `@consensus-tools/personas`.
+
+**Why:** Same DRY/organizational debt as the guards. Three packages for one lifecycle (generate → manage → respawn).
+
+**Pros:** One import, one test suite, clearer lifecycle API.
+
+**Cons:** Medium effort, separate test migration. Same pattern as guard unification.
+
+**Context:** Three standalone npm packages in the workspace, each managing a different phase of persona lifecycle. Same unification pattern used for guards.
+
+**Depends on:** Guard unification (establishes the pattern).
+
+---
+
+## T12: Idempotency Race Condition Fix
+
+**What:** Fix race condition where two concurrent guard calls with same input can both create artifacts. Add atomic check-and-set to storage for idempotency keys.
+
+**Why:** Prevents duplicate decisions under concurrent load. Currently documented as a known limitation in GuardHandler.
+
+**Pros:** Correct idempotency guarantees.
+
+**Cons:** Requires SqliteStorage (T3) or optimistic locking. Medium effort.
+
+**Context:** The GuardHandler uses in-memory cache + storage lookup for idempotency. Two concurrent calls can both pass the check before either writes. Real fix requires atomic upsert in storage.
+
+**Depends on:** T3 (SqliteStorage redesign) or storage interface change.
