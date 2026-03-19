@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { GuardEvaluateInput, GuardResult, GuardPolicy } from "@consensus-tools/schemas";
 import { evaluatorVotes, finalizeVotes, normalizeGuardType, type GuardEvaluatorRegistry } from "@consensus-tools/guards";
-import type { IStorage } from "../storage/interface.js";
+import type { IStorage } from "@consensus-tools/storage";
 import type { AgentRegistry } from "./agent-registry.js";
 import { newId } from "../util/ids.js";
 import { nowIso } from "../util/time.js";

@@ -1,5 +1,5 @@
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
-import type { IStorage } from "../storage/interface.js";
+import type { IStorage } from "@consensus-tools/storage";
 import { JobEngine } from "../engine/engine.js";
 import { LedgerEngine } from "../ledger/ledger.js";
 

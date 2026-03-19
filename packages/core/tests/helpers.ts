@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 import { promises as fs } from "node:fs";
-import { JsonStorage } from "../src/storage/json.js";
+import { JsonStorage } from "@consensus-tools/storage";
 import { LedgerEngine } from "../src/ledger/ledger.js";
 import { JobEngine } from "../src/engine/engine.js";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";

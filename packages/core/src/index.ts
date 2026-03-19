@@ -35,14 +35,10 @@ export { LocalBoard } from "./board/board.js";
 export { LedgerEngine } from "./ledger/ledger.js";
 export { computeBalances, getBalance, ensureNonNegative } from "./ledger/rules.js";
 
-// ── Storage ─────────────────────────────────────────────────────────
-export type { IStorage, StorageCaps } from "./storage/interface.js";
-export { defaultState } from "./storage/interface.js";
-export { createStorage } from "./storage/factory.js";
-export { JsonStorage } from "./storage/json.js";
-export { SqliteStorage } from "./storage/sqlite.js";
+// ── Storage (re-exported from @consensus-tools/storage) ─────────────
+export type { IStorage, StorageCaps } from "@consensus-tools/storage";
+export { defaultState, applyStorageCaps, createStorage, JsonStorage, SqliteStorage, Mutex } from "@consensus-tools/storage";
 
 // ── Util ────────────────────────────────────────────────────────────
 export { newId, deepCopy } from "./util/ids.js";
-export { Mutex } from "./util/locks.js";
 export { nowIso, addSeconds, isPast } from "./util/time.js";

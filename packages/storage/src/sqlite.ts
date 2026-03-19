@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { Mutex } from "../util/locks.js";
+import { Mutex } from "./mutex.js";
 import { defaultState, applyStorageCaps, type StorageCaps } from "./interface.js";
 import type { IStorage } from "./interface.js";
 import type { StorageState } from "@consensus-tools/schemas";
