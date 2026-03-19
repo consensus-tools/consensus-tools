@@ -52,7 +52,8 @@ export class GuardHandler {
     this.registry = new GuardEvaluatorRegistry();
 
     if (opts.enableLogging !== false) {
-      this.events = new EventBuffer([new ConsoleSink()]);
+      // flushIntervalMs: 0 avoids a dangling setInterval timer
+      this.events = new EventBuffer([new ConsoleSink()], 100, 0);
     } else {
       this.events = null;
     }
