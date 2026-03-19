@@ -473,6 +473,12 @@ importers:
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../storage
+      '@consensus-tools/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
