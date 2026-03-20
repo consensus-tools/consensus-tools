@@ -10,6 +10,8 @@ export const guardTypeSchema = z.enum([
   "agent_action",
   "deployment",
   "permission_escalation",
+  "seo_fix",
+  "diff_check",
 ]);
 export type GuardType = z.infer<typeof guardTypeSchema>;
 
