@@ -1008,8 +1008,13 @@ plus a decision callback handler for audit trails.
 - `createGuardTool(domain)` — Single guard domain as a LangChain tool
 - `createGuardTools(domains?, customTemplates?)` — All 7 guards as tools + custom templates
 - `ConsensusCallbackHandler` — Records guard decisions in LangChain callback system
+- `LangSmithTracer` — Standalone tracer (no LangChain required) for decision tracing
+  - `tracer.traceGuardDecision({ domain, decision, risk, votes, input, durationMs })` — Trace guard eval
+  - `tracer.traceWrapperDecision({ name, action, aggregateScore, scores, attempt, durationMs })` — Trace wrapper
+  - `tracer.getTraceUrl(runId)` — Get LangSmith URL for a trace
+  - Peer dep: langsmith >= 0.4.0, requires LANGCHAIN_API_KEY env var
 
-**Dependencies:** schemas, guards. **Peer dep:** @langchain/core >= 0.3.0
+**Dependencies:** schemas, guards. **Peer deps:** @langchain/core >= 0.3.0, langsmith >= 0.4.0
 
 **Use case:** Add consensus guard evaluation to any LangChain agent. The agent
 calls `consensus_guard_publish` as a tool to check content safety before publishing.
@@ -1034,6 +1039,11 @@ Wraps any AI SDK generate call with consensus guard evaluation.
   - `opts.template` — Custom guard template (overrides domain)
   - `opts.onAllow/onBlock/onRewrite` — Lifecycle hooks
 - Returns: `{ decision, output, guard: { votes, risk } }`
+- `createGuardedStream(opts)` — Wrap streamText result with guard evaluation
+  - Stream passes through immediately (no buffering/blocking)
+  - Guard decision available as a promise: `const { stream, guard } = await guardedStream(streamResult)`
+  - `await guard` → `{ decision, text, guard: { votes, risk } }`
+  - Options: domain, template, onComplete hook
 
 **Dependencies:** schemas, guards. **Peer dep:** ai >= 4.0.0
 

@@ -6,3 +6,10 @@ export {
   type GuardedGenerateOptions,
   type GuardedResult,
 } from "./middleware.js";
+
+export {
+  createGuardedStream,
+  type GuardedStreamOptions,
+  type GuardedStreamResult,
+  type StreamGuardDecision,
+} from "./stream.js";
