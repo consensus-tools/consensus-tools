@@ -155,19 +155,9 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ---
 
-## T10: /consensus-engineer Skill
+## ~~T10: /consensus-engineer Skill~~ DONE (2026-03-20, Phase 1)
 
-**What:** Claude Code skill wrapping the full consensus system — evaluate PRs, post jobs, show decision trails, run multi-persona votes.
-
-**Why:** The missing UX layer. All the infrastructure exists but there's no developer-friendly interface.
-
-**Pros:** Makes the entire consensus system accessible through natural language. Design spec at `docs/superpowers/specs/2026-03-18-consensus-engineer-skill-design.md`.
-
-**Cons:** Large effort. Requires understanding of MCP tools, CLI, and guard system.
-
-**Context:** Design spec written as part of guard unification PR. Implementation is a follow-up. Orchestrates 29 MCP tools + GuardHandler + CLI.
-
-**Depends on:** Guard unification (this PR).
+Phase 1 shipped: llms.txt (2139-line system reference) + SKILL.md (359-line interactive 6-phase guide) + gen:llms validation script. Lives in `skills/consensus-engineer/`. Phase 2 (demo scaffolding, guard domain creation, schema generation) and Phase 3 (LangChain, LangSmith, Docker, AI SDK adapters) tracked as future work.
 
 ---
 
