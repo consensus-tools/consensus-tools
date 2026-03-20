@@ -3,6 +3,7 @@
 
 export type {
   PersonaConfig,
+  EvalPersonaConfig,
   PersonaSet,
   ReputationRuleset,
   ReputationChange,
@@ -10,3 +11,5 @@ export type {
   LearningSummary,
   RespawnResult,
 } from "./types.js";
+
+export { getPersonasByPack, getEvalPersonas, PERSONA_PACKS } from "./defaults.js";
