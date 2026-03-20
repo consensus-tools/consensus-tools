@@ -122,6 +122,8 @@ export function normalizeGuardType(type: string): GuardType {
     "agent_action",
     "deployment",
     "permission_escalation",
+    "seo_fix",
+    "diff_check",
   ];
   if (valid.includes(type as GuardType)) return type as GuardType;
   return "agent_action";
