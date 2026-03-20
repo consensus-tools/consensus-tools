@@ -16,3 +16,4 @@ export {
 } from "@consensus-tools/core";
 export { createPolicyRegistry, createRegistryResolver } from "./registry.js";
 export type { PolicyRegistry } from "./registry.js";
+export { createPolicyTemplate, type PolicyTemplate, type PolicyTemplateConfig } from "./templates.js";
