@@ -1,0 +1,40 @@
+{
+  "name": "@consensus-tools/ai-sdk",
+  "version": "0.5.0",
+  "description": "Vercel AI SDK adapter — consensus guard middleware for generateText/streamText",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/wrapper": "workspace:*"
+  },
+  "peerDependencies": {
+    "ai": ">=4.0.0"
+  },
+  "devDependencies": {
+    "ai": "^4.3.19",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "files": ["dist", "src"],
+  "license": "Apache-2.0",
+  "engines": { "node": ">=20.0.0" },
+  "sideEffects": false,
+  "publishConfig": { "access": "public" }
+}
