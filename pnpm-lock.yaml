@@ -514,6 +514,9 @@ importers:
         specifier: workspace:*
         version: link:../telemetry
     devDependencies:
+      '@consensus-tools/wrapper':
+        specifier: workspace:*
+        version: link:../wrapper
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.37
