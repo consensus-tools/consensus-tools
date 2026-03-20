@@ -23,7 +23,7 @@ module.exports = {
         "Tier 1 packages may only depend on Tier 0 (schemas, secrets).",
       severity: "error",
       from: {
-        path: "^packages/(guards|telemetry|sdk-client|evals|storage|personas)/|^packages/adapters/(integrations|notifications)/",
+        path: "^packages/(guards|telemetry|sdk-client|evals|storage|personas)/|^packages/adapters/(integrations|notifications|langchain|ai-sdk)/",
       },
       to: {
         path: "^packages/(core|policies|workflows|wrapper|cli|sdk-node)/|^packages/adapters/(mcp|openclaw)/",

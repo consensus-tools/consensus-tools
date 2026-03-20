@@ -20,8 +20,7 @@
   },
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
-    "@consensus-tools/guards": "workspace:*",
-    "@consensus-tools/wrapper": "workspace:*"
+    "@consensus-tools/guards": "workspace:*"
   },
   "peerDependencies": {
     "ai": ">=4.0.0"

@@ -349,9 +349,6 @@ importers:
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../../schemas
-      '@consensus-tools/wrapper':
-        specifier: workspace:*
-        version: link:../../wrapper
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
