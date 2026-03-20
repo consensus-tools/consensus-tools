@@ -1,17 +1,12 @@
 import * as fs from "fs";
 import * as path from "path";
-import { listRepos, listSkills, listVersions, fetchSkillAt } from "./fetcher.js";
+import { listCommits, fetchContent } from "./fetcher.js";
 import { runVersionEval, runDiffGuard } from "./eval-runner.js";
 
 const PORT = 3456;
-const DATA_DIR = path.join(import.meta.dir, "..", ".data", "runs");
 const UI_DIR = path.join(import.meta.dir, "..", "ui");
 
 let isRunning = false;
-
-function ensureDataDir() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 
 function jsonResponse(data: any, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -39,28 +34,45 @@ Bun.serve({
       }
     }
 
-    // API: list repos
-    if (pathname === "/api/repos" && req.method === "GET") {
-      return jsonResponse(listRepos());
-    }
-
-    // API: list skills for a repo
-    if (pathname === "/api/skills" && req.method === "GET") {
-      const repo = url.searchParams.get("repo") || "";
-      return jsonResponse(listSkills(repo));
-    }
-
-    // API: list versions (tags + branches)
-    if (pathname === "/api/versions" && req.method === "GET") {
+    // API: list commits for a file
+    if (pathname === "/api/commits" && req.method === "GET") {
       const owner = url.searchParams.get("owner") || "";
       const repo = url.searchParams.get("repo") || "";
-      if (!owner || !repo) {
-        return jsonResponse({ error: "owner and repo required" }, 400);
+      const filePath = url.searchParams.get("path") || "";
+      if (!owner || !repo || !filePath) {
+        return jsonResponse({ error: "owner, repo, and path are required" }, 400);
       }
-      return jsonResponse(listVersions(owner, repo));
+      try {
+        const commits = await listCommits(owner, repo, filePath);
+        return jsonResponse(commits);
+      } catch (err: any) {
+        const status = err.message?.includes("rate limit") ? 429 : 502;
+        return jsonResponse({ error: err.message || "Failed to fetch commits" }, status);
+      }
     }
 
-    // API: run eval
+    // API: fetch file content at a specific ref
+    if (pathname === "/api/content" && req.method === "GET") {
+      const owner = url.searchParams.get("owner") || "";
+      const repo = url.searchParams.get("repo") || "";
+      const filePath = url.searchParams.get("path") || "";
+      const ref = url.searchParams.get("ref") || "";
+      if (!owner || !repo || !filePath || !ref) {
+        return jsonResponse({ error: "owner, repo, path, and ref are required" }, 400);
+      }
+      try {
+        const content = await fetchContent(owner, repo, filePath, ref);
+        if (content === null) {
+          return jsonResponse({ error: "File not found at this ref" }, 404);
+        }
+        return jsonResponse({ content });
+      } catch (err: any) {
+        const status = err.message?.includes("rate limit") ? 429 : 502;
+        return jsonResponse({ error: err.message || "Failed to fetch content" }, status);
+      }
+    }
+
+    // API: run eval (client sends content — server does NOT re-fetch from GitHub)
     if (pathname === "/api/run" && req.method === "POST") {
       if (isRunning) {
         return jsonResponse({ error: "An evaluation is already running" }, 409);
@@ -73,55 +85,27 @@ Bun.serve({
         return jsonResponse({ error: "Invalid JSON body" }, 400);
       }
 
-      const { repo, skill, versionA, versionB, model } = body;
-      if (!repo || !skill || !versionA || !versionB || !model) {
+      const { skill, contentA, contentB, refA, refB, model } = body;
+      if (!skill || !contentA || !contentB || !refA || !refB || !model) {
         return jsonResponse(
-          { error: "Missing required fields: repo, skill, versionA, versionB, model" },
+          { error: "Missing required fields: skill, contentA, contentB, refA, refB, model" },
           400,
         );
       }
 
-      const repoInfo = listRepos().find((r) => r.label === repo);
-      if (!repoInfo) {
-        return jsonResponse({ error: `Unknown repo: ${repo}` }, 400);
-      }
-
       isRunning = true;
       try {
-        console.log(`Fetching ${skill}/SKILL.md at ${versionA}...`);
-        const contentA = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionA);
-        if (!contentA) {
-          return jsonResponse(
-            { error: `${skill}/SKILL.md not found at "${versionA}" — this skill may not exist on that branch/tag` },
-            404,
-          );
-        }
-
-        console.log(`Fetching ${skill}/SKILL.md at ${versionB}...`);
-        const contentB = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionB);
-        if (!contentB) {
-          return jsonResponse(
-            { error: `${skill}/SKILL.md not found at "${versionB}" — this skill may not exist on that branch/tag` },
-            404,
-          );
-        }
-
-        console.log(`Running eval: ${skill} ${versionA} vs ${versionB} with ${model}...`);
+        console.log(`Running eval: ${skill} ${refA} vs ${refB} with ${model}...`);
         const results = await runVersionEval(
           skill,
           contentA,
           contentB,
-          versionA,
-          versionB,
+          refA,
+          refB,
           model as any,
         );
 
-        // Save results
-        ensureDataDir();
-        const runFile = path.join(DATA_DIR, `${results.single.proposalId}.json`);
-        fs.writeFileSync(runFile, JSON.stringify(results, null, 2));
-        console.log(`Results saved to ${runFile}`);
-
+        console.log(`Eval complete: single=${results.single.winner}, consensus=${results.consensus.winner}`);
         return jsonResponse(results);
       } catch (err: any) {
         console.error("Eval failed:", err);
@@ -131,32 +115,7 @@ Bun.serve({
       }
     }
 
-    // API: list past runs
-    if (pathname === "/api/runs" && req.method === "GET") {
-      ensureDataDir();
-      try {
-        const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
-        const runs = files
-          .map((f) => {
-            try {
-              return JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), "utf-8"));
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean)
-          .sort((a: any, b: any) => {
-            const tA = a.single?.timestamp || a.consensus?.timestamp || "";
-            const tB = b.single?.timestamp || b.consensus?.timestamp || "";
-            return tB.localeCompare(tA);
-          });
-        return jsonResponse(runs);
-      } catch {
-        return jsonResponse([]);
-      }
-    }
-
-    // API: run diff guard (optional, triggered by button)
+    // API: run diff guard (client sends content)
     if (pathname === "/api/diff-guard" && req.method === "POST") {
       if (isRunning) {
         return jsonResponse({ error: "An evaluation is already running" }, 409);
@@ -165,30 +124,15 @@ Bun.serve({
       let body: any;
       try { body = await req.json(); } catch { return jsonResponse({ error: "Invalid JSON" }, 400); }
 
-      const { repo, skill, versionA, versionB, model, proposalId } = body;
-      if (!repo || !skill || !versionA || !versionB || !model || !proposalId) {
+      const { skill, contentA, contentB, model, proposalId } = body;
+      if (!skill || !contentA || !contentB || !model || !proposalId) {
         return jsonResponse({ error: "Missing required fields" }, 400);
       }
 
-      const repoInfo = listRepos().find((r) => r.label === repo);
-      if (!repoInfo) return jsonResponse({ error: `Unknown repo: ${repo}` }, 400);
-
       isRunning = true;
       try {
-        const contentA = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionA);
-        const contentB = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, versionB);
-        if (!contentA || !contentB) {
-          return jsonResponse({ error: "Could not fetch one or both versions" }, 404);
-        }
-
-        console.log(`Running diff guard: ${skill} ${versionA} vs ${versionB}...`);
+        console.log(`Running diff guard: ${skill} with ${model}...`);
         const result = await runDiffGuard(skill, contentA, contentB, model as any, proposalId);
-
-        // Save alongside the eval run
-        ensureDataDir();
-        const guardFile = path.join(DATA_DIR, `guard-${result.id}.json`);
-        fs.writeFileSync(guardFile, JSON.stringify(result, null, 2));
-
         return jsonResponse(result);
       } catch (err: any) {
         return jsonResponse({ error: err.message || "Diff guard failed" }, 500);
