@@ -1,5 +1,16 @@
 # Tech Debt & Future Work
 
+## Priority Order (updated 2026-03-20)
+
+```
+P0: T11 (Unify Personas) → T10 (/consensus-engineer)
+P2: T13 (GitHub auth), T7 (Guard Playground), T9 (Audit View)
+P3: T1, T2, T5, T6 (tech debt + demo tooling)
+P4: T3, T4, T8, T12 (deferred / blocked)
+```
+
+---
+
 ## T1: Decompose sdk-node/server.ts into route modules
 
 **What:** Split the 1014-line HTTP server into per-domain route files (jobs-routes.ts, guard-routes.ts, workflows-routes.ts, etc.).
@@ -160,19 +171,9 @@
 
 ---
 
-## T11: Unify Persona Packages
+## ~~T11: Unify Persona Packages~~ DONE (2026-03-20)
 
-**What:** Merge consensus-persona-engine + consensus-persona-generator + consensus-persona-respawn into `@consensus-tools/personas`.
-
-**Why:** Same DRY/organizational debt as the guards. Three packages for one lifecycle (generate → manage → respawn).
-
-**Pros:** One import, one test suite, clearer lifecycle API.
-
-**Cons:** Medium effort, separate test migration. Same pattern as guard unification.
-
-**Context:** Three standalone npm packages in the workspace, each managing a different phase of persona lifecycle. Same unification pattern used for guards.
-
-**Depends on:** Guard unification (establishes the pattern).
+Merged consensus-persona-engine + consensus-persona-generator + consensus-persona-respawn into `@consensus-tools/personas`. Standalone packages deleted. 28 tests, Tier 1 placement, evals re-imports from personas.
 
 ---
 
