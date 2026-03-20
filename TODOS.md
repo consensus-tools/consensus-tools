@@ -216,3 +216,23 @@ Merged consensus-persona-engine + consensus-persona-generator + consensus-person
 **Priority:** P2
 
 **Depends on:** Nothing — audit data already exists in storage.
+
+---
+
+## T15: Migrate Bun examples to vitest + tsx
+
+**What:** Convert skill-version-eval, skill-sandbox, and wrapper-demo from Bun runtime to vitest + tsx, matching the monorepo standard (pnpm + Turbo + vitest).
+
+**Why:** These 3 examples use `bun test` / `bun run` but CI doesn't have Bun. Currently their test scripts are `echo` skips, meaning CI never runs their tests. Migrating to vitest means Turbo runs them natively and CI catches regressions.
+
+**Pros:** CI actually tests these examples. Consistent tooling across the entire monorepo. No more Bun requirement for contributors.
+
+**Cons:** Small migration effort. `bun:test` → `vitest` requires changing imports (`import { describe, test, expect, mock } from "bun:test"` → `import { describe, it, expect, vi } from "vitest"`). `bun run` → `tsx` for dev scripts.
+
+**Context:** The core packages, cs-demo, and fintech-demo all use vitest/tsx. Only the 3 skill-related examples broke the pattern because they were created from a Bun-based repo (consensus-gstack-evals). The `globalThis.fetch` mocking pattern in fetcher.test.ts works the same in vitest.
+
+**Effort estimate:** S (~30 min)
+
+**Priority:** P3
+
+**Depends on:** Nothing.

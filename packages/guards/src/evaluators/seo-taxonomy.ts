@@ -40,8 +40,25 @@ export const SEO_HARD_BLOCK_PATTERNS: RegExp[] = SEO_PATTERN_GROUPS.flatMap(
 export function detectSeoHardBlocks(text: string): SeoHardBlockFlag[] {
   const flags: SeoHardBlockFlag[] = [];
   for (const group of SEO_PATTERN_GROUPS) {
-    if (group.patterns.some((p) => p.test(text))) {
-      flags.push(group.flag);
+    if (group.flag === "CONTENT_REWRITE") {
+      // Filter out script/style tag content before checking for visible text changes.
+      // Lines containing <script, <style, or application/ld+json are not visible content.
+      const filteredText = text
+        .split("\n")
+        .filter(
+          (line) =>
+            !/<script/i.test(line) &&
+            !/application\/ld\+json/i.test(line) &&
+            !/<style/i.test(line),
+        )
+        .join("\n");
+      if (group.patterns.some((p) => p.test(filteredText))) {
+        flags.push(group.flag);
+      }
+    } else {
+      if (group.patterns.some((p) => p.test(text))) {
+        flags.push(group.flag);
+      }
     }
   }
   return flags;

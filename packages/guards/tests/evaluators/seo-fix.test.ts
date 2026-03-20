@@ -49,6 +49,11 @@ describe("SEO hard-block taxonomy", () => {
       const result = detectSeoHardBlocks(">This is a paragraph of visible content that users will read<");
       expect(result).toContain("CONTENT_REWRITE");
     });
+
+    it("does NOT flag JSON-LD structured data content", () => {
+      const result = detectSeoHardBlocks('<script type="application/ld+json">{ "@context": "https://schema.org", "name": "Consensus Tools Platform" }</script>');
+      expect(result).not.toContain("CONTENT_REWRITE");
+    });
   });
 
   it("returns empty array for clean SEO content", () => {

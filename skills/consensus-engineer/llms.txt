@@ -1000,6 +1000,62 @@ AES-256-GCM credential encryption and storage. Zero internal dependencies.
 **Use case:** Store integration API keys (GitHub tokens, Slack tokens) securely
 at rest. Used by sdk-node for webhook auth.
 
+### @consensus-tools/langchain (v0.5.0)
+LangChain adapter — consensus-tools guards as LangChain DynamicStructuredTools
+plus a decision callback handler for audit trails.
+
+**Key exports:**
+- `createGuardTool(domain)` — Single guard domain as a LangChain tool
+- `createGuardTools(domains?, customTemplates?)` — All 7 guards as tools + custom templates
+- `ConsensusCallbackHandler` — Records guard decisions in LangChain callback system
+
+**Dependencies:** schemas, guards. **Peer dep:** @langchain/core >= 0.3.0
+
+**Use case:** Add consensus guard evaluation to any LangChain agent. The agent
+calls `consensus_guard_publish` as a tool to check content safety before publishing.
+The callback handler captures all guard decisions for audit.
+
+```typescript
+import { createGuardTools } from "@consensus-tools/langchain";
+import { ConsensusCallbackHandler } from "@consensus-tools/langchain";
+
+const tools = createGuardTools(["publish", "send_email"]);
+const handler = new ConsensusCallbackHandler();
+// Pass tools to your LangChain agent, handler as a callback
+```
+
+### @consensus-tools/ai-sdk (v0.5.0)
+Vercel AI SDK adapter — guard middleware for generateText/streamText.
+Wraps any AI SDK generate call with consensus guard evaluation.
+
+**Key exports:**
+- `createGuardedGenerate(opts)` — Wrap a generate function with guard evaluation
+  - `opts.domain` — Built-in guard domain (e.g., "publish")
+  - `opts.template` — Custom guard template (overrides domain)
+  - `opts.onAllow/onBlock/onRewrite` — Lifecycle hooks
+- Returns: `{ decision, output, guard: { votes, risk } }`
+
+**Dependencies:** schemas, guards. **Peer dep:** ai >= 4.0.0
+
+**Use case:** Gate LLM responses with consensus guards before returning to users.
+Wrap `generateText()` so output is evaluated for PII, profanity, or custom rules.
+
+```typescript
+import { createGuardedGenerate } from "@consensus-tools/ai-sdk";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const guardedGenerate = createGuardedGenerate({ domain: "publish" });
+const result = await guardedGenerate(() =>
+  generateText({ model: openai("gpt-4o"), prompt: "Write a blog post" })
+);
+if (result.decision === "allow") {
+  console.log(result.output.text);
+} else {
+  console.log("Blocked:", result.guard.votes);
+}
+```
+
 ```ts
 import { CredentialManager, encrypt, decrypt } from "@consensus-tools/secrets";
 ```
