@@ -17,17 +17,31 @@
 
     /* Controls */
     .controls { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .url-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+    .url-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .url-group label { font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .url-input { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; width: 100%; font-family: "SF Mono", Monaco, monospace; }
+    .url-input:focus { outline: none; border-color: #388bfd; }
+    .url-input.error { border-color: #f85149; }
+    .parsed-info { font-size: 0.75rem; color: #388bfd; margin-top: 4px; min-height: 1.2em; }
+    .parsed-info.error { color: #f85149; }
+
     .control-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
     .control-group { display: flex; flex-direction: column; gap: 4px; }
     .control-group label { font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
     select, button { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; min-width: 140px; cursor: pointer; }
     select:focus, button:focus { outline: none; border-color: #388bfd; }
-    optgroup { color: #8b949e; font-style: normal; }
     .btn-run { background: #238636; border-color: #238636; color: #fff; font-weight: 600; min-width: 120px; }
     .btn-run:hover:not(:disabled) { background: #2ea043; }
     .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
     .status-text { font-size: 0.8rem; color: #8b949e; align-self: center; min-width: 200px; }
     .status-text.error { color: #f85149; }
+
+    /* Toolbar */
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .btn-sm { background: #30363d; border: 1px solid #30363d; color: #c9d1d9; font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+    .btn-sm:hover { background: #484f58; }
+    .toolbar-spacer { flex: 1; }
 
     /* Cards */
     .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
@@ -96,32 +110,39 @@
 
     .empty-state { text-align: center; padding: 60px 20px; color: #484f58; }
     .empty-state h3 { color: #484f58; margin-bottom: 8px; }
+
+    /* Hidden file input */
+    #importInput { display: none; }
+
+    /* Keyboard hint */
+    .kbd-hint { font-size: 0.7rem; color: #484f58; align-self: center; }
   </style>
 </head>
 <body>
   <header>
     <h1>Skill Version Eval</h1>
-    <span class="tag">consensus-tools</span>
+    <span class="tag">any GitHub skill</span>
   </header>
 
   <div class="container">
     <div class="controls">
+      <div class="url-row">
+        <div class="url-group">
+          <label>GitHub URL to skill file</label>
+          <input type="text" class="url-input" id="urlInput"
+            placeholder="https://github.com/owner/repo/blob/main/path/to/SKILL.md" />
+          <div class="parsed-info" id="parsedInfo"></div>
+        </div>
+        <button class="btn-sm" id="loadBtn" style="min-width:100px">Load</button>
+      </div>
       <div class="control-row">
         <div class="control-group">
-          <label>Repo</label>
-          <select id="repoSelect"><option value="">Loading...</option></select>
-        </div>
-        <div class="control-group">
-          <label>Skill</label>
-          <select id="skillSelect"><option value="">Select repo first</option></select>
-        </div>
-        <div class="control-group">
           <label>Version A</label>
-          <select id="versionASelect"><option value="">Select repo</option></select>
+          <select id="versionASelect"><option value="">Paste a URL first</option></select>
         </div>
         <div class="control-group">
           <label>Version B</label>
-          <select id="versionBSelect"><option value="">Select repo</option></select>
+          <select id="versionBSelect"><option value="">Paste a URL first</option></select>
         </div>
         <div class="control-group">
           <label>Model</label>
@@ -132,113 +153,334 @@
         </div>
         <div class="control-group">
           <label>&nbsp;</label>
-          <button class="btn-run" id="runBtn">Run Eval</button>
+          <button class="btn-run" id="runBtn" disabled>Run Eval</button>
         </div>
         <div class="status-text" id="statusText"></div>
+        <span class="kbd-hint" id="kbdHint"></span>
       </div>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h2>Results</h2>
+    <!-- Diff preview (shown after selecting two versions) -->
+    <div id="diffPreviewSection" style="display:none;margin-bottom:24px">
+      <h2>Diff Preview</h2>
+      <div class="diff-preview" id="diffPreviewContent"></div>
+    </div>
+
+    <div class="toolbar">
+      <h2 style="margin-bottom:0">Results</h2>
       <span class="meta-text" id="resultCount"></span>
+      <div class="toolbar-spacer"></div>
+      <button class="btn-sm" id="exportBtn" style="display:none">Export JSON</button>
+      <button class="btn-sm" id="importBtn">Import JSON</button>
+      <input type="file" id="importInput" accept=".json" />
     </div>
     <div id="results">
-      <div class="empty-state"><h3>No results yet</h3><p>Select two versions and run an eval.</p></div>
+      <div class="empty-state"><h3>No results yet</h3><p>Paste a GitHub URL, pick two commits, and run an eval.</p></div>
     </div>
   </div>
 
 <script>
 const $ = s => document.querySelector(s);
-let repos = [], runs = [], cachedVersions = null;
-const openCards = new Set();
-const openGuards = new Set();
 
+// ─── State ───
+let runs = [];
+let parsed = null;         // {owner, repo, path} from URL
+let commits = [];          // CommitEntry[] for current file
+let contentCache = {};     // {sha: string} → content text
+let commitCache = new Map(); // "owner/repo/path" → CommitEntry[]
+const openCards = new Set();
+
+// ─── URL Parsing (client-side) ───
+function parseGitHubUrl(url) {
+  const trimmed = (url || '').trim();
+  if (!trimmed) return { error: 'Enter a GitHub URL' };
+
+  let parsed;
+  try { parsed = new URL(trimmed); } catch { return { error: 'Invalid URL' }; }
+
+  if (parsed.hostname !== 'github.com') {
+    return { error: 'URL must be from github.com' };
+  }
+
+  const parts = parsed.pathname.split('/').filter(Boolean);
+  // Expected: [owner, repo, "blob", ref, ...path]
+  if (parts.length < 2) return { error: 'URL must include owner and repo' };
+
+  const owner = parts[0];
+  const repo = parts[1];
+
+  if (parts.length < 5 || parts[2] !== 'blob') {
+    return { error: 'URL must point to a file (use a /blob/ URL)' };
+  }
+
+  // parts[3] is the ref (branch/tag/sha) — we ignore it (decision 10A)
+  // Everything after the ref is the file path
+  const filePath = parts.slice(4).join('/');
+  if (!filePath) return { error: 'URL must include a file path' };
+
+  return { owner, repo, path: filePath };
+}
+
+// ─── Relative time ───
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// ─── API helpers ───
 async function api(url, opts) {
   const res = await fetch(url, opts);
   if (!res.ok) { const b = await res.json().catch(()=>({})); throw new Error(b.error || `HTTP ${res.status}`); }
   return res.json();
 }
 
-// ── Controls ──
-async function loadRepos() {
-  repos = await api('/api/repos');
-  $('#repoSelect').innerHTML = repos.map(r => `<option value="${r.label}" data-owner="${r.owner}" data-repo="${r.repo}">${r.label}</option>`).join('');
-  if (repos.length) onRepoChange();
+async function fetchContentCached(owner, repo, path, sha) {
+  const key = `${owner}/${repo}/${path}@${sha}`;
+  if (contentCache[key]) return contentCache[key];
+  const data = await api(`/api/content?owner=${enc(owner)}&repo=${enc(repo)}&path=${enc(path)}&ref=${enc(sha)}`);
+  contentCache[key] = data.content;
+  return data.content;
 }
 
-async function onRepoChange() {
-  const label = $('#repoSelect').value;
-  const repo = repos.find(r => r.label === label);
-  if (!repo) return;
-  try {
-    const skills = await api(`/api/skills?repo=${label}`);
-    $('#skillSelect').innerHTML = skills.map(s => `<option value="${s}">${s}</option>`).join('');
-  } catch { $('#skillSelect').innerHTML = '<option value="">Error</option>'; }
-  try {
-    cachedVersions = await api(`/api/versions?owner=${repo.owner}&repo=${repo.repo}`);
-    populateVersionDropdowns();
-  } catch { $('#versionASelect').innerHTML = $('#versionBSelect').innerHTML = '<option value="">Error</option>'; }
+function enc(s) { return encodeURIComponent(s); }
+
+// ─── URL hash state ───
+function saveHashState() {
+  if (parsed) {
+    location.hash = `github.com/${parsed.owner}/${parsed.repo}/blob/main/${parsed.path}`;
+  }
 }
-function populateVersionDropdowns() {
-  const v = cachedVersions;
-  if (!v) return;
-  const selA = $('#versionASelect'), selB = $('#versionBSelect');
+
+function loadHashState() {
+  const hash = location.hash.slice(1); // remove #
+  if (!hash) return;
+  const url = `https://${hash}`;
+  $('#urlInput').value = url;
+  handleUrlInput();
+}
+
+// ─── Controls ───
+async function handleUrlInput() {
+  const result = parseGitHubUrl($('#urlInput').value);
+  const info = $('#parsedInfo');
+
+  if (result.error) {
+    info.textContent = result.error;
+    info.className = 'parsed-info error';
+    $('#urlInput').classList.add('error');
+    parsed = null;
+    commits = [];
+    updateVersionDropdowns();
+    return;
+  }
+
+  info.textContent = `${result.owner}/${result.repo} — ${result.path}`;
+  info.className = 'parsed-info';
+  $('#urlInput').classList.remove('error');
+  parsed = result;
+
+  // Check commit cache
+  const cacheKey = `${parsed.owner}/${parsed.repo}/${parsed.path}`;
+  if (commitCache.has(cacheKey)) {
+    commits = commitCache.get(cacheKey);
+    updateVersionDropdowns();
+    saveHashState();
+    return;
+  }
+
+  // Fetch commits
+  info.textContent += ' — loading commits...';
+  try {
+    commits = await api(`/api/commits?owner=${enc(parsed.owner)}&repo=${enc(parsed.repo)}&path=${enc(parsed.path)}`);
+    commitCache.set(cacheKey, commits);
+    info.textContent = `${parsed.owner}/${parsed.repo} — ${parsed.path} (${commits.length} commits)`;
+    updateVersionDropdowns();
+    saveHashState();
+  } catch (e) {
+    info.textContent = e.message;
+    info.className = 'parsed-info error';
+    commits = [];
+    updateVersionDropdowns();
+  }
+}
+
+function updateVersionDropdowns() {
+  const selA = $('#versionASelect');
+  const selB = $('#versionBSelect');
+
+  if (!commits.length) {
+    selA.innerHTML = '<option value="">No commits loaded</option>';
+    selB.innerHTML = '<option value="">No commits loaded</option>';
+    $('#runBtn').disabled = true;
+    hideDiffPreview();
+    return;
+  }
+
   const curA = selA.value, curB = selB.value;
 
-  const buildOpts = (excludeVal) => {
-    let h = '';
-    if (v.tags?.length) {
-      h += '<optgroup label="Tags">';
-      h += v.tags.map(t => {
-        const dis = t.name === excludeVal ? ' disabled style="color:#484f58"' : '';
-        return `<option value="${t.name}"${dis}>${t.name} (${t.sha})</option>`;
-      }).join('');
-      h += '</optgroup>';
-    }
-    if (v.branches?.length) {
-      h += '<optgroup label="Branches">';
-      h += v.branches.map(b => {
-        const dis = b.name === excludeVal ? ' disabled style="color:#484f58"' : '';
-        return `<option value="${b.name}"${dis}>${b.name} (${b.sha})</option>`;
-      }).join('');
-      h += '</optgroup>';
-    }
-    return h || '<option value="">None</option>';
+  const buildOpts = (excludeSha) => {
+    return commits.map(c => {
+      const dis = c.sha === excludeSha ? ' disabled style="color:#484f58"' : '';
+      const label = `${c.shortSha} — ${esc(c.message.slice(0, 60))} (${relativeTime(c.date)})`;
+      return `<option value="${c.sha}"${dis}>${label}</option>`;
+    }).join('');
   };
 
   selA.innerHTML = buildOpts(curB);
   selB.innerHTML = buildOpts(curA);
 
-  // Restore selections
-  if (curA) selA.value = curA;
-  if (curB) selB.value = curB;
+  // Restore or set defaults
+  if (curA && commits.some(c => c.sha === curA)) selA.value = curA;
+  if (curB && commits.some(c => c.sha === curB)) selB.value = curB;
 
-  // If no selection yet, default B to second option
-  if (!curA && !curB && selB.options.length > 1) {
-    selB.selectedIndex = 1;
-    // Re-populate A to disable the newly selected B value
-    selA.innerHTML = buildOpts(selB.value);
+  // Default: A = first commit, B = second commit
+  if (!curA && !curB && commits.length >= 2) {
+    selA.value = commits[0].sha;
+    selB.value = commits[1].sha;
+    selA.innerHTML = buildOpts(commits[1].sha);
+    selB.innerHTML = buildOpts(commits[0].sha);
+  }
+
+  $('#runBtn').disabled = !selA.value || !selB.value || selA.value === selB.value;
+  loadDiffPreview();
+}
+
+$('#versionASelect').addEventListener('change', () => { updateVersionDropdowns(); });
+$('#versionBSelect').addEventListener('change', () => { updateVersionDropdowns(); });
+$('#loadBtn').addEventListener('click', handleUrlInput);
+$('#urlInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleUrlInput();
+});
+
+// ─── Diff preview ───
+let diffLoading = false;
+async function loadDiffPreview() {
+  const shaA = $('#versionASelect').value;
+  const shaB = $('#versionBSelect').value;
+  if (!parsed || !shaA || !shaB || shaA === shaB) {
+    hideDiffPreview();
+    return;
+  }
+
+  if (diffLoading) return;
+  diffLoading = true;
+
+  try {
+    const [contentA, contentB] = await Promise.all([
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaA),
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaB),
+    ]);
+
+    const diff = simpleDiff(contentA, contentB);
+    $('#diffPreviewContent').innerHTML = colorizeDiff(diff);
+    $('#diffPreviewSection').style.display = '';
+  } catch (e) {
+    $('#diffPreviewContent').innerHTML = `<span style="color:#f85149">${esc(e.message)}</span>`;
+    $('#diffPreviewSection').style.display = '';
+  } finally {
+    diffLoading = false;
   }
 }
 
-$('#versionASelect').addEventListener('change', populateVersionDropdowns);
-$('#versionBSelect').addEventListener('change', populateVersionDropdowns);
-$('#repoSelect').addEventListener('change', onRepoChange);
+function hideDiffPreview() {
+  $('#diffPreviewSection').style.display = 'none';
+}
 
-$('#runBtn').addEventListener('click', async () => {
-  const repo = $('#repoSelect').value, skill = $('#skillSelect').value;
-  const vA = $('#versionASelect').value, vB = $('#versionBSelect').value, model = $('#modelSelect').value;
-  if (!repo || !skill || !vA || !vB) { showStatus('Select all fields', true); return; }
-  if (vA === vB) { showStatus('Versions must differ', true); return; }
+// Client-side simple line diff
+function simpleDiff(textA, textB) {
+  const linesA = textA.split('\n');
+  const linesB = textB.split('\n');
+  const result = [];
+  const maxLen = Math.max(linesA.length, linesB.length);
+  // Simple line-by-line comparison (not a proper LCS diff, but good enough for preview)
+  let ia = 0, ib = 0;
+  while (ia < linesA.length || ib < linesB.length) {
+    if (ia >= linesA.length) {
+      result.push('+' + linesB[ib]);
+      ib++;
+    } else if (ib >= linesB.length) {
+      result.push('-' + linesA[ia]);
+      ia++;
+    } else if (linesA[ia] === linesB[ib]) {
+      result.push(' ' + linesA[ia]);
+      ia++; ib++;
+    } else {
+      result.push('-' + linesA[ia]);
+      result.push('+' + linesB[ib]);
+      ia++; ib++;
+    }
+  }
+  return result.join('\n');
+}
+
+// ─── Run eval ───
+$('#runBtn').addEventListener('click', runEval);
+
+async function runEval() {
+  const shaA = $('#versionASelect').value;
+  const shaB = $('#versionBSelect').value;
+  const model = $('#modelSelect').value;
+
+  if (!parsed || !shaA || !shaB) { showStatus('Select all fields', true); return; }
+  if (shaA === shaB) { showStatus('Versions must differ', true); return; }
+
   $('#runBtn').disabled = true;
   showStatus('Running eval — single (2 calls) + consensus (10 calls)...');
+
   try {
-    await api('/api/run', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({repo, skill, versionA: vA, versionB: vB, model}) });
+    // Ensure we have content (may already be cached from diff preview)
+    const [contentA, contentB] = await Promise.all([
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaA),
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaB),
+    ]);
+
+    // Extract skill name from path (last directory component or filename without extension)
+    const pathParts = parsed.path.split('/');
+    const skill = pathParts.length > 1 ? pathParts[pathParts.length - 2] : pathParts[0].replace(/\.md$/, '');
+
+    const result = await api('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill,
+        contentA,
+        contentB,
+        refA: shaA.slice(0, 7),
+        refB: shaB.slice(0, 7),
+        model,
+      }),
+    });
+
+    // Store content refs for diff guard
+    result._contentA = contentA;
+    result._contentB = contentB;
+    result._skill = skill;
+
+    runs.unshift(result);
     showStatus('Done!');
-    loadRuns();
-  } catch (e) { showStatus(e.message, true); }
-  finally { $('#runBtn').disabled = false; }
+    renderRuns();
+  } catch (e) {
+    showStatus(e.message, true);
+  } finally {
+    $('#runBtn').disabled = false;
+  }
+}
+
+// Cmd+Enter / Ctrl+Enter to run eval
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    if (!$('#runBtn').disabled) runEval();
+  }
 });
+// Show keyboard hint
+$('#kbdHint').textContent = navigator.platform.includes('Mac') ? '\u2318+Enter to run' : 'Ctrl+Enter to run';
 
 function showStatus(msg, err) {
   const el = $('#statusText');
@@ -247,7 +489,81 @@ function showStatus(msg, err) {
   if (!err) setTimeout(() => { el.textContent = ''; }, 5000);
 }
 
-// ── Rendering ──
+// ─── Import / Export ───
+$('#exportBtn').addEventListener('click', () => {
+  const data = JSON.stringify(runs.map(r => ({ single: r.single, consensus: r.consensus, diffGuard: r.diffGuard })), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `skill-eval-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$('#importBtn').addEventListener('click', () => { $('#importInput').click(); });
+
+$('#importInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Size check (10MB max)
+  if (file.size > 10 * 1024 * 1024) {
+    showStatus('File too large (max 10MB)', true);
+    e.target.value = '';
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    // Validate shape
+    if (!Array.isArray(data)) {
+      showStatus('Invalid format: expected a JSON array', true);
+      e.target.value = '';
+      return;
+    }
+
+    // Validate each entry has single + consensus
+    const valid = data.filter(r =>
+      r && r.single && r.consensus &&
+      r.single.proposalId && r.single.skill
+    );
+
+    if (valid.length === 0) {
+      showStatus('No valid eval results found in file', true);
+      e.target.value = '';
+      return;
+    }
+
+    // Merge with dedup on proposalId
+    const existingIds = new Set(runs.map(r => r.single?.proposalId));
+    let added = 0;
+    for (const entry of valid) {
+      if (!existingIds.has(entry.single.proposalId)) {
+        runs.push(entry);
+        existingIds.add(entry.single.proposalId);
+        added++;
+      }
+    }
+
+    // Sort by timestamp descending
+    runs.sort((a, b) => {
+      const tA = a.single?.timestamp || '';
+      const tB = b.single?.timestamp || '';
+      return tB.localeCompare(tA);
+    });
+
+    showStatus(`Imported ${added} new result${added === 1 ? '' : 's'} (${valid.length - added} duplicates skipped)`);
+    renderRuns();
+  } catch {
+    showStatus('Invalid JSON file', true);
+  }
+
+  e.target.value = ''; // reset file input
+});
+
+// ─── Rendering (largely preserved from original) ───
 function scoreColor(v) {
   if (v >= 4.5) return '#3fb950';
   if (v >= 3.5) return '#388bfd';
@@ -311,49 +627,6 @@ function renderPanel(result, modeLabel, badgeClass) {
   </div>`;
 }
 
-function renderRuns() {
-  if (!runs.length) {
-    $('#results').innerHTML = '<div class="empty-state"><h3>No results yet</h3><p>Select two versions and run an eval.</p></div>';
-    $('#resultCount').textContent = '';
-    return;
-  }
-  $('#resultCount').textContent = `${runs.length} eval${runs.length === 1 ? '' : 's'}`;
-  $('#results').innerHTML = runs.map(run => {
-    const s = run.single, c = run.consensus;
-    const agree = s.winner === c.winner;
-    const pid = s.proposalId;
-    const isOpen = openCards.has(pid);
-    const guardOpen = openGuards.has(pid);
-    const guard = run.diffGuard;
-
-    return `<div class="card${isOpen ? ' open' : ''}" data-pid="${pid}">
-      <div class="card-header" onclick="toggle('${pid}')">
-        <span class="arrow">&#9654;</span>
-        <span style="font-weight:600;color:#e6edf3">${esc(s.skill)}</span>
-        <span class="meta-text">${esc(s.versionA.ref)} → ${esc(s.versionB.ref)}</span>
-        <span class="model-tag">${esc(s.model)}</span>
-        <span class="badge ${agree ? 'badge-agree' : 'badge-disagree'}">${agree ? 'AGREE' : 'DISAGREE'}</span>
-        <span class="badge ${s.winner === 'A' ? 'badge-a' : s.winner === 'B' ? 'badge-b' : 'badge-tie'}">single: ${s.winner}</span>
-        <span class="badge ${c.winner === 'A' ? 'badge-a' : c.winner === 'B' ? 'badge-b' : 'badge-tie'}">consensus: ${c.winner}</span>
-      </div>
-      <div class="card-body">
-        <h3>Diff (for reference)</h3>
-        <div class="diff-preview">${colorizeDiff(s.fullDiff || s.diffSummary || '')}</div>
-        <div class="panels">
-          ${renderPanel(s, 'Single (1 judge)', 'badge-single')}
-          ${renderPanel(c, 'Consensus (5 judges)', 'badge-consensus')}
-        </div>
-        <div class="guard-section">
-          ${guard
-            ? renderGuardResult(guard)
-            : `<button class="btn-guard" onclick="runGuard('${pid}', event)" id="guard-btn-${pid}">Run Diff Guard Analysis</button>`
-          }
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 function renderGuardResult(guard) {
   const decBadge = guard.decision === 'ALLOW' ? 'badge-allow'
     : guard.decision === 'BLOCK' ? 'badge-block'
@@ -374,7 +647,54 @@ function renderGuardResult(guard) {
     }).join('')}`;
 }
 
-// ── Actions ──
+function renderRuns() {
+  // Show/hide export button
+  $('#exportBtn').style.display = runs.length ? '' : 'none';
+
+  if (!runs.length) {
+    $('#results').innerHTML = '<div class="empty-state"><h3>No results yet</h3><p>Paste a GitHub URL, pick two commits, and run an eval.</p></div>';
+    $('#resultCount').textContent = '';
+    return;
+  }
+  $('#resultCount').textContent = `${runs.length} eval${runs.length === 1 ? '' : 's'}`;
+  $('#results').innerHTML = runs.map(run => {
+    const s = run.single, c = run.consensus;
+    const agree = s.winner === c.winner;
+    const pid = s.proposalId;
+    const isOpen = openCards.has(pid);
+    const guard = run.diffGuard;
+
+    return `<div class="card${isOpen ? ' open' : ''}" data-pid="${pid}">
+      <div class="card-header" onclick="toggle('${pid}')">
+        <span class="arrow">&#9654;</span>
+        <span style="font-weight:600;color:#e6edf3">${esc(s.skill)}</span>
+        <span class="meta-text">${esc(s.versionA.ref)} \u2192 ${esc(s.versionB.ref)}</span>
+        <span class="model-tag">${esc(s.model)}</span>
+        <span class="badge ${agree ? 'badge-agree' : 'badge-disagree'}">${agree ? 'AGREE' : 'DISAGREE'}</span>
+        <span class="badge ${s.winner === 'A' ? 'badge-a' : s.winner === 'B' ? 'badge-b' : 'badge-tie'}">single: ${s.winner}</span>
+        <span class="badge ${c.winner === 'A' ? 'badge-a' : c.winner === 'B' ? 'badge-b' : 'badge-tie'}">consensus: ${c.winner}</span>
+      </div>
+      <div class="card-body">
+        <h3>Diff (for reference)</h3>
+        <div class="diff-preview">${colorizeDiff(s.fullDiff || s.diffSummary || '')}</div>
+        <div class="panels">
+          ${renderPanel(s, 'Single (1 judge)', 'badge-single')}
+          ${renderPanel(c, 'Consensus (5 judges)', 'badge-consensus')}
+        </div>
+        <div class="guard-section">
+          ${guard
+            ? renderGuardResult(guard)
+            : run._contentA
+              ? `<button class="btn-guard" onclick="runGuard('${pid}', event)" id="guard-btn-${pid}">Run Diff Guard Analysis</button>`
+              : `<span class="meta-text">Diff guard unavailable for imported results</span>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Actions ───
 function toggle(pid) {
   openCards.has(pid) ? openCards.delete(pid) : openCards.add(pid);
   const el = document.querySelector(`[data-pid="${pid}"]`);
@@ -385,14 +705,22 @@ async function runGuard(pid, event) {
   event.stopPropagation();
   const run = runs.find(r => r.single.proposalId === pid);
   if (!run) return;
+
   const btn = $(`#guard-btn-${pid}`);
   if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+
   try {
     const s = run.single;
-    const repo = $('#repoSelect').value;
     const guard = await api('/api/diff-guard', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ repo, skill: s.skill, versionA: s.versionA.ref, versionB: s.versionB.ref, model: s.model, proposalId: pid }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill: run._skill || s.skill,
+        contentA: run._contentA || '',
+        contentB: run._contentB || '',
+        model: s.model,
+        proposalId: pid,
+      }),
     });
     run.diffGuard = guard;
     renderRuns();
@@ -411,22 +739,8 @@ function colorizeDiff(diff) {
 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// ── Data loading ──
-async function loadRuns() {
-  try {
-    const all = await api('/api/runs');
-    // Merge diff guard results into their parent runs
-    runs = all.map(r => {
-      if (r.single && r.consensus) return r; // already a run pair
-      return r;
-    });
-    renderRuns();
-  } catch {}
-}
-
-loadRepos();
-loadRuns();
-setInterval(loadRuns, 5000);
+// ─── Init ───
+loadHashState();
 </script>
 </body>
 </html>
