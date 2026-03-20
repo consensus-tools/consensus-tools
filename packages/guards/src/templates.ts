@@ -1,6 +1,21 @@
 import type { GuardVote, GuardEvaluateInput } from "@consensus-tools/schemas";
-import type { ReviewerFn, ReviewResult, ReviewContext } from "@consensus-tools/wrapper";
 import type { GuardEvaluatorRegistry } from "./registry.js";
+
+// Inline wrapper-compatible types to avoid circular dependency (guards=Tier1, wrapper=Tier3).
+// These match @consensus-tools/wrapper's ReviewerFn/ReviewResult/ReviewContext exactly.
+interface ReviewContext {
+  name: string;
+  args: unknown[];
+  attempt: number;
+}
+
+interface ReviewResult {
+  score: number;
+  rationale?: string;
+  block?: boolean;
+}
+
+type ReviewerFn<T = unknown> = (output: T, context: ReviewContext) => Promise<ReviewResult> | ReviewResult;
 
 /**
  * Guard template — reusable configuration for a custom guard domain.
