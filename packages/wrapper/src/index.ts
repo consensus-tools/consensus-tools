@@ -1,5 +1,6 @@
 export { consensus } from "./consensus.js";
 export { aggregateScores } from "./strategy.js";
+export { createWrapperTemplate, type WrapperTemplate, type WrapperTemplateConfig } from "./templates.js";
 export type {
   ConsensusOptions,
   ReviewerFn,
