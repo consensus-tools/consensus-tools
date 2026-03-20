@@ -198,6 +198,37 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(vite@7.3.1(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0))
 
+  examples/fintech-demo:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^1.3.0
+        version: 1.3.24(zod@3.25.76)
+      '@consensus-tools/evals':
+        specifier: workspace:*
+        version: link:../../packages/evals
+      '@consensus-tools/guards':
+        specifier: workspace:*
+        version: link:../../packages/guards
+      '@consensus-tools/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
+      '@consensus-tools/telemetry':
+        specifier: workspace:*
+        version: link:../../packages/telemetry
+      ai:
+        specifier: ^4.3.0
+        version: 4.3.19(react@18.3.1)(zod@3.25.76)
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+    devDependencies:
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(vite@7.3.1(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0))
+
   examples/mcp-server:
     dependencies:
       '@consensus-tools/core':
@@ -454,6 +485,9 @@ importers:
       '@consensus-tools/guards':
         specifier: workspace:*
         version: link:../guards
+      '@consensus-tools/personas':
+        specifier: workspace:*
+        version: link:../personas
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../schemas
@@ -489,6 +523,22 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0)
+
+  packages/personas:
+    dependencies:
+      '@consensus-tools/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(vite@7.3.1(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0))
 
   packages/policies:
     dependencies:
