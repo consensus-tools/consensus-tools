@@ -148,10 +148,35 @@ approval-threshold, lazy-consensus, round-robin.
 Options: yes (SOC2/HIPAA/internal audit), nice-to-have (logging without compliance
 mandate), no (governance logic only). Consult llms.txt ## Storage and ## Telemetry.
 
-After all questions, output a capability map:
+### Detecting the right integration pattern
+
+Based on the user's answers to Q1-Q4, recommend one of three patterns.
+Consult llms.txt ## Templates for API details.
+
+**Guards pattern** (workflow/API style):
+- User needs audit trails, compliance, pre-execution gates
+- Decisions happen before actions (pre-execution)
+- Multiple domains to evaluate
+- Compliance/regulatory requirements
+-> Recommend: createGuardTemplate + GuardHandler
+
+**Wrapper pattern** (in-memory function gating):
+- User wraps function calls
+- Decisions evaluate output quality
+- Low-latency requirements
+- Score-based pass/fail
+-> Recommend: createWrapperTemplate + consensus()
+
+**Hybrid pattern** (guards as wrapper reviewers):
+- User needs both input governance AND output quality
+- Guard templates provide the rules, wrapper provides the runtime gate
+-> Recommend: createGuardTemplate.asReviewer() + createWrapperTemplate
+
+After all questions, output a capability map including the detected pattern:
 ```
 CAPABILITY MAP
 ==============
+Integration:       Guards pattern (or Wrapper / Hybrid)
 Guard Domains:     publish, agent-action
 Consensus Policy:  supermajority (hybrid HITL)
 Persona Pack:      default-5 (Ethics, Security, UX, Legal, Technical)
@@ -244,12 +269,35 @@ Detect package manager (pnpm/bun/npm) and run the appropriate install command wi
 Write config with: guardDomains, consensusPolicy, personas (pack + weights), storage (driver + path), hitl settings. All values from Phase 2 answers.
 
 ### Create starter TypeScript file
-Consult llms.txt for accurate imports, types, and API. Include:
-1. Import statements for recommended packages
-2. Configured guard handler with their domains
-3. Sample input matching their use case
-4. Storage initialization
-5. Runnable `main()` that evaluates and prints results
+
+Based on the integration pattern detected in Phase 2, scaffold the right starter
+code. Consult llms.txt ## Templates for accurate imports, types, and API.
+
+**Guards pattern starter:**
+1. Import `createGuardTemplate` from `@consensus-tools/guards`
+2. Define rules function with domain-specific evaluation logic
+3. Add hardBlockPatterns for known dangerous inputs
+4. Register into GuardHandler, evaluate sample input, print results
+5. Include storage initialization for audit trail
+
+**Wrapper pattern starter:**
+1. Import `createWrapperTemplate` from `@consensus-tools/wrapper`
+2. Define reviewer functions (score-based)
+3. Configure strategy and threshold
+4. Wrap the user's target function, run with sample input, print results
+
+**Hybrid pattern starter:**
+1. Import both `createGuardTemplate` and `createWrapperTemplate`
+2. Define guard template with rules and hardBlockPatterns
+3. Use `.asReviewer()` to convert guard votes to wrapper-compatible scores
+4. Create wrapper template with guard reviewer + additional reviewers
+5. Wrap target function, run with sample input, print results
+6. Reference `examples/wrapper-demo` for a complete working example
+
+All patterns should include:
+- Runnable `main()` that evaluates and prints results
+- Sample input matching the user's domain and terminology
+- Clear console output showing decision, scores, and reasoning
 
 Place at `src/consensus.ts` or ask user for preferred location.
 

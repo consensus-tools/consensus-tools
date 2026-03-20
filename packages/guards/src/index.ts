@@ -4,3 +4,4 @@ export { finalizeVotes, computeDecision, normalizeGuardType } from "./decision.j
 export { GuardEvaluatorRegistry, createGuardEvaluatorRegistry, type EvaluatorFn } from "./registry.js";
 export { detectHardBlockFlags, HARD_BLOCK_FLAGS, type HardBlockFlag } from "./taxonomy.js";
 export { GuardHandler, type GuardHandlerOptions } from "./handler.js";
+export { createGuardTemplate, type GuardTemplate, type GuardTemplateConfig } from "./templates.js";

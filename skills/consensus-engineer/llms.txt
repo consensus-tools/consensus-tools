@@ -1558,6 +1558,14 @@ Skill version evaluation with consensus guards.
 ### example-background-worker
 Background worker pattern with consensus job polling.
 
+### example-wrapper-demo
+LLM output safety gate using guard templates + wrapper templates together.
+Demonstrates the hybrid pattern: createGuardTemplate().asReviewer() feeds
+guard-based votes into a createWrapperTemplate() for runtime function gating.
+
+**Stack:** consensus guards + wrapper, Bun runtime
+**Run:** `cd examples/wrapper-demo && bun run demo`
+
 ---
 
 ## Use Case Mapping
@@ -2106,6 +2114,225 @@ function finalizeVotes(votes: GuardVote[], actionType: string, policy?: GuardPol
 function computeDecision(votes: WeightedGuardVote[], policy: GuardPolicy, mode?: WeightingMode): { decision: GuardDecision; tally: VoteTally; quorumMet: boolean; weightedYesRatio: number; combinedRisk: number };
 function detectHardBlockFlags(text: string): HardBlockFlag[];
 function normalizeGuardType(type: string): GuardType;
+```
+
+---
+
+## Templates
+
+Templates are the developer-facing API for creating custom governance domains.
+A template is a reusable configuration object (not a class) with convenience
+methods for registration and cross-interface consumption.
+
+### createGuardTemplate(name, config)
+
+Create a custom guard evaluator from user-defined rules.
+
+```ts
+import { createGuardTemplate } from "@consensus-tools/guards";
+
+const template = createGuardTemplate("loan_approval", {
+  // Required: rules function receives action payload, returns guard votes
+  rules: (payload) => {
+    if ((payload["amount"] as number) > 100_000) {
+      return [{ evaluator: "loan-risk", vote: "NO", reason: "High-value loan requires review", risk: 0.9 }];
+    }
+    return [{ evaluator: "loan-risk", vote: "YES", reason: "Standard loan", risk: 0.2 }];
+  },
+  // Optional: regex patterns that auto-block before rules run
+  hardBlockPatterns: [/fraud/i, /sanctions/i],
+  // Optional: human-readable description
+  description: "Evaluates loan applications for risk",
+});
+```
+
+**Config shape:**
+```ts
+{
+  rules: (payload: Record<string, unknown>) => GuardVote[];
+  hardBlockPatterns?: RegExp[];
+  description?: string;
+}
+```
+
+**Returns:**
+```ts
+{
+  name: string;
+  evaluate(input: GuardEvaluateInput): GuardVote[];
+  asReviewer(): ReviewerFn;      // Wrapper-compatible reviewer
+  register(registry: GuardEvaluatorRegistry): void;
+  description: string;
+}
+```
+
+- `.evaluate(input)` — runs hard-block patterns (scans all string values in payload), then calls rules
+- `.asReviewer()` — converts guard votes to wrapper-compatible review scores:
+  - YES vote -> high score (> 0.5), block: false
+  - NO vote -> low score (< 0.5), block: true
+  - REWRITE vote -> mid score, block: false
+- `.register(registry)` — registers into a GuardEvaluatorRegistry so GuardHandler can evaluate it
+
+### createPolicyTemplate(name, config)
+
+Extend one of the 9 base consensus algorithms with custom overrides.
+
+```ts
+import { createPolicyTemplate } from "@consensus-tools/policies";
+
+const template = createPolicyTemplate("strict_approval", {
+  // Required: base policy algorithm to extend
+  base: "SUPERMAJORITY",
+  // Required: override parameters for the base algorithm
+  overrides: { threshold: 0.8, quorum: 5 },
+  // Optional: short-circuit before running the full algorithm
+  preCheck: (input) => {
+    if (input.votes.length < 3) {
+      return { decision: "BLOCK", reason: "Insufficient voters" };
+    }
+    return null; // proceed to base algorithm
+  },
+});
+```
+
+**Config shape:**
+```ts
+{
+  base: ConsensusPolicyType;  // One of the 9 policy algorithms
+  overrides: Record<string, unknown>;
+  preCheck?: (input: ConsensusInput) => ConsensusResult | null;
+}
+```
+
+**Returns:**
+```ts
+{
+  name: string;
+  base: ConsensusPolicyType;
+  resolve(input: ConsensusInput): ConsensusResult;
+  register(registry: PolicyRegistry): void;
+  description: string;
+}
+```
+
+### createWrapperTemplate(name, config)
+
+Create a reusable function gate with consensus-based review.
+
+```ts
+import { createWrapperTemplate } from "@consensus-tools/wrapper";
+
+const template = createWrapperTemplate<string>("safe_output", {
+  // Required: array of reviewer functions
+  reviewers: [safetyGuard.asReviewer(), relevanceReviewer],
+  // Required: aggregation strategy and threshold
+  strategy: { strategy: "unanimous", threshold: 0.5 },
+  // Optional: lifecycle hooks
+  hooks: {
+    afterResolve: (result) => console.log(`Decision: ${result.action}`),
+    onBlock: (result) => console.log(`Blocked: ${result.scores}`),
+    onEscalate: (result) => console.log(`Escalated: ${result.aggregateScore}`),
+  },
+  // Optional: max retry attempts on escalation (default: 0)
+  maxRetries: 0,
+});
+
+const safeFn = template.wrap(myFunction);
+const result = await safeFn(args);
+// result.output: T | undefined
+// result.action: "allow" | "block" | "escalate"
+// result.scores: ReviewScore[]
+// result.aggregateScore: number
+```
+
+**Config shape:**
+```ts
+{
+  reviewers: ReviewerFn[];
+  strategy: StrategyConfig;
+  hooks?: LifecycleHooks;
+  maxRetries?: number;
+}
+```
+
+**Returns:**
+```ts
+{
+  name: string;
+  wrap<T>(fn: (...args: any[]) => Promise<T>): WrappedFunction<T>;
+  description: string;
+}
+```
+
+### Decision Tree: Guards vs Wrapper vs Hybrid
+
+```
+Your integration pattern:
+|-- "Check before an action executes" -> Guards (createGuardTemplate)
+|   Use when: audit trails, compliance, multi-domain evaluation, pre-execution gates
+|
+|-- "Validate output quality at runtime" -> Wrapper (createWrapperTemplate)
+|   Use when: function gating, score-based pass/fail, low-latency, in-process
+|
+|-- "Both input governance AND output quality" -> Hybrid
+|   Use when: guard templates provide rules, wrapper provides the runtime gate
+|   Pattern: createGuardTemplate().asReviewer() + createWrapperTemplate()
+|
++-- "Claude AI integration" -> MCP (29 tools)
+    Use when: Claude Code, Model Context Protocol, AI-driven governance
+```
+
+### Full Example: Guard + Wrapper Hybrid
+
+All three templates working together — a guard template defines safety rules,
+a policy template configures consensus, and a wrapper template gates a function.
+
+```ts
+import { createGuardTemplate } from "@consensus-tools/guards";
+import { createPolicyTemplate } from "@consensus-tools/policies";
+import { createWrapperTemplate } from "@consensus-tools/wrapper";
+
+// 1. Guard template: defines content safety rules
+const safetyGuard = createGuardTemplate("content_safety", {
+  rules: (payload) => {
+    const text = String(payload["value"] || "");
+    if (/\b\d{3}-\d{2}-\d{4}\b/.test(text)) {
+      return [{ evaluator: "content-safety", vote: "NO", reason: "SSN detected", risk: 0.95 }];
+    }
+    return [{ evaluator: "content-safety", vote: "YES", reason: "Content clean", risk: 0.1 }];
+  },
+  hardBlockPatterns: [/api[_-]?key\s*[:=]/i],
+});
+
+// 2. Policy template: strict consensus for high-risk decisions
+const strictPolicy = createPolicyTemplate("strict_review", {
+  base: "SUPERMAJORITY",
+  overrides: { threshold: 0.8 },
+});
+
+// 3. Wrapper template: gate LLM output with guard-as-reviewer
+const safeLLM = createWrapperTemplate<string>("safe_llm", {
+  reviewers: [
+    safetyGuard.asReviewer(),  // Guard template as a reviewer
+    (output) => ({             // Simple relevance scorer
+      score: output.length > 10 ? 0.8 : 0.3,
+      rationale: output.length > 10 ? "Substantive" : "Too short",
+    }),
+  ],
+  strategy: { strategy: "unanimous", threshold: 0.5 },
+  hooks: {
+    onBlock: (r) => console.log("Blocked:", r.scores.map(s => s.rationale)),
+  },
+});
+
+// 4. Wrap any async function
+const wrapped = safeLLM.wrap(async (prompt: string) => {
+  return `Response to: ${prompt}`;
+});
+
+const result = await wrapped("Hello");
+// result.action: "allow" | "block" | "escalate"
+// result.output: string | undefined
 ```
 
 ---

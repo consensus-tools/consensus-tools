@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.json",
-    "test": "node --import tsx/esm --test src/__tests__/*.test.ts",
+    "test": "node --import tsx/esm --test src/__tests__/*.test.ts && vitest run",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -25,7 +25,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   },
   "files": [
     "dist",
