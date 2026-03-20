@@ -19,7 +19,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@consensus-tools/schemas": "workspace:*"
+    "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/storage": "workspace:*",
+    "@consensus-tools/telemetry": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

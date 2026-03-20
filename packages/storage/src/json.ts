@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { Mutex } from "../util/locks.js";
+import { Mutex } from "./mutex.js";
 import { defaultState, applyStorageCaps, type StorageCaps } from "./interface.js";
 import type { IStorage } from "./interface.js";
 import type { StorageState } from "@consensus-tools/schemas";

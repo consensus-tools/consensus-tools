@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
-    "@consensus-tools/guards": "workspace:*"
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/storage": "workspace:*"
   },
   "optionalDependencies": {
     "better-sqlite3": "^9.4.3"

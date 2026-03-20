@@ -18,6 +18,7 @@ export const telemetryEventTypeSchema = z.enum([
   "wrapper.decided",
   "wrapper.blocked",
   "wrapper.escalated",
+  "guard.evaluated",
 ]);
 export type TelemetryEventType = z.infer<typeof telemetryEventTypeSchema>;
 

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Version Eval</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+    h1 { font-size: 1.4rem; font-weight: 600; color: #e6edf3; }
+    h2 { font-size: 1.1rem; font-weight: 600; color: #e6edf3; margin-bottom: 12px; }
+    h3 { font-size: 0.9rem; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    header { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid #30363d; background: #161b22; }
+    header .tag { font-size: 0.7rem; background: #388bfd22; color: #388bfd; padding: 2px 8px; border-radius: 12px; }
+    .mono { font-family: "SF Mono", Monaco, monospace; }
+
+    /* Controls */
+    .controls { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .url-row { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; }
+    .url-group { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .url-group label { font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .url-input { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; width: 100%; font-family: "SF Mono", Monaco, monospace; }
+    .url-input:focus { outline: none; border-color: #388bfd; }
+    .url-input.error { border-color: #f85149; }
+    .parsed-info { font-size: 0.75rem; color: #388bfd; margin-top: 4px; min-height: 1.2em; }
+    .parsed-info.error { color: #f85149; }
+
+    .control-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    .control-group label { font-size: 0.75rem; color: #8b949e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    select, button { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; min-width: 140px; cursor: pointer; }
+    select:focus, button:focus { outline: none; border-color: #388bfd; }
+    .btn-run { background: #238636; border-color: #238636; color: #fff; font-weight: 600; min-width: 120px; }
+    .btn-run:hover:not(:disabled) { background: #2ea043; }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status-text { font-size: 0.8rem; color: #8b949e; align-self: center; min-width: 200px; }
+    .status-text.error { color: #f85149; }
+
+    /* Toolbar */
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .btn-sm { background: #30363d; border: 1px solid #30363d; color: #c9d1d9; font-size: 0.8rem; padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+    .btn-sm:hover { background: #484f58; }
+    .toolbar-spacer { flex: 1; }
+
+    /* Cards */
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .card-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; user-select: none; flex-wrap: wrap; }
+    .card-header:hover { background: #1c2129; }
+    .card-header .arrow { font-size: 0.7rem; color: #8b949e; transition: transform 0.2s; margin-right: 4px; }
+    .card.open .card-header .arrow { transform: rotate(90deg); }
+    .card-body { display: none; padding: 0 18px 18px; }
+    .card.open .card-body { display: block; }
+
+    /* Badges */
+    .badge { font-size: 0.7rem; font-weight: 600; padding: 2px 10px; border-radius: 12px; }
+    .badge-a { background: #388bfd22; color: #388bfd; }
+    .badge-b { background: #a371f722; color: #a371f7; }
+    .badge-tie { background: #30363d; color: #8b949e; }
+    .badge-single { background: #388bfd22; color: #388bfd; border: 1px solid #388bfd44; }
+    .badge-consensus { background: #a371f722; color: #a371f7; border: 1px solid #a371f744; }
+    .badge-agree { background: #23863622; color: #3fb950; }
+    .badge-disagree { background: #da363322; color: #f85149; }
+    .badge-allow { background: #23863622; color: #238636; }
+    .badge-block { background: #da363322; color: #da3633; }
+    .badge-rewrite { background: #d2992222; color: #d29922; }
+    .badge-human { background: #8957e522; color: #8957e5; }
+    .badge-yes { background: #23863622; color: #3fb950; }
+    .badge-no { background: #da363322; color: #f85149; }
+    .model-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: #30363d; color: #8b949e; }
+    .meta-text { font-size: 0.78rem; color: #484f58; }
+
+    /* Diff */
+    .diff-preview { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: "SF Mono", monospace; font-size: 0.75rem; line-height: 1.6; max-height: 440px; overflow-y: auto; margin-bottom: 16px; white-space: pre-wrap; word-break: break-word; }
+    .diff-add { color: #3fb950; }
+    .diff-del { color: #f85149; }
+
+    /* Score panels */
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .panels { grid-template-columns: 1fr; } }
+    .panel { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; }
+    .panel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+    /* Score bars */
+    .score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; }
+    .score-label { width: 110px; color: #8b949e; }
+    .score-bar { flex: 1; height: 14px; background: #21262d; border-radius: 3px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+    .score-val { width: 30px; text-align: right; font-family: "SF Mono", monospace; font-weight: 600; color: #e6edf3; }
+    .score-avg { font-size: 1.4rem; font-weight: 700; color: #e6edf3; margin-bottom: 4px; }
+    .score-avg-label { font-size: 0.72rem; color: #8b949e; margin-bottom: 10px; }
+    .version-scores { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
+    .version-scores:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .version-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+
+    /* Agent breakdown */
+    .agent-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1px solid #21262d; font-size: 0.78rem; }
+    .agent-row:first-child { border-top: none; }
+    .agent-name { min-width: 130px; color: #8b949e; }
+    .agent-scores { color: #e6edf3; font-family: "SF Mono", monospace; font-size: 0.75rem; }
+    .agent-reasoning { flex: 1; color: #484f58; font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Diff guard */
+    .guard-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #30363d; }
+    .btn-guard { background: #30363d; border-color: #30363d; color: #c9d1d9; font-size: 0.8rem; min-width: auto; padding: 6px 14px; }
+    .btn-guard:hover:not(:disabled) { background: #484f58; }
+    .guard-vote { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.8rem; border-top: 1px solid #21262d; }
+    .guard-vote:first-child { border-top: none; }
+    .guard-reason { flex: 1; color: #8b949e; font-size: 0.75rem; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #484f58; }
+    .empty-state h3 { color: #484f58; margin-bottom: 8px; }
+
+    /* Hidden file input */
+    #importInput { display: none; }
+
+    /* Keyboard hint */
+    .kbd-hint { font-size: 0.7rem; color: #484f58; align-self: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Skill Version Eval</h1>
+    <span class="tag">any GitHub skill</span>
+  </header>
+
+  <div class="container">
+    <div class="controls">
+      <div class="url-row">
+        <div class="url-group">
+          <label>GitHub URL to skill file</label>
+          <input type="text" class="url-input" id="urlInput"
+            placeholder="https://github.com/owner/repo/blob/main/path/to/SKILL.md" />
+          <div class="parsed-info" id="parsedInfo"></div>
+        </div>
+        <button class="btn-sm" id="loadBtn" style="min-width:100px">Load</button>
+      </div>
+      <div class="control-row">
+        <div class="control-group">
+          <label>Version A</label>
+          <select id="versionASelect"><option value="">Paste a URL first</option></select>
+        </div>
+        <div class="control-group">
+          <label>Version B</label>
+          <select id="versionBSelect"><option value="">Paste a URL first</option></select>
+        </div>
+        <div class="control-group">
+          <label>Model</label>
+          <select id="modelSelect">
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="gpt-5-mini">gpt-5-mini</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button class="btn-run" id="runBtn" disabled>Run Eval</button>
+        </div>
+        <div class="status-text" id="statusText"></div>
+        <span class="kbd-hint" id="kbdHint"></span>
+      </div>
+    </div>
+
+    <!-- Diff preview (shown after selecting two versions) -->
+    <div id="diffPreviewSection" style="display:none;margin-bottom:24px">
+      <h2>Diff Preview</h2>
+      <div class="diff-preview" id="diffPreviewContent"></div>
+    </div>
+
+    <div class="toolbar">
+      <h2 style="margin-bottom:0">Results</h2>
+      <span class="meta-text" id="resultCount"></span>
+      <div class="toolbar-spacer"></div>
+      <button class="btn-sm" id="exportBtn" style="display:none">Export JSON</button>
+      <button class="btn-sm" id="importBtn">Import JSON</button>
+      <input type="file" id="importInput" accept=".json" />
+    </div>
+    <div id="results">
+      <div class="empty-state"><h3>No results yet</h3><p>Paste a GitHub URL, pick two commits, and run an eval.</p></div>
+    </div>
+  </div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+// ─── State ───
+let runs = [];
+let parsed = null;         // {owner, repo, path} from URL
+let commits = [];          // CommitEntry[] for current file
+let contentCache = {};     // {sha: string} → content text
+let commitCache = new Map(); // "owner/repo/path" → CommitEntry[]
+const openCards = new Set();
+
+// ─── URL Parsing (client-side) ───
+function parseGitHubUrl(url) {
+  const trimmed = (url || '').trim();
+  if (!trimmed) return { error: 'Enter a GitHub URL' };
+
+  let parsed;
+  try { parsed = new URL(trimmed); } catch { return { error: 'Invalid URL' }; }
+
+  if (parsed.hostname !== 'github.com') {
+    return { error: 'URL must be from github.com' };
+  }
+
+  const parts = parsed.pathname.split('/').filter(Boolean);
+  // Expected: [owner, repo, "blob", ref, ...path]
+  if (parts.length < 2) return { error: 'URL must include owner and repo' };
+
+  const owner = parts[0];
+  const repo = parts[1];
+
+  if (parts.length < 5 || parts[2] !== 'blob') {
+    return { error: 'URL must point to a file (use a /blob/ URL)' };
+  }
+
+  // parts[3] is the ref (branch/tag/sha) — we ignore it (decision 10A)
+  // Everything after the ref is the file path
+  const filePath = parts.slice(4).join('/');
+  if (!filePath) return { error: 'URL must include a file path' };
+
+  return { owner, repo, path: filePath };
+}
+
+// ─── Relative time ───
+function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+// ─── API helpers ───
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  if (!res.ok) { const b = await res.json().catch(()=>({})); throw new Error(b.error || `HTTP ${res.status}`); }
+  return res.json();
+}
+
+async function fetchContentCached(owner, repo, path, sha) {
+  const key = `${owner}/${repo}/${path}@${sha}`;
+  if (contentCache[key]) return contentCache[key];
+  const data = await api(`/api/content?owner=${enc(owner)}&repo=${enc(repo)}&path=${enc(path)}&ref=${enc(sha)}`);
+  contentCache[key] = data.content;
+  return data.content;
+}
+
+function enc(s) { return encodeURIComponent(s); }
+
+// ─── URL hash state ───
+function saveHashState() {
+  if (parsed) {
+    location.hash = `github.com/${parsed.owner}/${parsed.repo}/blob/main/${parsed.path}`;
+  }
+}
+
+function loadHashState() {
+  const hash = location.hash.slice(1); // remove #
+  if (!hash) return;
+  const url = `https://${hash}`;
+  $('#urlInput').value = url;
+  handleUrlInput();
+}
+
+// ─── Controls ───
+async function handleUrlInput() {
+  const result = parseGitHubUrl($('#urlInput').value);
+  const info = $('#parsedInfo');
+
+  if (result.error) {
+    info.textContent = result.error;
+    info.className = 'parsed-info error';
+    $('#urlInput').classList.add('error');
+    parsed = null;
+    commits = [];
+    updateVersionDropdowns();
+    return;
+  }
+
+  info.textContent = `${result.owner}/${result.repo} — ${result.path}`;
+  info.className = 'parsed-info';
+  $('#urlInput').classList.remove('error');
+  parsed = result;
+
+  // Check commit cache
+  const cacheKey = `${parsed.owner}/${parsed.repo}/${parsed.path}`;
+  if (commitCache.has(cacheKey)) {
+    commits = commitCache.get(cacheKey);
+    updateVersionDropdowns();
+    saveHashState();
+    return;
+  }
+
+  // Fetch commits
+  info.textContent += ' — loading commits...';
+  try {
+    commits = await api(`/api/commits?owner=${enc(parsed.owner)}&repo=${enc(parsed.repo)}&path=${enc(parsed.path)}`);
+    commitCache.set(cacheKey, commits);
+    info.textContent = `${parsed.owner}/${parsed.repo} — ${parsed.path} (${commits.length} commits)`;
+    updateVersionDropdowns();
+    saveHashState();
+  } catch (e) {
+    info.textContent = e.message;
+    info.className = 'parsed-info error';
+    commits = [];
+    updateVersionDropdowns();
+  }
+}
+
+function updateVersionDropdowns() {
+  const selA = $('#versionASelect');
+  const selB = $('#versionBSelect');
+
+  if (!commits.length) {
+    selA.innerHTML = '<option value="">No commits loaded</option>';
+    selB.innerHTML = '<option value="">No commits loaded</option>';
+    $('#runBtn').disabled = true;
+    hideDiffPreview();
+    return;
+  }
+
+  const curA = selA.value, curB = selB.value;
+
+  const buildOpts = (excludeSha) => {
+    return commits.map(c => {
+      const dis = c.sha === excludeSha ? ' disabled style="color:#484f58"' : '';
+      const label = `${c.shortSha} — ${esc(c.message.slice(0, 60))} (${relativeTime(c.date)})`;
+      return `<option value="${c.sha}"${dis}>${label}</option>`;
+    }).join('');
+  };
+
+  selA.innerHTML = buildOpts(curB);
+  selB.innerHTML = buildOpts(curA);
+
+  // Restore or set defaults
+  if (curA && commits.some(c => c.sha === curA)) selA.value = curA;
+  if (curB && commits.some(c => c.sha === curB)) selB.value = curB;
+
+  // Default: A = first commit, B = second commit
+  if (!curA && !curB && commits.length >= 2) {
+    selA.value = commits[0].sha;
+    selB.value = commits[1].sha;
+    selA.innerHTML = buildOpts(commits[1].sha);
+    selB.innerHTML = buildOpts(commits[0].sha);
+  }
+
+  $('#runBtn').disabled = !selA.value || !selB.value || selA.value === selB.value;
+  loadDiffPreview();
+}
+
+$('#versionASelect').addEventListener('change', () => { updateVersionDropdowns(); });
+$('#versionBSelect').addEventListener('change', () => { updateVersionDropdowns(); });
+$('#loadBtn').addEventListener('click', handleUrlInput);
+$('#urlInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleUrlInput();
+});
+
+// ─── Diff preview ───
+let diffLoading = false;
+async function loadDiffPreview() {
+  const shaA = $('#versionASelect').value;
+  const shaB = $('#versionBSelect').value;
+  if (!parsed || !shaA || !shaB || shaA === shaB) {
+    hideDiffPreview();
+    return;
+  }
+
+  if (diffLoading) return;
+  diffLoading = true;
+
+  try {
+    const [contentA, contentB] = await Promise.all([
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaA),
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaB),
+    ]);
+
+    const diff = simpleDiff(contentA, contentB);
+    $('#diffPreviewContent').innerHTML = colorizeDiff(diff);
+    $('#diffPreviewSection').style.display = '';
+  } catch (e) {
+    $('#diffPreviewContent').innerHTML = `<span style="color:#f85149">${esc(e.message)}</span>`;
+    $('#diffPreviewSection').style.display = '';
+  } finally {
+    diffLoading = false;
+  }
+}
+
+function hideDiffPreview() {
+  $('#diffPreviewSection').style.display = 'none';
+}
+
+// Client-side simple line diff
+function simpleDiff(textA, textB) {
+  const linesA = textA.split('\n');
+  const linesB = textB.split('\n');
+  const result = [];
+  const maxLen = Math.max(linesA.length, linesB.length);
+  // Simple line-by-line comparison (not a proper LCS diff, but good enough for preview)
+  let ia = 0, ib = 0;
+  while (ia < linesA.length || ib < linesB.length) {
+    if (ia >= linesA.length) {
+      result.push('+' + linesB[ib]);
+      ib++;
+    } else if (ib >= linesB.length) {
+      result.push('-' + linesA[ia]);
+      ia++;
+    } else if (linesA[ia] === linesB[ib]) {
+      result.push(' ' + linesA[ia]);
+      ia++; ib++;
+    } else {
+      result.push('-' + linesA[ia]);
+      result.push('+' + linesB[ib]);
+      ia++; ib++;
+    }
+  }
+  return result.join('\n');
+}
+
+// ─── Run eval ───
+$('#runBtn').addEventListener('click', runEval);
+
+async function runEval() {
+  const shaA = $('#versionASelect').value;
+  const shaB = $('#versionBSelect').value;
+  const model = $('#modelSelect').value;
+
+  if (!parsed || !shaA || !shaB) { showStatus('Select all fields', true); return; }
+  if (shaA === shaB) { showStatus('Versions must differ', true); return; }
+
+  $('#runBtn').disabled = true;
+  showStatus('Running eval — single (2 calls) + consensus (10 calls)...');
+
+  try {
+    // Ensure we have content (may already be cached from diff preview)
+    const [contentA, contentB] = await Promise.all([
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaA),
+      fetchContentCached(parsed.owner, parsed.repo, parsed.path, shaB),
+    ]);
+
+    // Extract skill name from path (last directory component or filename without extension)
+    const pathParts = parsed.path.split('/');
+    const skill = pathParts.length > 1 ? pathParts[pathParts.length - 2] : pathParts[0].replace(/\.md$/, '');
+
+    const result = await api('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill,
+        contentA,
+        contentB,
+        refA: shaA.slice(0, 7),
+        refB: shaB.slice(0, 7),
+        model,
+      }),
+    });
+
+    // Store content refs for diff guard
+    result._contentA = contentA;
+    result._contentB = contentB;
+    result._skill = skill;
+
+    runs.unshift(result);
+    showStatus('Done!');
+    renderRuns();
+  } catch (e) {
+    showStatus(e.message, true);
+  } finally {
+    $('#runBtn').disabled = false;
+  }
+}
+
+// Cmd+Enter / Ctrl+Enter to run eval
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    if (!$('#runBtn').disabled) runEval();
+  }
+});
+// Show keyboard hint
+$('#kbdHint').textContent = navigator.platform.includes('Mac') ? '\u2318+Enter to run' : 'Ctrl+Enter to run';
+
+function showStatus(msg, err) {
+  const el = $('#statusText');
+  el.textContent = msg;
+  el.className = err ? 'status-text error' : 'status-text';
+  if (!err) setTimeout(() => { el.textContent = ''; }, 5000);
+}
+
+// ─── Import / Export ───
+$('#exportBtn').addEventListener('click', () => {
+  const data = JSON.stringify(runs.map(r => ({ single: r.single, consensus: r.consensus, diffGuard: r.diffGuard })), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `skill-eval-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+$('#importBtn').addEventListener('click', () => { $('#importInput').click(); });
+
+$('#importInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Size check (10MB max)
+  if (file.size > 10 * 1024 * 1024) {
+    showStatus('File too large (max 10MB)', true);
+    e.target.value = '';
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    // Validate shape
+    if (!Array.isArray(data)) {
+      showStatus('Invalid format: expected a JSON array', true);
+      e.target.value = '';
+      return;
+    }
+
+    // Validate each entry has single + consensus
+    const valid = data.filter(r =>
+      r && r.single && r.consensus &&
+      r.single.proposalId && r.single.skill
+    );
+
+    if (valid.length === 0) {
+      showStatus('No valid eval results found in file', true);
+      e.target.value = '';
+      return;
+    }
+
+    // Merge with dedup on proposalId
+    const existingIds = new Set(runs.map(r => r.single?.proposalId));
+    let added = 0;
+    for (const entry of valid) {
+      if (!existingIds.has(entry.single.proposalId)) {
+        runs.push(entry);
+        existingIds.add(entry.single.proposalId);
+        added++;
+      }
+    }
+
+    // Sort by timestamp descending
+    runs.sort((a, b) => {
+      const tA = a.single?.timestamp || '';
+      const tB = b.single?.timestamp || '';
+      return tB.localeCompare(tA);
+    });
+
+    showStatus(`Imported ${added} new result${added === 1 ? '' : 's'} (${valid.length - added} duplicates skipped)`);
+    renderRuns();
+  } catch {
+    showStatus('Invalid JSON file', true);
+  }
+
+  e.target.value = ''; // reset file input
+});
+
+// ─── Rendering (largely preserved from original) ───
+function scoreColor(v) {
+  if (v >= 4.5) return '#3fb950';
+  if (v >= 3.5) return '#388bfd';
+  if (v >= 2.5) return '#d29922';
+  return '#f85149';
+}
+
+function scoreBar(label, val) {
+  const pct = (val / 5 * 100).toFixed(0);
+  return `<div class="score-row">
+    <span class="score-label">${label}</span>
+    <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;background:${scoreColor(val)}"></div></div>
+    <span class="score-val" style="color:${scoreColor(val)}">${val}</span>
+  </div>`;
+}
+
+function renderVersionScores(label, badgeClass, vs) {
+  return `<div class="version-scores">
+    <div class="version-header">
+      <span class="badge ${badgeClass}">${label}</span>
+      <span class="meta-text">${esc(vs.ref)}</span>
+    </div>
+    <div class="score-avg" style="color:${scoreColor(vs.average)}">${vs.average.toFixed(2)}</div>
+    <div class="score-avg-label">average (clarity + completeness + actionability) / 3</div>
+    ${scoreBar('Clarity', vs.scores.clarity)}
+    ${scoreBar('Completeness', vs.scores.completeness)}
+    ${scoreBar('Actionability', vs.scores.actionability)}
+    <div style="font-size:0.75rem;color:#8b949e;margin-top:6px">${esc(vs.scores.reasoning || '').slice(0, 200)}</div>
+  </div>`;
+}
+
+function renderAgentBreakdown(agents) {
+  if (!agents || !agents.length) return '';
+  return `<div style="margin-top:10px">
+    <h3>Per-Agent Scores</h3>
+    ${agents.map(a => `<div class="agent-row">
+      <span class="agent-name">${esc(a.agentName)}</span>
+      <span class="agent-scores">C:${a.scores.clarity} Co:${a.scores.completeness} A:${a.scores.actionability}</span>
+      <span class="agent-reasoning" title="${esc(a.scores.reasoning)}">${esc(a.scores.reasoning)}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderPanel(result, modeLabel, badgeClass) {
+  const winnerBadge = result.winner === 'A' ? '<span class="badge badge-a">A wins</span>'
+    : result.winner === 'B' ? '<span class="badge badge-b">B wins</span>'
+    : '<span class="badge badge-tie">TIE</span>';
+  const deltaStr = result.delta > 0 ? `+${result.delta.toFixed(2)}` : result.delta.toFixed(2);
+  const deltaColor = result.delta > 0.2 ? '#3fb950' : result.delta < -0.2 ? '#f85149' : '#8b949e';
+
+  return `<div class="panel">
+    <div class="panel-header">
+      <span class="badge ${badgeClass}">${modeLabel}</span>
+      ${winnerBadge}
+      <span style="font-family:monospace;font-size:0.8rem;color:${deltaColor}">delta: ${deltaStr}</span>
+      <span class="meta-text" style="margin-left:auto">${(result.durationMs/1000).toFixed(1)}s</span>
+    </div>
+    ${renderVersionScores('Version A', 'badge-a', result.versionA)}
+    ${renderVersionScores('Version B', 'badge-b', result.versionB)}
+    ${result.mode === 'consensus' ? renderAgentBreakdown(result.versionA.agentResults) : ''}
+  </div>`;
+}
+
+function renderGuardResult(guard) {
+  const decBadge = guard.decision === 'ALLOW' ? 'badge-allow'
+    : guard.decision === 'BLOCK' ? 'badge-block'
+    : guard.decision.includes('REWRITE') ? 'badge-rewrite' : 'badge-human';
+  return `<h3>Diff Guard Analysis</h3>
+    <div style="margin-bottom:8px">
+      <span class="badge ${decBadge}">${guard.decision}</span>
+      <span class="meta-text" style="margin-left:8px">risk: ${guard.combinedRisk.toFixed(2)} | ${(guard.durationMs/1000).toFixed(1)}s</span>
+    </div>
+    ${guard.votes.map(v => {
+      const vc = v.vote === 'YES' ? 'badge-yes' : v.vote === 'NO' ? 'badge-no' : 'badge-rewrite';
+      return `<div class="guard-vote">
+        <span class="agent-name">${esc(v.agentName)}</span>
+        <span class="badge ${vc}">${v.vote}</span>
+        <span style="font-family:monospace;font-size:0.75rem;color:#8b949e">${v.risk.toFixed(2)}</span>
+        <span class="guard-reason">${esc(v.reason)}</span>
+      </div>`;
+    }).join('')}`;
+}
+
+function renderRuns() {
+  // Show/hide export button
+  $('#exportBtn').style.display = runs.length ? '' : 'none';
+
+  if (!runs.length) {
+    $('#results').innerHTML = '<div class="empty-state"><h3>No results yet</h3><p>Paste a GitHub URL, pick two commits, and run an eval.</p></div>';
+    $('#resultCount').textContent = '';
+    return;
+  }
+  $('#resultCount').textContent = `${runs.length} eval${runs.length === 1 ? '' : 's'}`;
+  $('#results').innerHTML = runs.map(run => {
+    const s = run.single, c = run.consensus;
+    const agree = s.winner === c.winner;
+    const pid = s.proposalId;
+    const isOpen = openCards.has(pid);
+    const guard = run.diffGuard;
+
+    return `<div class="card${isOpen ? ' open' : ''}" data-pid="${pid}">
+      <div class="card-header" onclick="toggle('${pid}')">
+        <span class="arrow">&#9654;</span>
+        <span style="font-weight:600;color:#e6edf3">${esc(s.skill)}</span>
+        <span class="meta-text">${esc(s.versionA.ref)} \u2192 ${esc(s.versionB.ref)}</span>
+        <span class="model-tag">${esc(s.model)}</span>
+        <span class="badge ${agree ? 'badge-agree' : 'badge-disagree'}">${agree ? 'AGREE' : 'DISAGREE'}</span>
+        <span class="badge ${s.winner === 'A' ? 'badge-a' : s.winner === 'B' ? 'badge-b' : 'badge-tie'}">single: ${s.winner}</span>
+        <span class="badge ${c.winner === 'A' ? 'badge-a' : c.winner === 'B' ? 'badge-b' : 'badge-tie'}">consensus: ${c.winner}</span>
+      </div>
+      <div class="card-body">
+        <h3>Diff (for reference)</h3>
+        <div class="diff-preview">${colorizeDiff(s.fullDiff || s.diffSummary || '')}</div>
+        <div class="panels">
+          ${renderPanel(s, 'Single (1 judge)', 'badge-single')}
+          ${renderPanel(c, 'Consensus (5 judges)', 'badge-consensus')}
+        </div>
+        <div class="guard-section">
+          ${guard
+            ? renderGuardResult(guard)
+            : run._contentA
+              ? `<button class="btn-guard" onclick="runGuard('${pid}', event)" id="guard-btn-${pid}">Run Diff Guard Analysis</button>`
+              : `<span class="meta-text">Diff guard unavailable for imported results</span>`
+          }
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Actions ───
+function toggle(pid) {
+  openCards.has(pid) ? openCards.delete(pid) : openCards.add(pid);
+  const el = document.querySelector(`[data-pid="${pid}"]`);
+  if (el) el.classList.toggle('open');
+}
+
+async function runGuard(pid, event) {
+  event.stopPropagation();
+  const run = runs.find(r => r.single.proposalId === pid);
+  if (!run) return;
+
+  const btn = $(`#guard-btn-${pid}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+
+  try {
+    const s = run.single;
+    const guard = await api('/api/diff-guard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skill: run._skill || s.skill,
+        contentA: run._contentA || '',
+        contentB: run._contentB || '',
+        model: s.model,
+        proposalId: pid,
+      }),
+    });
+    run.diffGuard = guard;
+    renderRuns();
+  } catch (e) {
+    if (btn) { btn.textContent = `Error: ${e.message}`; btn.disabled = false; }
+  }
+}
+
+function colorizeDiff(diff) {
+  return diff.split('\n').map(l => {
+    if (l.startsWith('+')) return `<span class="diff-add">${esc(l)}</span>`;
+    if (l.startsWith('-')) return `<span class="diff-del">${esc(l)}</span>`;
+    return esc(l);
+  }).join('\n');
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── Init ───
+loadHashState();
+</script>
+</body>
+</html>

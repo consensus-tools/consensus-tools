@@ -10,7 +10,7 @@ import type {
   SlashingPolicy,
   PolicyResolver,
 } from "@consensus-tools/schemas";
-import type { IStorage } from "../storage/interface.js";
+import type { IStorage } from "@consensus-tools/storage";
 import { newId } from "../util/ids.js";
 import { addSeconds, nowIso, isPast } from "../util/time.js";
 import { resolveConsensus } from "../resolve/resolve.js";

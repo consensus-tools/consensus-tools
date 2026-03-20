@@ -1,0 +1,16 @@
+{
+  "name": "example-skill-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/serve.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@consensus-tools/evals": "workspace:*",
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "openai": "^5.0.0"
+  }
+}

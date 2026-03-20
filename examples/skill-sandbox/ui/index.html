@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skill Sandbox</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    background: #0d1117; color: #c9d1d9; padding: 24px; line-height: 1.5;
+  }
+  h1 { color: #58a6ff; margin-bottom: 4px; font-size: 1.5rem; }
+  h2 { color: #8b949e; font-size: 1rem; margin-bottom: 16px; font-weight: normal; }
+  h3 { color: #58a6ff; font-size: 0.95rem; margin-bottom: 8px; }
+
+  .controls {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+    margin-bottom: 24px; padding: 16px; background: #161b22;
+    border: 1px solid #30363d; border-radius: 8px;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 4px; }
+  .control-group label { font-size: 0.8rem; color: #8b949e; text-transform: uppercase; }
+  select, button {
+    background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 6px; padding: 8px 12px; font-size: 0.9rem; cursor: pointer;
+  }
+  select:focus, button:focus { outline: none; border-color: #58a6ff; }
+  button.primary {
+    background: #238636; border-color: #238636; color: #fff; font-weight: 600;
+    padding: 8px 20px;
+  }
+  button.primary:hover { background: #2ea043; }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-indicator {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; background: #3fb950;
+  }
+  .status-indicator.running { background: #d29922; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .status-text { font-size: 0.85rem; color: #8b949e; align-self: center; }
+
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    margin-bottom: 12px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    cursor: pointer; user-select: none; flex-wrap: wrap;
+  }
+  .card-header:hover { background: #1c2128; }
+  .card-body { padding: 0 16px 16px; display: none; }
+  .card.expanded .card-body { display: block; }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  }
+  .badge.approve, .badge.yes { background: #238636; color: #fff; }
+  .badge.reject, .badge.no { background: #da3633; color: #fff; }
+  .badge.rewrite, .badge.hitl { background: #d29922; color: #000; }
+  .badge.fabricated_file, .badge.fabricated_command { background: #da3633; color: #fff; }
+  .badge.wrong_behavior, .badge.contradicts_repo { background: #d29922; color: #000; }
+  .badge.accurate { background: #238636; color: #fff; }
+  .badge.high { background: #da3633; color: #fff; }
+  .badge.medium { background: #d29922; color: #000; }
+  .badge.low { background: #388bfd; color: #fff; }
+
+  .skill-name { font-weight: 600; color: #58a6ff; }
+  .version-tag { color: #8b949e; font-size: 0.85rem; }
+  .model-tag { color: #bc8cff; font-size: 0.85rem; }
+  .hallucination-count { color: #da3633; font-size: 0.85rem; font-weight: 600; }
+  .hallucination-count.zero { color: #3fb950; }
+  .duration { color: #8b949e; font-size: 0.8rem; margin-left: auto; }
+
+  .section {
+    margin-bottom: 16px; border: 1px solid #30363d; border-radius: 6px; overflow: hidden;
+  }
+  .section-header {
+    padding: 8px 12px; background: #21262d; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; color: #8b949e; user-select: none;
+  }
+  .section-header:hover { background: #282e36; }
+  .section-body { padding: 12px; display: none; }
+  .section.expanded .section-body { display: block; }
+  .section.always-visible .section-body { display: block; }
+
+  ul.claims, ul.weakpoints { padding-left: 20px; margin: 8px 0; }
+  ul.claims li { color: #c9d1d9; margin-bottom: 4px; }
+  ul.weakpoints li { color: #d29922; margin-bottom: 4px; }
+
+  pre.output {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+    padding: 12px; overflow: auto; max-height: 440px; font-size: 0.85rem;
+    color: #c9d1d9; white-space: pre-wrap; word-break: break-word;
+  }
+
+  .agent-result {
+    border: 1px solid #30363d; border-radius: 6px; margin-bottom: 8px; overflow: hidden;
+  }
+  .agent-header {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    cursor: pointer; user-select: none; font-size: 0.9rem;
+  }
+  .agent-header:hover { background: #1c2128; }
+  .agent-body { padding: 8px 12px; display: none; border-top: 1px solid #30363d; }
+  .agent-result.expanded .agent-body { display: block; }
+  .agent-name { font-weight: 600; color: #c9d1d9; }
+  .risk-score { font-size: 0.8rem; color: #8b949e; }
+  .findings-count { font-size: 0.8rem; color: #8b949e; }
+
+  .finding {
+    padding: 8px; margin-bottom: 6px; background: #0d1117;
+    border: 1px solid #30363d; border-radius: 4px;
+  }
+  .finding-header { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+  .finding-desc { font-size: 0.85rem; color: #c9d1d9; margin-bottom: 4px; }
+  .finding-evidence { font-size: 0.8rem; color: #8b949e; font-style: italic; }
+
+  .overall-decision {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    background: #21262d; border-radius: 6px; margin-top: 12px;
+  }
+  .overall-decision .label { font-weight: 600; color: #8b949e; }
+  .risk-bar {
+    width: 100px; height: 6px; background: #30363d; border-radius: 3px; overflow: hidden;
+  }
+  .risk-bar-fill { height: 100%; border-radius: 3px; }
+
+  .empty-state {
+    text-align: center; padding: 48px; color: #484f58; font-size: 0.95rem;
+  }
+
+  .error-msg {
+    background: #3d1214; border: 1px solid #da3633; color: #f85149;
+    padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<h1>Skill Sandbox</h1>
+<h2>Benchmark whether a skill does what it claims -- detect hallucinations via consensus</h2>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Repo</label>
+    <select id="repoSelect"><option value="">Loading...</option></select>
+  </div>
+  <div class="control-group">
+    <label>Skill</label>
+    <select id="skillSelect"><option value="">--</option></select>
+  </div>
+  <div class="control-group">
+    <label>Version</label>
+    <select id="versionSelect"><option value="">--</option></select>
+  </div>
+  <div class="control-group">
+    <label>Model</label>
+    <select id="modelSelect">
+      <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+      <option value="gpt-5-mini">gpt-5-mini</option>
+    </select>
+  </div>
+  <button class="primary" id="runBtn" disabled>Run Sandbox</button>
+  <div class="status-text" id="statusText">
+    <span class="status-indicator" id="statusDot"></span>
+    <span id="statusLabel">Ready</span>
+  </div>
+</div>
+
+<div id="errorBox" style="display:none" class="error-msg"></div>
+<div id="results"></div>
+
+<script>
+const repoSelect = document.getElementById('repoSelect');
+const skillSelect = document.getElementById('skillSelect');
+const versionSelect = document.getElementById('versionSelect');
+const modelSelect = document.getElementById('modelSelect');
+const runBtn = document.getElementById('runBtn');
+const statusDot = document.getElementById('statusDot');
+const statusLabel = document.getElementById('statusLabel');
+const errorBox = document.getElementById('errorBox');
+const resultsDiv = document.getElementById('results');
+
+let repos = [];
+let isRunning = false;
+
+async function init() {
+  try {
+    const res = await fetch('/api/repos');
+    repos = await res.json();
+    repoSelect.innerHTML = repos.map(r =>
+      `<option value="${r.label}" data-owner="${r.owner}" data-repo="${r.repo}">${r.label}</option>`
+    ).join('');
+    if (repos.length) onRepoChange();
+  } catch (e) {
+    repoSelect.innerHTML = '<option value="">Failed to load</option>';
+  }
+  loadRuns();
+}
+
+async function onRepoChange() {
+  const label = repoSelect.value;
+  try {
+    const res = await fetch(`/api/skills?repo=${label}`);
+    const skills = await res.json();
+    skillSelect.innerHTML = skills.map(s => `<option value="${s}">${s}</option>`).join('');
+  } catch { skillSelect.innerHTML = '<option value="">--</option>'; }
+
+  const opt = repoSelect.selectedOptions[0];
+  const owner = opt?.dataset.owner;
+  const repo = opt?.dataset.repo;
+  if (owner && repo) {
+    try {
+      const res = await fetch(`/api/versions?owner=${owner}&repo=${repo}`);
+      const { tags, branches } = await res.json();
+      let opts = '';
+      if (tags.length) {
+        opts += '<optgroup label="Tags">' + tags.map(t => `<option value="${t}">${t}</option>`).join('') + '</optgroup>';
+      }
+      if (branches.length) {
+        opts += '<optgroup label="Branches">' + branches.map(b => `<option value="${b}">${b}</option>`).join('') + '</optgroup>';
+      }
+      versionSelect.innerHTML = opts || '<option value="">--</option>';
+    } catch { versionSelect.innerHTML = '<option value="">--</option>'; }
+  }
+  updateRunBtn();
+}
+
+function updateRunBtn() {
+  runBtn.disabled = isRunning || !repoSelect.value || !skillSelect.value || !versionSelect.value;
+}
+
+repoSelect.addEventListener('change', onRepoChange);
+skillSelect.addEventListener('change', updateRunBtn);
+versionSelect.addEventListener('change', updateRunBtn);
+
+runBtn.addEventListener('click', async () => {
+  if (isRunning) return;
+  isRunning = true;
+  runBtn.disabled = true;
+  statusDot.classList.add('running');
+  statusLabel.textContent = 'Running sandbox...';
+  errorBox.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/run-sandbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repo: repoSelect.value,
+        skill: skillSelect.value,
+        version: versionSelect.value,
+        model: modelSelect.value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errorBox.textContent = data.error || 'Run failed';
+      errorBox.style.display = 'block';
+    } else {
+      loadRuns();
+    }
+  } catch (e) {
+    errorBox.textContent = 'Network error: ' + e.message;
+    errorBox.style.display = 'block';
+  } finally {
+    isRunning = false;
+    statusDot.classList.remove('running');
+    statusLabel.textContent = 'Ready';
+    updateRunBtn();
+  }
+});
+
+async function loadRuns() {
+  try {
+    const res = await fetch('/api/runs');
+    const runs = await res.json();
+    renderRuns(runs);
+  } catch { /* ignore */ }
+}
+
+const openCards = new Set();
+const openSections = new Set();
+const openAgents = new Set();
+
+function renderRuns(runs) {
+  if (!runs.length) {
+    resultsDiv.innerHTML = '<div class="empty-state">No sandbox runs yet. Select a skill and click "Run Sandbox".</div>';
+    return;
+  }
+  resultsDiv.innerHTML = runs.map(run => renderCard(run)).join('');
+}
+
+function renderCard(run) {
+  const decisionClass = run.decision === 'approve' ? 'approve' : run.decision === 'reject' ? 'reject' : 'hitl';
+  const hCountClass = run.hallucinationCount === 0 ? 'zero' : '';
+  const dur = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : '';
+
+  const cardId = run.id;
+  const isOpen = openCards.has(cardId);
+
+  return `
+  <div class="card${isOpen ? ' expanded' : ''}" data-cid="${cardId}">
+    <div class="card-header" onclick="toggleCard('${cardId}')">
+      <span class="skill-name">${esc(run.skill)}</span>
+      <span class="version-tag">${esc(run.version)}</span>
+      <span class="model-tag">${esc(run.model)}</span>
+      <span class="badge ${decisionClass}">${esc(run.decision)}</span>
+      <span class="hallucination-count ${hCountClass}">${run.hallucinationCount} hallucination${run.hallucinationCount !== 1 ? 's' : ''}</span>
+      <span class="duration">${dur}</span>
+    </div>
+    <div class="card-body" onclick="event.stopPropagation()">
+      ${renderRubricSection(run.rubric, cardId)}
+      ${renderOutputSection(run.executionOutput, cardId)}
+      ${renderCheckSection(run.checkResults, run.decision, run.combinedRisk, cardId)}
+    </div>
+  </div>`;
+}
+
+function renderRubricSection(rubric, cardId) {
+  if (!rubric) return '';
+  const secId = cardId + '-rubric';
+  const isOpen = openSections.has(secId);
+  return `
+  <div class="section${isOpen ? ' expanded' : ''}" data-sid="${secId}" onclick="toggleSection('${secId}'); event.stopPropagation();">
+    <div class="section-header">Rubric (${rubric.claims?.length || 0} claims, ${rubric.weakPoints?.length || 0} weak points)</div>
+    <div class="section-body">
+      <h3>Claims</h3>
+      <ul class="claims">${(rubric.claims || []).map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+      <h3>Weak Points</h3>
+      <ul class="weakpoints">${(rubric.weakPoints || []).map(w => `<li>${esc(w)}</li>`).join('')}</ul>
+      <h3>Test Prompt</h3>
+      <pre class="output">${esc(rubric.testPrompt || '')}</pre>
+    </div>
+  </div>`;
+}
+
+function renderOutputSection(output, cardId) {
+  if (!output) return '';
+  const secId = cardId + '-output';
+  const isOpen = openSections.has(secId);
+  return `
+  <div class="section${isOpen ? ' expanded' : ''}" data-sid="${secId}" onclick="toggleSection('${secId}'); event.stopPropagation();">
+    <div class="section-header">Skill Output (${output.length} chars)</div>
+    <div class="section-body">
+      <pre class="output">${esc(output)}</pre>
+    </div>
+  </div>`;
+}
+
+function renderCheckSection(checks, decision, combinedRisk, cardId) {
+  if (!checks || !checks.length) return '';
+  const decisionClass = decision === 'approve' ? 'approve' : decision === 'reject' ? 'reject' : 'hitl';
+  const riskPct = Math.round((combinedRisk || 0) * 100);
+  const riskColor = riskPct > 60 ? '#da3633' : riskPct > 30 ? '#d29922' : '#3fb950';
+
+  let agentsHtml = checks.map(cr => {
+    const voteClass = cr.vote === 'YES' ? 'yes' : cr.vote === 'NO' ? 'no' : 'rewrite';
+    const findingsHtml = (cr.findings || []).map(f => `
+      <div class="finding">
+        <div class="finding-header">
+          <span class="badge ${f.category}">${esc(f.category)}</span>
+          <span class="badge ${f.severity}">${esc(f.severity)}</span>
+        </div>
+        <div class="finding-desc">${esc(f.description)}</div>
+        ${f.evidence ? `<div class="finding-evidence">${esc(f.evidence)}</div>` : ''}
+      </div>
+    `).join('');
+
+    const agentKey = (cardId || '') + '-' + cr.agentId;
+    const agentOpen = openAgents.has(agentKey);
+    return `
+    <div class="agent-result${agentOpen ? ' expanded' : ''}" data-aid="${agentKey}" onclick="toggleAgent('${agentKey}'); event.stopPropagation();">
+      <div class="agent-header">
+        <span class="agent-name">${esc(cr.agentName)}</span>
+        <span class="badge ${voteClass}">${cr.vote}</span>
+        <span class="risk-score">risk: ${(cr.risk || 0).toFixed(2)}</span>
+        <span class="findings-count">${(cr.findings || []).length} findings</span>
+      </div>
+      <div class="agent-body">
+        <div style="margin-bottom:8px;color:#8b949e;font-size:0.85rem;">${esc(cr.reason)}</div>
+        ${findingsHtml || '<div style="color:#484f58;font-size:0.85rem;">No findings</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="section always-visible">
+    <div class="section-header">Hallucination Check</div>
+    <div class="section-body">
+      ${agentsHtml}
+      <div class="overall-decision">
+        <span class="label">Decision:</span>
+        <span class="badge ${decisionClass}">${esc(decision)}</span>
+        <span class="label" style="margin-left:16px;">Combined Risk:</span>
+        <div class="risk-bar">
+          <div class="risk-bar-fill" style="width:${riskPct}%;background:${riskColor}"></div>
+        </div>
+        <span style="font-size:0.85rem;color:${riskColor}">${riskPct}%</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCard(id) { openCards.has(id) ? openCards.delete(id) : openCards.add(id); const el = document.querySelector(`[data-cid="${id}"]`); if (el) el.classList.toggle('expanded'); }
+function toggleSection(id) { openSections.has(id) ? openSections.delete(id) : openSections.add(id); const el = document.querySelector(`[data-sid="${id}"]`); if (el) el.classList.toggle('expanded'); }
+function toggleAgent(id) { openAgents.has(id) ? openAgents.delete(id) : openAgents.add(id); const el = document.querySelector(`[data-aid="${id}"]`); if (el) el.classList.toggle('expanded'); }
+
+function esc(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Auto-refresh
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/status');
+    const { running } = await res.json();
+    if (running !== isRunning) {
+      isRunning = running;
+      if (running) {
+        statusDot.classList.add('running');
+        statusLabel.textContent = 'Running sandbox...';
+      } else {
+        statusDot.classList.remove('running');
+        statusLabel.textContent = 'Ready';
+        loadRuns();
+      }
+      updateRunBtn();
+    }
+  } catch { /* ignore */ }
+  if (!isRunning) loadRuns();
+}, 5000);
+
+init();
+</script>
+</body>
+</html>

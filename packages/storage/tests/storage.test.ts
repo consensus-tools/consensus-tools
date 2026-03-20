@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { promises as fs } from "node:fs";
 import { createTempStorage } from "./helpers.js";
-import { defaultState } from "../src/storage/interface.js";
+import { defaultState } from "../src/interface.js";
 
 describe("JsonStorage", () => {
   it("init creates file with default state", async () => {

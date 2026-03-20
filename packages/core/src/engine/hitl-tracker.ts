@@ -1,5 +1,5 @@
 import type { HitlApproval, HitlMode, GuardDecision } from "@consensus-tools/schemas";
-import type { IStorage } from "../storage/interface.js";
+import type { IStorage } from "@consensus-tools/storage";
 import { newId } from "../util/ids.js";
 import { nowIso } from "../util/time.js";
 

@@ -1,0 +1,6 @@
+{
+  "name": "task-manager-api",
+  "version": "1.0.0",
+  "scripts": { "dev": "tsx src/index.ts" },
+  "dependencies": { "express": "^4.18.0", "better-sqlite3": "^11.0.0" }
+}
