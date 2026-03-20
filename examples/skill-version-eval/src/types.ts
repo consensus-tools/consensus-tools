@@ -52,3 +52,11 @@ export interface DiffGuardResult {
   combinedRisk: number;
   durationMs: number;
 }
+
+/** A commit that touched a specific file, returned by GitHub Commits API */
+export interface CommitEntry {
+  sha: string;        // full 40-char SHA
+  shortSha: string;   // first 7 chars
+  message: string;    // first line of commit message
+  date: string;       // ISO 8601 date string
+}
