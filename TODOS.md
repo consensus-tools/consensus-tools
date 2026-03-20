@@ -189,3 +189,19 @@
 **Context:** The GuardHandler uses in-memory cache + storage lookup for idempotency. Two concurrent calls can both pass the check before either writes. Real fix requires atomic upsert in storage.
 
 **Depends on:** T3 (SqliteStorage redesign) or storage interface change.
+
+---
+
+## T13: Skill version eval — GitHub API authentication
+
+**What:** Add optional `GITHUB_TOKEN` env var to the skill-version-eval server for authenticated GitHub API access.
+
+**Why:** Unauthenticated GitHub API rate limit is 60 requests/hour per IP. For a deployed multi-user tool, this is ~20 evals/hour shared across all users. Authenticated access provides 5,000 req/hr.
+
+**Pros:** Unlocks public deployment at scale without users hitting rate limits.
+
+**Cons:** Requires managing a GitHub token. Minimal implementation effort (~30 min).
+
+**Context:** The server proxies GitHub API calls via `/api/commits` and `/api/content` routes in `consensus-tools/examples/skill-version-eval/src/fetcher.ts`. The `githubFetch()` function already builds headers — adding an `Authorization: Bearer ${token}` header when `GITHUB_TOKEN` env var is set is the only change needed.
+
+**Depends on:** Nothing.
