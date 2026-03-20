@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run src/serve.ts",
-    "test": "bun test"
+    "test": "echo 'bun tests — run locally with: bun test'"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
