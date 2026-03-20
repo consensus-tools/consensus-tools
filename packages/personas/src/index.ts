@@ -13,3 +13,5 @@ export type {
 } from "./types.js";
 
 export { getPersonasByPack, getEvalPersonas, PERSONA_PACKS } from "./defaults.js";
+
+export { updateReputation, DEFAULT_RULESET } from "./reputation.js";
