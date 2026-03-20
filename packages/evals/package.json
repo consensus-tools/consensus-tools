@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
-    "@consensus-tools/guards": "workspace:*"
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/personas": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
