@@ -6,6 +6,10 @@ description: |
   analyzes your project, recommends consensus-tools integration, scaffolds setup,
   and proves it works with auditability. Covers guard evaluation, consensus voting,
   persona management, workflow orchestration, and MCP tool integration.
+homepage: https://github.com/consensus-tools/consensus-tools
+source: https://github.com/consensus-tools/consensus-tools/tree/main/skills/consensus-engineer
+upstream:
+  consensus-tools: https://github.com/consensus-tools/consensus-tools
 allowed-tools:
   - Read
   - Write
