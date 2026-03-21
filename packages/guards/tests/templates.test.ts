@@ -102,4 +102,50 @@ describe("createGuardTemplate", () => {
 
     expect(registry.listTypes()).toContain("custom_domain");
   });
+
+  it("evaluate with empty/undefined payload doesn't crash", () => {
+    const template = createGuardTemplate("empty_payload_guard", {
+      rules: () => [{ evaluator: "test", vote: "YES", reason: "OK", risk: 0.1 }],
+    });
+
+    const input: GuardEvaluateInput = { boardId: "test", action: { type: "empty_payload_guard", payload: {} } };
+    expect(() => template.evaluate(input)).not.toThrow();
+    const votes = template.evaluate(input);
+    expect(votes.length).toBeGreaterThan(0);
+  });
+
+  it("hard-block patterns ignore non-string values in payload", () => {
+    const template = createGuardTemplate("amount_guard", {
+      rules: () => [{ evaluator: "amount", vote: "YES", reason: "OK", risk: 0.1 }],
+      hardBlockPatterns: [/100000/],
+    });
+
+    // amount is a number, not a string — should NOT be scanned by hard-block
+    const votes = template.evaluate(makeInput("amount_guard", { amount: 100000 }));
+    expect(votes[0]!.vote).toBe("YES");
+  });
+
+  it("asReviewer() with REWRITE vote returns mid-range score (~0.2-0.5)", async () => {
+    const template = createGuardTemplate("rewrite_guard", {
+      rules: () => [{ evaluator: "test", vote: "REWRITE", reason: "Needs changes", risk: 0.5 }],
+    });
+
+    const reviewer = template.asReviewer();
+    const result = await reviewer({ text: "draft" }, { name: "rewrite_guard", args: [], attempt: 1 });
+    // REWRITE score formula: 0.5 - (risk ?? 0.5) * 0.3 = 0.5 - 0.15 = 0.35
+    expect(result.score).toBeGreaterThanOrEqual(0.2);
+    expect(result.score).toBeLessThanOrEqual(0.5);
+    expect(result.block).toBe(false);
+  });
+
+  it("asReviewer() with empty votes returns score 1.0", async () => {
+    const template = createGuardTemplate("empty_rules_guard", {
+      rules: () => [],
+    });
+
+    const reviewer = template.asReviewer();
+    const result = await reviewer({ text: "hello" }, { name: "empty_rules_guard", args: [], attempt: 1 });
+    expect(result.score).toBe(1.0);
+    expect(result.block).toBe(false);
+  });
 });
