@@ -1,8 +1,8 @@
-import { describe, test, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, vi } from "vitest";
 import type { CommitEntry } from "./types.js";
 
 describe("listCommits", () => {
-  test("returns commits for a valid file path", async () => {
+  it("returns commits for a valid file path", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const mockResponse = [
@@ -23,7 +23,7 @@ describe("listCommits", () => {
     ];
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async (url: string | URL | Request) => {
+    globalThis.fetch = vi.fn(async (url: string | URL | Request) => {
       const urlStr = url.toString();
       if (urlStr.includes("/commits")) {
         return new Response(JSON.stringify(mockResponse), { status: 200 });
@@ -44,11 +44,11 @@ describe("listCommits", () => {
     }
   });
 
-  test("returns empty array on 404", async () => {
+  it("returns empty array on 404", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response(JSON.stringify({ message: "Not Found" }), { status: 404 });
     }) as typeof fetch;
 
@@ -60,11 +60,11 @@ describe("listCommits", () => {
     }
   });
 
-  test("throws on 403 rate limit", async () => {
+  it("throws on 403 rate limit", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response(JSON.stringify({ message: "API rate limit exceeded" }), {
         status: 403,
         headers: { "X-RateLimit-Remaining": "0" },
@@ -80,12 +80,12 @@ describe("listCommits", () => {
 });
 
 describe("fetchContent", () => {
-  test("returns raw content for a valid file + ref", async () => {
+  it("returns raw content for a valid file + ref", async () => {
     const { fetchContent } = await import("./fetcher.js");
 
     let capturedUrl = "";
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async (url: string | URL | Request) => {
+    globalThis.fetch = vi.fn(async (url: string | URL | Request) => {
       capturedUrl = url.toString();
       return new Response("# Skill Title\n\nContent here", {
         status: 200,
@@ -105,11 +105,11 @@ describe("fetchContent", () => {
     }
   });
 
-  test("returns null on 404", async () => {
+  it("returns null on 404", async () => {
     const { fetchContent } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response("Not Found", { status: 404 });
     }) as typeof fetch;
 
@@ -121,11 +121,11 @@ describe("fetchContent", () => {
     }
   });
 
-  test("throws on 403 rate limit", async () => {
+  it("throws on 403 rate limit", async () => {
     const { fetchContent } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response(JSON.stringify({ message: "API rate limit exceeded" }), {
         status: 403,
         headers: { "X-RateLimit-Remaining": "0" },
@@ -139,11 +139,11 @@ describe("fetchContent", () => {
     }
   });
 
-  test("403 without X-RateLimit-Remaining header throws generic 403 error", async () => {
+  it("403 without X-RateLimit-Remaining header throws generic 403 error", async () => {
     const { fetchContent } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response("Forbidden", { status: 403 });
     }) as typeof fetch;
 
@@ -154,11 +154,11 @@ describe("fetchContent", () => {
     }
   });
 
-  test("fetchContent with 500 error throws", async () => {
+  it("fetchContent with 500 error throws", async () => {
     const { fetchContent } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response("Internal Server Error", { status: 500 });
     }) as typeof fetch;
 
@@ -171,11 +171,11 @@ describe("fetchContent", () => {
 });
 
 describe("listCommits — edge cases", () => {
-  test("listCommits with API returning empty array returns []", async () => {
+  it("listCommits with API returning empty array returns []", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response(JSON.stringify([]), { status: 200 });
     }) as typeof fetch;
 
@@ -187,7 +187,7 @@ describe("listCommits — edge cases", () => {
     }
   });
 
-  test("commit message with newlines only returns first line", async () => {
+  it("commit message with newlines only returns first line", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const mockResponse = [
@@ -201,7 +201,7 @@ describe("listCommits — edge cases", () => {
     ];
 
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response(JSON.stringify(mockResponse), { status: 200 });
     }) as typeof fetch;
 
@@ -216,7 +216,7 @@ describe("listCommits — edge cases", () => {
 });
 
 describe("githubFetch — authentication", () => {
-  test("sends Authorization header when GITHUB_TOKEN is set", async () => {
+  it("sends Authorization header when GITHUB_TOKEN is set", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     let capturedHeaders: Record<string, string> = {};
@@ -224,7 +224,7 @@ describe("githubFetch — authentication", () => {
     const originalEnv = process.env.GITHUB_TOKEN;
     process.env.GITHUB_TOKEN = "ghp_test_token_123";
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       capturedHeaders = Object.fromEntries(
         Object.entries((init?.headers as Record<string, string>) ?? {}),
       );
@@ -241,7 +241,7 @@ describe("githubFetch — authentication", () => {
     }
   });
 
-  test("does NOT send Authorization header when GITHUB_TOKEN is unset", async () => {
+  it("does NOT send Authorization header when GITHUB_TOKEN is unset", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     let capturedHeaders: Record<string, string> = {};
@@ -249,7 +249,7 @@ describe("githubFetch — authentication", () => {
     const originalEnv = process.env.GITHUB_TOKEN;
     delete process.env.GITHUB_TOKEN;
 
-    globalThis.fetch = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       capturedHeaders = Object.fromEntries(
         Object.entries((init?.headers as Record<string, string>) ?? {}),
       );
@@ -266,14 +266,14 @@ describe("githubFetch — authentication", () => {
     }
   });
 
-  test("401 with GITHUB_TOKEN set throws enriched error mentioning token", async () => {
+  it("401 with GITHUB_TOKEN set throws enriched error mentioning token", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
     const originalEnv = process.env.GITHUB_TOKEN;
     process.env.GITHUB_TOKEN = "ghp_bad_token";
 
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response("Bad credentials", { status: 401 });
     }) as typeof fetch;
 
@@ -286,14 +286,14 @@ describe("githubFetch — authentication", () => {
     }
   });
 
-  test("401 without GITHUB_TOKEN throws generic 401 error", async () => {
+  it("401 without GITHUB_TOKEN throws generic 401 error", async () => {
     const { listCommits } = await import("./fetcher.js");
 
     const originalFetch = globalThis.fetch;
     const originalEnv = process.env.GITHUB_TOKEN;
     delete process.env.GITHUB_TOKEN;
 
-    globalThis.fetch = mock(async () => {
+    globalThis.fetch = vi.fn(async () => {
       return new Response("Bad credentials", { status: 401 });
     }) as typeof fetch;
 
