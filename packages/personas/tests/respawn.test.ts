@@ -86,4 +86,47 @@ describe("mutatePersona", () => {
     const result = mutatePersona(base, learning);
     expect(result.role).toBe("security");
   });
+
+  it("mutatePersona with undefined non_negotiables doesn't crash", () => {
+    const sparse: PersonaConfig = {
+      id: "p2",
+      name: "Sparse Agent",
+      role: "ops",
+      reputation: 0.5,
+    };
+    const learning: LearningSummary = { source_decisions: 2, mistake_patterns: ["high_confidence_mismatch:1"] };
+    expect(() => mutatePersona(sparse, learning)).not.toThrow();
+    const result = mutatePersona(sparse, learning);
+    expect(result.non_negotiables).toContain("Validate high-confidence disagreement");
+    expect(result.failure_modes).toContain("Overconfidence without evidence");
+  });
+});
+
+describe("buildLearningSummary (additional edge cases)", () => {
+  it("reads votes from response.votes fallback path", () => {
+    const decisions = [
+      {
+        response: {
+          final_decision: "ALLOW",
+          votes: [{ persona_id: "p1", vote: "NO", confidence: 0.9, red_flags: [] }],
+        },
+      },
+    ];
+    const result = buildLearningSummary("p1", decisions);
+    expect(result.source_decisions).toBe(1);
+    expect(result.mistake_patterns).toContain("high_confidence_mismatch:1");
+  });
+
+  it("handles legacy APPROVE decision string (same as ALLOW)", () => {
+    const decisions = [
+      {
+        final_decision: "APPROVE",
+        votes: [{ persona_id: "p1", vote: "YES", confidence: 0.5, red_flags: [] }],
+      },
+    ];
+    // vote=YES aligned with APPROVE → not opposite → no high_confidence_mismatch
+    const result = buildLearningSummary("p1", decisions);
+    expect(result.source_decisions).toBe(1);
+    expect(result.mistake_patterns).not.toContain("high_confidence_mismatch:1");
+  });
 });

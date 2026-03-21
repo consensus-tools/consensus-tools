@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getPersonasByPack, PERSONA_PACKS } from "../src/defaults.js";
+import { getPersonasByPack, getEvalPersonas, PERSONA_PACKS } from "../src/defaults.js";
 
 describe("getPersonasByPack", () => {
   it("returns 3 default eval personas", () => {
@@ -51,5 +51,32 @@ describe("getPersonasByPack", () => {
       const ids = personas.map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
+  });
+
+  it("getEvalPersonas(\"default\") returns personas with required systemPrompt and evaluationFocus", () => {
+    const personas = getEvalPersonas("default");
+    expect(personas).toHaveLength(3);
+    for (const p of personas) {
+      expect(typeof p.systemPrompt).toBe("string");
+      expect(p.systemPrompt).not.toBeUndefined();
+      expect(typeof p.evaluationFocus).toBe("string");
+      expect(p.evaluationFocus).not.toBeUndefined();
+    }
+  });
+
+  it("getEvalPersonas(\"skill-review\") returns 5 personas with systemPrompt", () => {
+    const personas = getEvalPersonas("skill-review");
+    expect(personas).toHaveLength(5);
+    for (const p of personas) {
+      expect(typeof p.systemPrompt).toBe("string");
+      expect(p.systemPrompt.length).toBeGreaterThan(0);
+      expect(typeof p.evaluationFocus).toBe("string");
+      expect(p.evaluationFocus.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("getPersonasByPack(\"default\", 0) returns empty array", () => {
+    const personas = getPersonasByPack("default", 0);
+    expect(personas).toEqual([]);
   });
 });

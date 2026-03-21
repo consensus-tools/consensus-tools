@@ -78,4 +78,36 @@ describe("createGuardedGenerate", () => {
     await guarded(async () => ({ text: "Clean content here." }));
     expect(allowed).toBe(true);
   });
+
+  it("output without text field uses empty payload", async () => {
+    const guarded = createGuardedGenerate({
+      domain: "publish",
+    });
+
+    const result = await guarded(async () => ({ other: "value" } as any));
+    // No text to evaluate, should allow by default (no blocking patterns in empty payload)
+    expect(result.decision).toBe("allow");
+    expect(result.output).toEqual({ other: "value" });
+  });
+
+  it("async hook that throws does not crash", async () => {
+    const guarded = createGuardedGenerate({
+      domain: "publish",
+      onAllow: async () => { throw new Error("hook failure"); },
+    });
+
+    // Should throw since the hook error propagates, but the result was computed
+    // The source code uses `await opts.onAllow?.(...)` so an error will propagate
+    // We verify it doesn't silently fail and the result structure is returned up to the throw
+    await expect(guarded(async () => ({ text: "Clean content here." }))).rejects.toThrow("hook failure");
+  });
+
+  it("domain defaults to publish when not specified", async () => {
+    const guarded = createGuardedGenerate({});
+
+    const result = await guarded(async () => ({ text: "Clean content." }));
+    // With no domain or template, defaults to "publish" domain
+    expect(result.decision).toBe("allow");
+    expect(result.guard).toBeTruthy();
+  });
 });

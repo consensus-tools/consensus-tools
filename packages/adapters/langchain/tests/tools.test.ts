@@ -52,4 +52,16 @@ describe("createGuardTools", () => {
     expect(tools.length).toBeGreaterThan(7);
     expect(tools.map(t => t.name)).toContain("consensus_guard_loan_approval");
   });
+
+  it("createGuardTools([]) returns empty array", () => {
+    const tools = createGuardTools([]);
+    expect(tools).toHaveLength(0);
+  });
+});
+
+describe("createGuardTool with custom description", () => {
+  it("createGuardTool with custom description uses it", () => {
+    const tool = createGuardTool("publish", "My custom description for publish guard");
+    expect(tool.description).toBe("My custom description for publish guard");
+  });
 });

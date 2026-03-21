@@ -122,4 +122,43 @@ describe("updateReputation", () => {
     expect(DEFAULT_RULESET.minRep).toBe(0.05);
     expect(DEFAULT_RULESET.maxRep).toBe(0.95);
   });
+
+  it("persona with undefined reputation defaults to 0.5", () => {
+    const personas: PersonaConfig[] = [{ id: "p1", name: "Alice", role: "security" }];
+    const result = updateReputation(
+      [{ persona_id: "p1", vote: "YES", confidence: 0.7 }],
+      "ALLOW",
+      personas,
+    );
+    expect(result.changes[0]!.reputation_before).toBe(0.5);
+    expect(result.changes[0]!.reputation_after).toBe(0.52);
+  });
+
+  it("confidence boundary: 0.79 does NOT trigger penalty boost, 0.80 DOES", () => {
+    // 0.79 — misaligned but no boost: delta = penalizeMisaligned only = -0.03
+    const resultBelow = updateReputation(
+      [{ persona_id: "p1", vote: "YES", confidence: 0.79 }],
+      "BLOCK",
+      makePersonas(),
+    );
+    expect(resultBelow.changes[0]!.delta).toBe(-0.03);
+
+    // 0.80 — misaligned + boost: delta = -0.03 + -0.02 = -0.05
+    const resultAt = updateReputation(
+      [{ persona_id: "p1", vote: "YES", confidence: 0.8 }],
+      "BLOCK",
+      makePersonas(),
+    );
+    expect(resultAt.changes[0]!.delta).toBe(-0.05);
+  });
+
+  it("unknown decision string treats all votes as misaligned", () => {
+    const result = updateReputation(
+      [{ persona_id: "p1", vote: "YES", confidence: 0.7 }],
+      "SOMETHING_WEIRD",
+      makePersonas(),
+    );
+    // isAligned returns false for unknown decisions → penalizeMisaligned
+    expect(result.changes[0]!.delta).toBe(-0.03);
+  });
 });
