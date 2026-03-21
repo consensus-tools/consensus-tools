@@ -421,9 +421,6 @@ importers:
 
   packages/adapters/mcp:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.78.0
-        version: 0.78.0(zod@3.25.76)
       '@consensus-tools/core':
         specifier: workspace:*
         version: link:../../core
@@ -445,13 +442,16 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
         version: 1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)
-      openai:
-        specifier: ^5.0.0
-        version: 5.23.2(zod@3.25.76)
     devDependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.78.0
+        version: 0.78.0(zod@3.25.76)
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.37
+      openai:
+        specifier: ^5.0.0
+        version: 5.23.2(zod@3.25.76)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -508,9 +508,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.78.0
-        version: 0.78.0(zod@3.25.76)
       '@consensus-tools/core':
         specifier: workspace:*
         version: link:../core
@@ -526,16 +523,19 @@ importers:
       commander:
         specifier: ^13.0.0
         version: 13.1.0
-      openai:
-        specifier: ^5.0.0
-        version: 5.23.2(zod@3.25.76)
       zod:
         specifier: ^3.23.0
         version: 3.25.76
     devDependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.78.0
+        version: 0.78.0(zod@3.25.76)
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.37
+      openai:
+        specifier: ^5.0.0
+        version: 5.23.2(zod@3.25.76)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

@@ -22,18 +22,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "@consensus-tools/core": "workspace:*",
     "@consensus-tools/guards": "workspace:*",
     "@consensus-tools/policies": "workspace:*",
     "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/workflows": "workspace:*",
     "@consensus-tools/wrapper": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "openai": "^5.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@types/node": "^20.0.0",
+    "openai": "^5.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
