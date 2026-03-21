@@ -1,0 +1,592 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+
+header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 { font-size: 1.2rem; font-weight: 600; }
+
+button {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#btn-reset { background: #f44336; color: #fff; }
+
+/* Layout */
+main {
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: 1rem;
+  padding: 1rem;
+  height: calc(100vh - 60px);
+  overflow: hidden;
+}
+
+/* Left: Tier panel */
+#tier-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+#tier-panel h2 { font-size: 1rem; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
+
+.tier-card {
+  padding: 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.tier-card:hover { background: #f0f0f0; }
+
+.tier-card.selected { border-color: #7c4dff; background: #f3e5f5; }
+
+.tier-name { font-weight: 600; font-size: 0.9rem; }
+.tier-meta { font-size: 0.75rem; color: #888; margin-top: 0.2rem; }
+
+.btn-run {
+  background: #2196f3;
+  color: #fff;
+  padding: 0.6rem;
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+/* Center column */
+#center-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  overflow-y: scroll;
+}
+
+#scenario-panel, #response-panel, #decision-panel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  min-height: 220px;
+  flex-shrink: 0;
+}
+
+section h2 {
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Email-style panels */
+.email-panel { padding: 0 !important; overflow: hidden; }
+.email-panel h2 {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.email-envelope {
+  padding: 1rem;
+}
+
+.email-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.email-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.email-avatar-customer { background: #e53935; }
+.email-avatar-agent { background: #1e88e5; }
+
+.email-from { font-weight: 600; font-size: 0.85rem; color: #333; }
+.email-to { font-size: 0.75rem; color: #888; }
+.email-subject { font-size: 0.75rem; color: #888; margin-top: 0.1rem; }
+.email-time { font-size: 0.7rem; color: #aaa; margin-left: auto; white-space: nowrap; }
+
+.email-body {
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.email-meta {
+  font-size: 0.7rem;
+  color: #bbb;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.scenario-text { font-size: 0.9rem; line-height: 1.6; color: #333; }
+.scenario-meta { font-size: 0.75rem; color: #999; margin-top: 0.5rem; }
+
+.response-text { font-size: 0.9rem; line-height: 1.6; color: #333; }
+
+.rewrite-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+  background: #fff3e0;
+  color: #e65100;
+  font-weight: 600;
+}
+
+/* Cycle sections for rewrite iterations */
+.response-cycle { margin-bottom: 0.75rem; }
+
+.response-cycle + .response-cycle {
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+}
+
+.cycle-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e65100;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rewrite-notice {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  background: #fff3e0;
+  font-size: 0.8rem;
+  color: #e65100;
+}
+
+.rewrite-label {
+  font-weight: 700;
+  margin-right: 0.4rem;
+}
+
+.guard-cycle-section {
+  margin-bottom: 1rem;
+}
+
+.guard-cycle-section + .guard-cycle-section {
+  border-top: 2px solid #e0e0e0;
+  padding-top: 0.75rem;
+}
+
+.cycle-divider {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.cycle-decision {
+  margin-top: 0.5rem;
+}
+
+.guard-re-eval-notice {
+  padding: 0.4rem 0.75rem;
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+  color: #7b1fa2;
+  background: #f3e5f5;
+  border-radius: 6px;
+}
+
+.btn-flag-bad {
+  margin: 0.75rem 1rem 1rem;
+  background: #ff5252;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.flagged-badge {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* Guard decision */
+.decision-badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.decision-allow { background: #e8f5e9; color: #2e7d32; }
+.decision-block { background: #ffebee; color: #c62828; }
+.decision-rewrite { background: #fff3e0; color: #e65100; }
+.decision-hitl { background: #e8eaf6; color: #283593; }
+
+.decision-meta { font-size: 0.8rem; color: #666; margin-bottom: 0.75rem; }
+
+.guard-votes { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.guard-vote-card {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.guard-vote-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.guard-vote-name { font-weight: 600; font-size: 0.85rem; }
+
+.guard-vote-badge {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.vote-yes { background: #e8f5e9; color: #2e7d32; }
+.vote-no { background: #ffebee; color: #c62828; }
+.vote-rewrite { background: #fff3e0; color: #e65100; }
+
+.guard-vote-risk { font-size: 0.75rem; color: #888; }
+.guard-vote-reason { font-size: 0.8rem; color: #555; line-height: 1.4; }
+
+/* Right panel */
+#right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#reputation-panel {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  border-bottom: 1px solid #eee;
+}
+
+#reputation-panel h2 { font-size: 1rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
+
+#telemetry-panel {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.telemetry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.telemetry-header h2 { font-size: 1rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; flex: 1; }
+
+.btn-export {
+  background: #607d8b;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Reputation cards */
+.rep-card {
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+  border-radius: 6px;
+  background: #fafafa;
+  border-left: 3px solid #2196f3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rep-name { font-weight: 600; font-size: 0.8rem; }
+
+.rep-stats { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; }
+.rep-score { font-weight: 700; }
+.rep-high { color: #2e7d32; }
+.rep-normal { color: #1565c0; }
+.rep-low { color: #c62828; }
+.rep-delta { font-size: 0.7rem; color: #888; }
+
+/* Telemetry stream */
+.telemetry-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0;
+  font-size: 0.7rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.telemetry-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.telemetry-desc { color: #555; word-wrap: break-word; overflow-wrap: break-word; }
+
+.telemetry-job-submitted { background: #e0f2f1; color: #00695c; }
+.telemetry-job-voted { background: #f3e5f5; color: #7b1fa2; }
+.telemetry-job-resolved { background: #e8f5e9; color: #2e7d32; }
+.telemetry-ledger-payout { background: #c8e6c9; color: #1b5e20; }
+.telemetry-ledger-slash { background: #ffcdd2; color: #b71c1c; }
+
+/* Slack dialog */
+dialog {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 680px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  margin: auto;
+  position: fixed;
+  inset: 0;
+  height: fit-content;
+}
+
+dialog::backdrop { background: rgba(0,0,0,0.5); }
+
+.slack-window { background: #fff; border-radius: 8px; overflow: hidden; }
+
+.slack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #3f0e40;
+  color: #fff;
+}
+
+.slack-channel { font-weight: 700; font-size: 0.95rem; }
+
+.slack-close {
+  background: none;
+  color: #fff;
+  font-size: 1.3rem;
+  padding: 0;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+.slack-close:hover { opacity: 1; }
+
+.slack-body { padding: 1rem; max-height: 500px; overflow-y: auto; }
+
+.slack-message { display: flex; gap: 0.75rem; }
+
+.slack-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: #7c4dff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.slack-content { flex: 1; }
+
+.slack-sender { font-weight: 700; font-size: 0.9rem; }
+.slack-time { font-weight: 400; font-size: 0.75rem; color: #999; margin-left: 0.4rem; }
+
+.slack-text { margin-top: 0.3rem; font-size: 0.85rem; line-height: 1.6; color: #333; }
+.slack-text p { margin-bottom: 0.3rem; }
+
+.slack-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
+.slack-btn {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.slack-approve { background: #2eb67d; color: #fff; border-color: #2eb67d; }
+.slack-reject { background: #e01e5a; color: #fff; border-color: #e01e5a; }
+.slack-revise { background: #ecb22e; color: #fff; border-color: #ecb22e; }
+
+/* Progress indicator */
+.progress-indicator { padding: 1rem; text-align: center; }
+
+.progress-step { font-size: 0.9rem; color: #666; padding: 0.5rem; }
+
+.progress-step.active {
+  color: #2196f3;
+  font-weight: 600;
+}
+
+.progress-step.active::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #2196f3;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.placeholder { color: #999; font-size: 0.85rem; font-style: italic; }
+
+/* Fix placeholder padding inside email panels */
+.email-panel .placeholder {
+  padding: 1rem;
+}
+
+/* Content areas expand naturally — center column scrolls as a unit */
+#scenario-content, #response-content, #decision-content {
+  min-height: 220px;
+  overflow-y: visible;
+}
+
+/* Center column scrollbar */
+#center-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+#center-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#center-column::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+#center-column::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Slack dialog context cards */
+.slack-context-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+  margin-top: 0.75rem;
+}
+
+.slack-context-label:first-child {
+  margin-top: 0;
+}
+
+.slack-context-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.slack-context-card .email-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.slack-context-card .slack-context-text {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: #555;
+  white-space: pre-wrap;
+}
+
+.slack-context-card .slack-context-from {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #333;
+  margin-bottom: 0.15rem;
+}

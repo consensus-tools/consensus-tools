@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fintech Transaction Guard Demo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Fintech Transaction Guard Demo</h1>
+    <div class="controls">
+      <button id="btn-reset">Reset</button>
+    </div>
+  </header>
+
+  <main id="dashboard">
+    <section id="tier-panel">
+      <h2>Risk Tier</h2>
+      <div id="tier-list"></div>
+      <button id="btn-run" class="btn-run" disabled>Run</button>
+    </section>
+
+    <div id="center-column">
+      <section id="scenario-panel" class="email-panel">
+        <h2>Transaction Inbox</h2>
+        <div id="scenario-content">
+          <p class="placeholder">Select a risk tier and click Run.</p>
+        </div>
+      </section>
+
+      <section id="response-panel" class="email-panel">
+        <h2>Agent Verdict</h2>
+        <div id="response-content">
+          <p class="placeholder">Agent response will appear here.</p>
+        </div>
+      </section>
+
+      <section id="decision-panel">
+        <h2>Guard Decision</h2>
+        <div id="decision-content">
+          <p class="placeholder">Guard evaluation results will appear here.</p>
+        </div>
+      </section>
+    </div>
+
+    <section id="right-panel">
+      <div id="reputation-panel">
+        <h2>Guard Reputation</h2>
+        <div id="reputation-content">
+          <p class="placeholder">Run a scenario to see reputation.</p>
+        </div>
+      </div>
+      <div id="telemetry-panel">
+        <div class="telemetry-header">
+          <h2>Telemetry Stream</h2>
+          <button class="btn-export" onclick="window.exportTelemetry()">Export</button>
+        </div>
+        <div id="telemetry-content">
+          <p class="placeholder">No events yet.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="slack-dialog">
+    <div class="slack-window">
+      <div class="slack-header">
+        <span class="slack-channel">#transaction-governance</span>
+        <button class="slack-close" onclick="document.getElementById('slack-dialog').close()">&times;</button>
+      </div>
+      <div class="slack-body" id="slack-body"></div>
+      <div class="slack-actions">
+        <button class="slack-btn slack-approve" onclick="window.hitlRespond('APPROVE')">APPROVE</button>
+        <button class="slack-btn slack-reject" onclick="window.hitlRespond('REJECT')">REJECT</button>
+        <button class="slack-btn slack-revise" onclick="window.hitlRespond('REVISE')">REVISE</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
