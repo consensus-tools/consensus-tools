@@ -5,7 +5,7 @@
 ```
 P0: ~~T11 (Unify Personas)~~ → ~~T10 (/consensus-engineer)~~
 P2: T7 (Guard Playground), T9 (Audit View)
-P3: T1, T2, T5, T6 (tech debt + demo tooling), T15 (Bun→vitest migration), T16 (LLM factory DRY), T17 (CLI config cast)
+P3: T1, T2, T5, T6 (tech debt + demo tooling), T16 (LLM factory DRY), T17 (CLI config cast)
 P4: T3, T4, T8, T12 (deferred / blocked)
 ```
 
@@ -195,23 +195,9 @@ Shipped `explainDecision()` in `@consensus-tools/core` — normalizes GuardVote 
 
 ---
 
-## T15: Migrate Bun examples to vitest + tsx
+## ~~T15: Migrate Bun examples to vitest + tsx~~ DONE (2026-03-20)
 
-**What:** Convert skill-version-eval, skill-sandbox, and wrapper-demo from Bun runtime to vitest + tsx, matching the monorepo standard (pnpm + Turbo + vitest).
-
-**Why:** These 3 examples use `bun test` / `bun run` but CI doesn't have Bun. Currently their test scripts are `echo` skips, meaning CI never runs their tests. Migrating to vitest means Turbo runs them natively and CI catches regressions.
-
-**Pros:** CI actually tests these examples. Consistent tooling across the entire monorepo. No more Bun requirement for contributors.
-
-**Cons:** Small migration effort. `bun:test` → `vitest` requires changing imports (`import { describe, test, expect, mock } from "bun:test"` → `import { describe, it, expect, vi } from "vitest"`). `bun run` → `tsx` for dev scripts.
-
-**Context:** The core packages, cs-demo, and fintech-demo all use vitest/tsx. Only the 3 skill-related examples broke the pattern because they were created from a Bun-based repo (consensus-gstack-evals). The `globalThis.fetch` mocking pattern in fetcher.test.ts works the same in vitest.
-
-**Effort estimate:** S (~30 min)
-
-**Priority:** P3
-
-**Depends on:** Nothing.
+Converted all 3 Bun examples to monorepo standard. wrapper-demo: script change only. skill-sandbox: Bun.serve → Node http.createServer. skill-version-eval: Bun.serve → Node http with exported createApp(), bun:test → vitest (fetcher + serve integration tests, 30 tests total). All tests now run via `pnpm test` / Turbo.
 
 ---
 
