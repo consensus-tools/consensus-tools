@@ -1,5 +1,16 @@
 # @consensus-tools/mcp
 
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/guards@0.7.0
+  - @consensus-tools/policies@0.7.0
+  - @consensus-tools/wrapper@0.7.0
+  - @consensus-tools/core@0.7.0
+  - @consensus-tools/workflows@0.7.0
+
 ## 0.6.0
 
 ### Patch Changes

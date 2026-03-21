@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.7.0 — 2026-03-20
+
+### New packages
+- **@consensus-tools/personas** (v0.7.0) — Unified persona lifecycle: types, 3 persona packs (default, skill-review, governance), reputation engine, respawn logic. Replaces 3 standalone packages (consensus-persona-engine, -generator, -respawn).
+- **@consensus-tools/langchain** (v0.7.0) — LangChain adapter: guards as DynamicStructuredTools, ConsensusCallbackHandler for audit trails, LangSmithTracer for decision tracing.
+- **@consensus-tools/ai-sdk** (v0.7.0) — Vercel AI SDK adapter: `createGuardedGenerate()` for generateText, `createGuardedStream()` for streamText.
+
+### Template system (new feature)
+- **createGuardTemplate()** in @consensus-tools/guards — Custom guard domains with `.asReviewer()` bridge to wrapper and `.register()` for registry.
+- **createPolicyTemplate()** in @consensus-tools/policies — Extend any of 9 base consensus algorithms with overrides and pre-checks.
+- **createWrapperTemplate()** in @consensus-tools/wrapper — Reusable consensus-gated functions combining reviewers + strategy + hooks.
+
+### /consensus-engineer skill
+- `skills/consensus-engineer/llms.txt` — 2200+ line system reference covering all 32 packages, 29 MCP tools, 9 policies, 7 guard domains
+- `skills/consensus-engineer/SKILL.md` — Interactive 6-phase guided experience (Analyze → Discover → Recommend → Setup → Prove → Extend)
+- Guard vs Wrapper vs Hybrid pattern detection
+
+### Examples
+- **wrapper-demo** — First real wrapper usage: LLM output safety gating with guard-as-reviewer pattern
+
+### Other changes
+- @consensus-tools/evals: Personas re-imported from @consensus-tools/personas (backwards compatible)
+- `pnpm gen:llms` validation script for llms.txt completeness
+- `pnpm guard:new` scaffold command for custom guard domains
+- 577 total tests (128 new this release, including first serve.ts coverage)
+
 ## 0.5.0 — 2026-03-15
 
 ### Added

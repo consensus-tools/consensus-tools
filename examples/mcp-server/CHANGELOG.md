@@ -1,5 +1,14 @@
 # example-mcp-server
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/policies@0.7.0
+  - @consensus-tools/mcp@0.7.0
+  - @consensus-tools/core@0.7.0
+
 ## 0.0.2
 
 ### Patch Changes

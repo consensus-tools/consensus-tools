@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/langchain",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "description": "LangChain adapter — consensus-tools guards as LangChain tools + decision callback handler",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,9 +34,16 @@
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },
-  "files": ["dist", "src"],
+  "files": [
+    "dist",
+    "src"
+  ],
   "license": "Apache-2.0",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "sideEffects": false,
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }
