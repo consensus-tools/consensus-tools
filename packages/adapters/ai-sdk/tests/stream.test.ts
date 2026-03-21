@@ -74,4 +74,29 @@ describe("createGuardedStream", () => {
     const decision = await result.guard;
     expect(decision.decision).toBe("block");
   });
+
+  it("onComplete hook error does not break the guard promise", async () => {
+    const guarded = createGuardedStream({
+      domain: "publish",
+      onComplete: async () => { throw new Error("onComplete failure"); },
+    });
+
+    const stream = mockStreamResult("Clean text.");
+    const result = await guarded(stream);
+
+    // The guard promise should reject because onComplete throws (error propagates via await)
+    await expect(result.guard).rejects.toThrow("onComplete failure");
+  });
+
+  it("defaults to publish domain when no domain or template", async () => {
+    const guarded = createGuardedStream({});
+
+    const stream = mockStreamResult("Our team builds great products.");
+    const result = await guarded(stream);
+
+    const decision = await result.guard;
+    // Default domain is "publish"; clean text should be allowed
+    expect(decision.decision).toBe("allow");
+    expect(decision.text).toBe("Our team builds great products.");
+  });
 });

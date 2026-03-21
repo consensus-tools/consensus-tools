@@ -66,4 +66,29 @@ describe("LangSmithTracer", () => {
     const t = new LangSmithTracer();
     expect(t.projectName).toBe("consensus-tools");
   });
+
+  it("traceGuardDecision returns a runId string even if client fails", async () => {
+    // Override createRun to simulate a failure
+    vi.spyOn(tracer["client"], "createRun").mockRejectedValueOnce(new Error("Network error"));
+
+    const runId = await tracer.traceGuardDecision({
+      domain: "publish",
+      decision: "ALLOW",
+      risk: 0.1,
+      votes: [{ evaluator: "publish-risk", vote: "YES", reason: "OK", risk: 0.1 }],
+      input: { text: "Hello" },
+      durationMs: 10,
+    });
+
+    // Should still return a UUID string despite client failure
+    expect(typeof runId).toBe("string");
+    expect(runId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  });
+
+  it("getTraceUrl with empty runId still returns a URL", () => {
+    const url = tracer.getTraceUrl("");
+    expect(url).toContain("smith.langchain.com");
+    expect(typeof url).toBe("string");
+    expect(url.length).toBeGreaterThan(0);
+  });
 });

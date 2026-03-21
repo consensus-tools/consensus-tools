@@ -29,4 +29,18 @@ describe("ConsensusCallbackHandler", () => {
     const json = handler.toJSONString();
     expect(json).toBe("[]");
   });
+
+  it("ignores non-consensus_guard tool calls", async () => {
+    const handler = new ConsensusCallbackHandler();
+    await handler.handleToolStart({ id: ["langchain_community", "tools", "other_tool"], name: "other_tool", type: "not_implemented" }, '{"payload":{}}', "run-2");
+    expect(handler.getDecisionLog()).toHaveLength(0);
+  });
+
+  it("clear() empties the decision log", async () => {
+    const handler = new ConsensusCallbackHandler();
+    await handler.handleToolStart({ id: ["langchain_community", "tools", "consensus_guard_publish"], name: "consensus_guard_publish", type: "not_implemented" }, '{"payload":{}}', "run-3");
+    expect(handler.getDecisionLog()).toHaveLength(1);
+    handler.clear();
+    expect(handler.getDecisionLog()).toHaveLength(0);
+  });
 });
