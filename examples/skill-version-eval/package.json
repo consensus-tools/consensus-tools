@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run src/serve.ts",
-    "test": "echo 'bun tests — run locally with: bun test'"
+    "dev": "tsx src/serve.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -12,5 +12,9 @@
     "@consensus-tools/guards": "workspace:*",
     "@consensus-tools/schemas": "workspace:*",
     "openai": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "vitest": "^4.0.18"
   }
 }
