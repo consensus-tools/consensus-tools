@@ -214,3 +214,95 @@ describe("listCommits — edge cases", () => {
     }
   });
 });
+
+describe("githubFetch — authentication", () => {
+  test("sends Authorization header when GITHUB_TOKEN is set", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    let capturedHeaders: Record<string, string> = {};
+    const originalFetch = globalThis.fetch;
+    const originalEnv = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_test_token_123";
+
+    globalThis.fetch = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = Object.fromEntries(
+        Object.entries((init?.headers as Record<string, string>) ?? {}),
+      );
+      return new Response(JSON.stringify([]), { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      await listCommits("owner", "repo", "file.md");
+      expect(capturedHeaders["Authorization"]).toBe("Bearer ghp_test_token_123");
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalEnv === undefined) delete process.env.GITHUB_TOKEN;
+      else process.env.GITHUB_TOKEN = originalEnv;
+    }
+  });
+
+  test("does NOT send Authorization header when GITHUB_TOKEN is unset", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    let capturedHeaders: Record<string, string> = {};
+    const originalFetch = globalThis.fetch;
+    const originalEnv = process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+
+    globalThis.fetch = mock(async (_url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = Object.fromEntries(
+        Object.entries((init?.headers as Record<string, string>) ?? {}),
+      );
+      return new Response(JSON.stringify([]), { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      await listCommits("owner", "repo", "file.md");
+      expect(capturedHeaders["Authorization"]).toBeUndefined();
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalEnv === undefined) delete process.env.GITHUB_TOKEN;
+      else process.env.GITHUB_TOKEN = originalEnv;
+    }
+  });
+
+  test("401 with GITHUB_TOKEN set throws enriched error mentioning token", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    const originalFetch = globalThis.fetch;
+    const originalEnv = process.env.GITHUB_TOKEN;
+    process.env.GITHUB_TOKEN = "ghp_bad_token";
+
+    globalThis.fetch = mock(async () => {
+      return new Response("Bad credentials", { status: 401 });
+    }) as typeof fetch;
+
+    try {
+      await expect(listCommits("owner", "repo", "file.md")).rejects.toThrow("GITHUB_TOKEN");
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalEnv === undefined) delete process.env.GITHUB_TOKEN;
+      else process.env.GITHUB_TOKEN = originalEnv;
+    }
+  });
+
+  test("401 without GITHUB_TOKEN throws generic 401 error", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    const originalFetch = globalThis.fetch;
+    const originalEnv = process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_TOKEN;
+
+    globalThis.fetch = mock(async () => {
+      return new Response("Bad credentials", { status: 401 });
+    }) as typeof fetch;
+
+    try {
+      await expect(listCommits("owner", "repo", "file.md")).rejects.toThrow("401");
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalEnv === undefined) delete process.env.GITHUB_TOKEN;
+      else process.env.GITHUB_TOKEN = originalEnv;
+    }
+  });
+});
