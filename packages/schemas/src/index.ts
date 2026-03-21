@@ -129,6 +129,16 @@ export {
   parseHumanApprovalYesNo,
 } from "./guard.js";
 
+// ── Explain ──────────────────────────────────────────────────────
+export {
+  normalizedVoteSchema,
+  type NormalizedVote,
+  explainInputSchema,
+  type ExplainInput,
+  explainResultSchema,
+  type ExplainResult,
+} from "./explain.js";
+
 // ── Agent ───────────────────────────────────────────────────────────
 export {
   agentKindSchema,
