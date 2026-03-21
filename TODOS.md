@@ -3,9 +3,9 @@
 ## Priority Order (updated 2026-03-20)
 
 ```
-P0: T11 (Unify Personas) → T10 (/consensus-engineer)
-P2: T13 (GitHub auth), T7 (Guard Playground), T9 (Audit View)
-P3: T1, T2, T5, T6 (tech debt + demo tooling)
+P0: ~~T11 (Unify Personas)~~ → ~~T10 (/consensus-engineer)~~
+P2: T7 (Guard Playground), T9 (Audit View)
+P3: T1, T2, T5, T6 (tech debt + demo tooling), T15 (Bun→vitest migration)
 P4: T3, T4, T8, T12 (deferred / blocked)
 ```
 
@@ -183,39 +183,15 @@ Merged consensus-persona-engine + consensus-persona-generator + consensus-person
 
 ---
 
-## T13: Skill version eval — GitHub API authentication
+## ~~T13: Skill version eval — GitHub API authentication~~ DONE (2026-03-20)
 
-**What:** Add optional `GITHUB_TOKEN` env var to the skill-version-eval server for authenticated GitHub API access.
-
-**Why:** Unauthenticated GitHub API rate limit is 60 requests/hour per IP. For a deployed multi-user tool, this is ~20 evals/hour shared across all users. Authenticated access provides 5,000 req/hr.
-
-**Pros:** Unlocks public deployment at scale without users hitting rate limits.
-
-**Cons:** Requires managing a GitHub token. Minimal implementation effort (~30 min).
-
-**Context:** The server proxies GitHub API calls via `/api/commits` and `/api/content` routes in `consensus-tools/examples/skill-version-eval/src/fetcher.ts`. The `githubFetch()` function already builds headers — adding an `Authorization: Bearer ${token}` header when `GITHUB_TOKEN` env var is set is the only change needed.
-
-**Depends on:** Nothing.
+Added `GITHUB_TOKEN` env var support to `githubFetch()` in skill-version-eval. Authenticated requests get 5,000 req/hr (vs 60 unauthenticated). Includes enriched 401 error messages when token is invalid.
 
 ---
 
-## T14: AI-Powered Audit Explainer
+## ~~T14: AI-Powered Audit Explainer~~ DONE (2026-03-20)
 
-**What:** A tool that reads any decision audit trail (GuardResult, DecisionResult, or raw vote data) and produces human-readable reasoning explaining how the policy ran — which reviewers voted what, how weights and reputation applied, why the final decision was reached.
-
-**Why:** Guard and wrapper decisions produce structured data (GuardVote[], ReviewResult[], risk scores, weights, policy config) that's machine-readable but opaque to humans. A compliance officer reviewing an audit trail shouldn't need to understand vote aggregation math — they need: "3 of 5 reviewers flagged this as high-risk because the loan amount exceeded $100K. The Security Gatekeeper (reputation: 0.85) voted NO with 0.92 confidence, citing missing fraud verification. The weighted consensus policy required 70% approval but only achieved 40%, resulting in BLOCK."
-
-**Pros:** Makes audit trails useful for compliance, debugging, and stakeholder communication. Works across ALL interfaces — GuardVote (guards), ReviewResult (wrapper), and MCP tool responses. Transforms raw decision data into narrative explanations.
-
-**Cons:** Requires an LLM call per explanation (cost). Need to design the prompt carefully to only reference data present in the audit record. Medium effort.
-
-**Context:** The audit data already exists in storage. GuardResult has votes[], decision, risk_score, audit_id. DecisionResult has scores[], action, aggregateScore. Both share the same underlying primitives (evaluator/reviewer assessments + aggregation policy). The explainer reads structured data + policy config (quorum, riskThreshold, strategy) and generates a narrative. Expose as: (1) MCP tool `audit.explain`, (2) function `explainDecision(result, policy)`, (3) CLI `consensus-tools explain <audit_id>`. Should accept any vote format — GuardVote, ReviewResult, or the raw weighted votes from consensus resolution.
-
-**Effort estimate:** M
-
-**Priority:** P2
-
-**Depends on:** Nothing — audit data already exists in storage.
+Shipped `explainDecision()` in `@consensus-tools/core` — normalizes GuardVote and ReviewResult into common shape, builds a structured prompt, calls user-provided LLM callback, returns narrative or error. Exposed via MCP tool (`audit.explain`) and CLI command (`consensus-tools explain <auditId>`). Supports Anthropic and OpenAI providers via dynamic import.
 
 ---
 
