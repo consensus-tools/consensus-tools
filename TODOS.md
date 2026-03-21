@@ -157,7 +157,7 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ## ~~T10: /consensus-engineer Skill~~ DONE (2026-03-20, Phase 1)
 
-Phase 1 shipped: llms.txt (2139-line system reference) + SKILL.md (359-line interactive 6-phase guide) + gen:llms validation script. Lives in `skills/consensus-engineer/`. Phase 2 (demo scaffolding, guard domain creation, schema generation) and Phase 3 (LangChain, LangSmith, Docker, AI SDK adapters) tracked as future work.
+All 3 phases shipped in v0.7.0. Phase 1: llms.txt (2,200+ lines) + SKILL.md (6-phase interactive guide). Phase 2: createGuardTemplate, createPolicyTemplate, createWrapperTemplate + wrapper-demo. Phase 3: @consensus-tools/langchain (guard tools + LangSmith tracer) + @consensus-tools/ai-sdk (guarded generate + guarded stream). Published to npm, ClawHub, and skills.sh.
 
 ---
 
