@@ -138,4 +138,79 @@ describe("fetchContent", () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  test("403 without X-RateLimit-Remaining header throws generic 403 error", async () => {
+    const { fetchContent } = await import("./fetcher.js");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async () => {
+      return new Response("Forbidden", { status: 403 });
+    }) as typeof fetch;
+
+    try {
+      await expect(fetchContent("owner", "repo", "file.md", "abc")).rejects.toThrow("403");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("fetchContent with 500 error throws", async () => {
+    const { fetchContent } = await import("./fetcher.js");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async () => {
+      return new Response("Internal Server Error", { status: 500 });
+    }) as typeof fetch;
+
+    try {
+      await expect(fetchContent("owner", "repo", "file.md", "abc")).rejects.toThrow("500");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+describe("listCommits — edge cases", () => {
+  test("listCommits with API returning empty array returns []", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async () => {
+      return new Response(JSON.stringify([]), { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      const commits = await listCommits("owner", "repo", "file.md");
+      expect(commits).toEqual([]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("commit message with newlines only returns first line", async () => {
+    const { listCommits } = await import("./fetcher.js");
+
+    const mockResponse = [
+      {
+        sha: "aabbccdd11223344aabbccdd11223344aabbccdd",
+        commit: {
+          message: "First line\nSecond line\nThird",
+          committer: { date: "2026-03-19T10:00:00Z" },
+        },
+      },
+    ];
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = mock(async () => {
+      return new Response(JSON.stringify(mockResponse), { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      const commits = await listCommits("owner", "repo", "file.md");
+      expect(commits).toHaveLength(1);
+      expect(commits[0].message).toBe("First line");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
