@@ -310,6 +310,10 @@ importers:
       openai:
         specifier: ^5.0.0
         version: 5.23.2(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
   examples/skill-version-eval:
     dependencies:
@@ -328,6 +332,13 @@ importers:
       openai:
         specifier: ^5.0.0
         version: 5.23.2(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(vite@7.3.1(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0))
 
   examples/wrapper-demo:
     dependencies:
@@ -340,6 +351,10 @@ importers:
       '@consensus-tools/wrapper':
         specifier: workspace:*
         version: link:../../packages/wrapper
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
   packages/adapters/ai-sdk:
     dependencies:

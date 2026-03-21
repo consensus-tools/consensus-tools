@@ -3,9 +3,8 @@
 ## Priority Order (updated 2026-03-20)
 
 ```
-P0: ~~T11 (Unify Personas)~~ → ~~T10 (/consensus-engineer)~~
 P2: T7 (Guard Playground), T9 (Audit View)
-P3: T1, T2, T5, T6 (tech debt + demo tooling), T16 (LLM factory DRY), T17 (CLI config cast)
+P3: T1, T2 (tech debt), T16 (LLM factory DRY), T17 (CLI config cast)
 P4: T3, T4, T8, T12 (deferred / blocked)
 ```
 
@@ -75,38 +74,6 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ---
 
-## T5: Skill guard demo — audit log export command
-
-**What:** Add `tsx main.ts --export-audit` flag to skill-guard-demo that pretty-prints the ndjson audit trail for debugging.
-
-**Why:** After a confusing demo run, the raw `.data/skill-guard-audit.ndjson` file has all the data but is hard to scan. A formatted view showing rounds → proposals → votes → decisions → settlements would make debugging trivial.
-
-**Pros:** Quick to build (~30 lines), reuses existing audit data, valuable for demo presentations.
-
-**Cons:** Low priority — users can `cat audit.ndjson | jq` for now.
-
-**Context:** The ndjson audit log was added as part of the skill-guard-demo implementation. Each line is a JSON object with `ts`, `event`, and event-specific fields. Events: `demo.start`, `proposal`, `guard.decision`, `guard.rewrite`, `judge`, `settlement`, `skill.written`, `demo.complete`.
-
-**Depends on:** Skill guard demo (examples/skill-guard-demo).
-
----
-
-## T6: Skill guard demo — compare mode for regression testing
-
-**What:** Add `tsx main.ts --compare <baseline.json>` that runs the demo, saves scores, and diffs against a previous baseline.
-
-**Why:** Validates the demo's core thesis: iterative consensus-driven improvement actually works. A regression test would show judge score deltas across runs and flag quality drops.
-
-**Pros:** Makes the demo self-validating. Uses existing audit log data. Natural follow-up to the eval patterns in consensus-gstack-evals.
-
-**Cons:** Medium effort — needs baseline file format, score extraction from audit log, diff rendering.
-
-**Context:** The demo already shows score progression per skill in the final summary. This TODO would formalize that into a saveable/comparable format. The gstack-evals repo has a similar pattern: `test/fixtures/eval-baselines.json` pinning LLM judge scores.
-
-**Depends on:** T5 (audit log export) for the data format, though could also read directly from ndjson.
-
----
-
 ## T7: Guard Playground
 
 **What:** Interactive guard runner with colored vote breakdown and weight tweaking. `pnpm guard:playground --domain code-merge --input examples/sample-pr.json`.
@@ -155,18 +122,6 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ---
 
-## ~~T10: /consensus-engineer Skill~~ DONE (2026-03-20, Phase 1)
-
-All 3 phases shipped in v0.7.0. Phase 1: llms.txt (2,200+ lines) + SKILL.md (6-phase interactive guide). Phase 2: createGuardTemplate, createPolicyTemplate, createWrapperTemplate + wrapper-demo. Phase 3: @consensus-tools/langchain (guard tools + LangSmith tracer) + @consensus-tools/ai-sdk (guarded generate + guarded stream). Published to npm, ClawHub, and skills.sh.
-
----
-
-## ~~T11: Unify Persona Packages~~ DONE (2026-03-20)
-
-Merged consensus-persona-engine + consensus-persona-generator + consensus-persona-respawn into `@consensus-tools/personas`. Standalone packages deleted. 28 tests, Tier 1 placement, evals re-imports from personas.
-
----
-
 ## T12: Idempotency Race Condition Fix
 
 **What:** Fix race condition where two concurrent guard calls with same input can both create artifacts. Add atomic check-and-set to storage for idempotency keys.
@@ -180,24 +135,6 @@ Merged consensus-persona-engine + consensus-persona-generator + consensus-person
 **Context:** The GuardHandler uses in-memory cache + storage lookup for idempotency. Two concurrent calls can both pass the check before either writes. Real fix requires atomic upsert in storage.
 
 **Depends on:** T3 (SqliteStorage redesign) or storage interface change.
-
----
-
-## ~~T13: Skill version eval — GitHub API authentication~~ DONE (2026-03-20)
-
-Added `GITHUB_TOKEN` env var support to `githubFetch()` in skill-version-eval. Authenticated requests get 5,000 req/hr (vs 60 unauthenticated). Includes enriched 401 error messages when token is invalid.
-
----
-
-## ~~T14: AI-Powered Audit Explainer~~ DONE (2026-03-20)
-
-Shipped `explainDecision()` in `@consensus-tools/core` — normalizes GuardVote and ReviewResult into common shape, builds a structured prompt, calls user-provided LLM callback, returns narrative or error. Exposed via MCP tool (`audit.explain`) and CLI command (`consensus-tools explain <auditId>`). Supports Anthropic and OpenAI providers via dynamic import.
-
----
-
-## ~~T15: Migrate Bun examples to vitest + tsx~~ DONE (2026-03-20)
-
-Converted all 3 Bun examples to monorepo standard. wrapper-demo: script change only. skill-sandbox: Bun.serve → Node http.createServer. skill-version-eval: Bun.serve → Node http with exported createApp(), bun:test → vitest (fetcher + serve integration tests, 30 tests total). All tests now run via `pnpm test` / Turbo.
 
 ---
 
