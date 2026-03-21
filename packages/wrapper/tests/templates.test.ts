@@ -55,6 +55,40 @@ describe("createWrapperTemplate", () => {
     expect(events).toEqual(["before", "after"]);
   });
 
+  it("wrap() with maxRetries=0 escalates immediately on low score", async () => {
+    const template = createWrapperTemplate("immediate_escalate", {
+      reviewers: [() => ({ score: 0.2, rationale: "Very bad output" })],
+      strategy: { strategy: "threshold", threshold: 0.7 },
+      maxRetries: 0,
+    });
+
+    const safeFn = template.wrap(async () => "low quality response");
+    const result = await safeFn();
+    expect(result.action).toBe("escalate");
+    expect(result.aggregateScore).toBeLessThan(0.7);
+  });
+
+  it("wrap() with sync function works", async () => {
+    const template = createWrapperTemplate("sync_fn_test", {
+      reviewers: [() => ({ score: 0.9, rationale: "OK" })],
+      strategy: { strategy: "threshold", threshold: 0.5 },
+    });
+
+    const safeFn = template.wrap((input: string) => `sync: ${input}`);
+    const result = await safeFn("hello");
+    expect(result.action).toBe("allow");
+    expect(result.output).toBe("sync: hello");
+  });
+
+  it("default description is generated from name", () => {
+    const template = createWrapperTemplate("my_special_wrapper", {
+      reviewers: [() => ({ score: 0.9, rationale: "OK" })],
+      strategy: { strategy: "threshold", threshold: 0.5 },
+    });
+
+    expect(template.description).toContain("my_special_wrapper");
+  });
+
   it("wrap() uses guard template asReviewer()", async () => {
     // Import createGuardTemplate to test the integration
     const { createGuardTemplate } = await import("@consensus-tools/guards");
