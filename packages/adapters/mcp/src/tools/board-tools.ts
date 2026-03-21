@@ -182,10 +182,10 @@ export async function handle(
         }
 
         // Dynamic import to avoid hard dependency
-        const { explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
+        const { explainDecision, guardResultToExplainInput, createLlmFn } = await import("@consensus-tools/core");
 
         const input = guardResultToExplainInput(guardResult);
-        const llm = await createLlmFn(anthropicKey, openaiKey);
+        const llm = await createLlmFn({ anthropicKey, openaiKey });
         const result = await explainDecision(input, { llm });
 
         if (result.status === "error") {
@@ -204,35 +204,4 @@ export async function handle(
     const message = err instanceof Error ? err.message : String(err);
     return { isError: true, content: [{ type: "text", text: message }] };
   }
-}
-
-async function createLlmFn(
-  anthropicKey: string | undefined,
-  openaiKey: string | undefined,
-): Promise<(prompt: string) => Promise<string>> {
-  if (anthropicKey) {
-    const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const client = new Anthropic({ apiKey: anthropicKey });
-    return async (prompt: string) => {
-      const res = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      });
-      const block = res.content[0];
-      return block?.type === "text" ? block.text : "";
-    };
-  }
-
-  // Fallback to OpenAI
-  const { default: OpenAI } = await import("openai");
-  const client = new OpenAI({ apiKey: openaiKey });
-  return async (prompt: string) => {
-    const res = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 1024,
-    });
-    return res.choices[0]?.message?.content ?? "";
-  };
 }

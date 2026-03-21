@@ -7,7 +7,7 @@ export interface ConsensusCliConfig {
   agentId?: string;
   activeBoard: "local" | "remote";
   boards: {
-    local: { type: "local"; root: string; jobsPath: string; ledgerPath: string };
+    local: { type: "local"; root: string; jobsPath: string; ledgerPath: string; storagePath?: string };
     remote: { type: "remote"; url: string; boardId: string; auth: { type: "apiKey"; apiKeyEnv: string } };
   };
   defaults: { policy: string; reward: number; stake: number; leaseSeconds: number };
@@ -17,7 +17,7 @@ export const consensusCliConfigSchema = z.object({
   agentId: z.string().optional(),
   activeBoard: z.enum(["local", "remote"]),
   boards: z.object({
-    local: z.object({ type: z.literal("local"), root: z.string(), jobsPath: z.string(), ledgerPath: z.string() }),
+    local: z.object({ type: z.literal("local"), root: z.string(), jobsPath: z.string(), ledgerPath: z.string(), storagePath: z.string().optional() }),
     remote: z.object({ type: z.literal("remote"), url: z.string(), boardId: z.string(), auth: z.object({ type: z.literal("apiKey"), apiKeyEnv: z.string() }) }),
   }),
   defaults: z.object({ policy: z.string(), reward: z.number(), stake: z.number(), leaseSeconds: z.number() }),

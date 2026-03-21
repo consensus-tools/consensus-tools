@@ -51,3 +51,4 @@ export {
   guardResultToExplainInput,
 } from "./explain.js";
 export type { LlmFn, ExplainOptions } from "./explain.js";
+export { createLlmFn } from "./llm-factory.js";

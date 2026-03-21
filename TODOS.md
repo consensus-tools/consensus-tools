@@ -4,7 +4,7 @@
 
 ```
 P2: T7 (Guard Playground), T9 (Audit View)
-P3: T1, T2 (tech debt), T16 (LLM factory DRY), T17 (CLI config cast)
+P3: T1, T2 (tech debt)
 P4: T3, T4, T8, T12 (deferred / blocked)
 ```
 
@@ -138,40 +138,12 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ---
 
-## T16: Extract shared LLM client factory
+## ~~T16: Extract shared LLM client factory~~ DONE (2026-03-21)
 
-**What:** The `createLlmFn` pattern (Anthropic vs OpenAI selection, model name, max_tokens) is duplicated in `packages/adapters/mcp/src/tools/board-tools.ts` and `packages/cli/src/commands.ts`. Extract into a shared utility.
-
-**Why:** DRY — model strings (`claude-sonnet-4-20250514`, `gpt-4o-mini`) and `max_tokens: 1024` appear in both files. When we update the default model, both need changing.
-
-**Pros:** Single place to update model defaults. Enables future configurability (e.g., user-selected model via config).
-
-**Cons:** Adds a new file. Only 2 call sites currently — marginal ROI.
-
-**Context:** Created during T14 (audit explainer). Both MCP and CLI surfaces need to construct an LLM callback from env vars. The factory takes `(anthropicKey, openaiKey)` and returns `(prompt: string) => Promise<string>`. Natural home: `packages/core/src/llm-factory.ts` or a new `packages/core/src/explain-llm.ts`.
-
-**Effort estimate:** S (~15 min)
-
-**Priority:** P3
-
-**Depends on:** Nothing.
+Extracted `createLlmFn()` into `packages/core/src/llm-factory.ts`. Single source of truth for model names, max_tokens, and Anthropic/OpenAI selection. Both MCP board-tools and CLI commands now import from core.
 
 ---
 
-## T17: Type-safe CLI config for local storage path
+## ~~T17: Type-safe CLI config for local storage path~~ DONE (2026-03-21)
 
-**What:** `packages/cli/src/commands.ts` uses `(cfg as any).boards?.local?.storagePath` to access the local board storage path, bypassing `ConsensusCliConfig` types.
-
-**Why:** If the config shape changes, this silently falls through to the default path without warning. The `as any` cast hides the missing field.
-
-**Pros:** Type safety — compiler catches config shape changes. Removes the only `as any` in the CLI.
-
-**Cons:** Requires extending `ConsensusCliConfig` type with an optional `storagePath` field, or adding a typed accessor.
-
-**Context:** Created during T14. The `explain` command needs to open local storage directly (unlike other CLI commands which use the remote SDK client). The fallback `"./data/local-board.json"` is reasonable but the access pattern should be typed.
-
-**Effort estimate:** S (~15 min)
-
-**Priority:** P3
-
-**Depends on:** Nothing.
+Added `storagePath?: string` to `ConsensusCliConfig.boards.local` and the Zod schema. Removed the `(cfg as any)` cast in CLI commands.ts.

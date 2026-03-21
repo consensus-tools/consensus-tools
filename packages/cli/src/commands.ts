@@ -174,17 +174,10 @@ export function buildProgram(): Command {
     .option("--json", "JSON output")
     .option("--verbose", "Print the prompt sent to the LLM")
     .action(async (auditId: string, opts) => {
-      const anthropicKey = process.env.ANTHROPIC_API_KEY;
-      const openaiKey = process.env.OPENAI_API_KEY;
-      if (!anthropicKey && !openaiKey) {
-        console.error("Error: Set ANTHROPIC_API_KEY or OPENAI_API_KEY to use explain.");
-        process.exit(1);
-      }
-
       // Load local storage to find the guard result
-      const { JsonStorage, explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
+      const { JsonStorage, explainDecision, guardResultToExplainInput, createLlmFn } = await import("@consensus-tools/core");
       const cfg = await loadCliConfig();
-      const storagePath = (cfg as any).boards?.local?.storagePath ?? "./data/local-board.json";
+      const storagePath = cfg.boards.local.storagePath ?? "./data/local-board.json";
       const storage = new JsonStorage(storagePath);
       await storage.init();
 
@@ -197,31 +190,12 @@ export function buildProgram(): Command {
 
       const input = guardResultToExplainInput(guardResult);
 
-      // Build LLM function
-      let llm: (prompt: string) => Promise<string>;
-      if (anthropicKey) {
-        const { default: Anthropic } = await import("@anthropic-ai/sdk");
-        const client = new Anthropic({ apiKey: anthropicKey });
-        llm = async (prompt: string) => {
-          const res = await client.messages.create({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1024,
-            messages: [{ role: "user", content: prompt }],
-          });
-          const block = res.content[0];
-          return block && block.type === "text" ? block.text : "";
-        };
-      } else {
-        const { default: OpenAI } = await import("openai");
-        const client = new OpenAI({ apiKey: openaiKey });
-        llm = async (prompt: string) => {
-          const res = await client.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: 1024,
-          });
-          return res.choices[0]?.message?.content ?? "";
-        };
+      let llm;
+      try {
+        llm = await createLlmFn();
+      } catch (err: unknown) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
       }
 
       const onPrompt = opts.verbose ? (prompt: string) => console.error("[prompt]\n" + prompt + "\n") : undefined;
