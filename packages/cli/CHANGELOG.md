@@ -1,5 +1,11 @@
 # @consensus-tools/cli
 
+## 0.7.0
+
+### Patch Changes
+
+- @consensus-tools/core@0.7.0
+
 ## 0.5.0
 
 ### Minor Changes

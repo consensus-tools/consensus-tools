@@ -1,0 +1,28 @@
+{
+  "name": "example-skill-guard-demo",
+  "version": "1.0.2",
+  "private": true,
+  "description": "Consensus guard agents iteratively improving gstack SKILL.md files with reputation tracking",
+  "type": "module",
+  "scripts": {
+    "start": "tsx main.ts",
+    "demo": "tsx main.ts --rounds 3 --skills browse,qa",
+    "demo:quick": "tsx main.ts --rounds 1 --skills browse",
+    "demo:dry": "tsx main.ts --dry-run",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.2.0",
+    "@ai-sdk/openai": "^1.3.0",
+    "@consensus-tools/evals": "workspace:*",
+    "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
+    "ai": "^4.3.0",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "vitest": "^4.1.0"
+  }
+}

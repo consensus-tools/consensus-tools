@@ -1,8 +1,8 @@
 {
-  "name": "example-cs-demo",
+  "name": "example-fintech-demo",
   "version": "2.0.3",
   "private": true,
-  "description": "Guard-centric CS demo — 1 agent answers, N guards evaluate, reputation tracks guard quality",
+  "description": "Fintech transaction governance demo — agent pipeline evaluates, consensus guards govern, reputation tracks guard quality",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
