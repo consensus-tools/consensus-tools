@@ -46,6 +46,21 @@ export const tools = [
       },
     },
   },
+  {
+    name: "audit.explain",
+    description:
+      "Generate a human-readable explanation of a guard decision. Requires an LLM — set ANTHROPIC_API_KEY or OPENAI_API_KEY in your environment.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        auditId: {
+          type: "string",
+          description: "The audit_id from a GuardResult to explain",
+        },
+      },
+      required: ["auditId"],
+    },
+  },
 ];
 
 export async function handle(
@@ -140,6 +155,48 @@ export async function handle(
         return { content: [{ type: "text", text: JSON.stringify({ events, count: events.length }) }] };
       }
 
+      case "audit.explain": {
+        if (!args.auditId) {
+          return { isError: true, content: [{ type: "text", text: "auditId is required" }] };
+        }
+        const auditId = args.auditId as string;
+        const state = await ctx.storage.getState();
+
+        // Find the guard result by audit_id
+        const guardResult = state.guardResults.find((r) => r.audit_id === auditId);
+        if (!guardResult) {
+          return {
+            isError: true,
+            content: [{ type: "text", text: `No guard result found for audit ID: ${auditId}` }],
+          };
+        }
+
+        // Check for an LLM API key
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const openaiKey = process.env.OPENAI_API_KEY;
+        if (!anthropicKey && !openaiKey) {
+          return {
+            isError: true,
+            content: [{ type: "text", text: "Set ANTHROPIC_API_KEY or OPENAI_API_KEY to use audit.explain" }],
+          };
+        }
+
+        // Dynamic import to avoid hard dependency
+        const { explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
+
+        const input = guardResultToExplainInput(guardResult);
+        const llm = await createLlmFn(anthropicKey, openaiKey);
+        const result = await explainDecision(input, { llm });
+
+        if (result.status === "error") {
+          return { isError: true, content: [{ type: "text", text: result.error! }] };
+        }
+
+        return {
+          content: [{ type: "text", text: JSON.stringify({ auditId, narrative: result.narrative }) }],
+        };
+      }
+
       default:
         return { isError: true, content: [{ type: "text", text: `Unknown tool: ${name}` }] };
     }
@@ -147,4 +204,35 @@ export async function handle(
     const message = err instanceof Error ? err.message : String(err);
     return { isError: true, content: [{ type: "text", text: message }] };
   }
+}
+
+async function createLlmFn(
+  anthropicKey: string | undefined,
+  openaiKey: string | undefined,
+): Promise<(prompt: string) => Promise<string>> {
+  if (anthropicKey) {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const client = new Anthropic({ apiKey: anthropicKey });
+    return async (prompt: string) => {
+      const res = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const block = res.content[0];
+      return block?.type === "text" ? block.text : "";
+    };
+  }
+
+  // Fallback to OpenAI
+  const { default: OpenAI } = await import("openai");
+  const client = new OpenAI({ apiKey: openaiKey });
+  return async (prompt: string) => {
+    const res = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1024,
+    });
+    return res.choices[0]?.message?.content ?? "";
+  };
 }
