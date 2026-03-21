@@ -4,7 +4,7 @@
  * Demonstrates using createGuardTemplate + createWrapperTemplate to gate
  * an LLM response function with consensus-based safety review.
  *
- * Run: bun run src/index.ts
+ * Run: tsx src/index.ts
  */
 import { createGuardTemplate } from "@consensus-tools/guards";
 import { createWrapperTemplate } from "@consensus-tools/wrapper";
