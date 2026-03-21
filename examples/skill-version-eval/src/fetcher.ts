@@ -31,10 +31,22 @@ async function githubFetch(path: string, accept?: string): Promise<Response> {
       Accept: accept || "application/vnd.github+json",
     };
 
+    const token = process.env.GITHUB_TOKEN;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${GITHUB_API}${path}`, {
       headers,
       signal: controller.signal,
     });
+
+    if (res.status === 401) {
+      if (token) {
+        throw new Error("GitHub API authentication failed (401) — check your GITHUB_TOKEN is valid and not expired");
+      }
+      throw new Error(`GitHub API unauthorized (401): ${await res.text().catch(() => "unknown")}`);
+    }
 
     if (res.status === 403) {
       const remaining = res.headers.get("X-RateLimit-Remaining");

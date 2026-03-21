@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "demo": "bun run src/index.ts",
+    "demo": "tsx src/index.ts",
     "test": "echo 'no tests — run demo manually'"
   },
   "dependencies": {
     "@consensus-tools/guards": "workspace:*",
     "@consensus-tools/wrapper": "workspace:*",
     "@consensus-tools/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

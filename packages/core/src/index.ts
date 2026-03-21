@@ -42,3 +42,12 @@ export { defaultState, applyStorageCaps, createStorage, JsonStorage, SqliteStora
 // ── Util ────────────────────────────────────────────────────────────
 export { newId, deepCopy } from "./util/ids.js";
 export { nowIso, addSeconds, isPast } from "./util/time.js";
+
+// ── Explain ──────────────────────────────────────────────────────
+export {
+  explainDecision,
+  normalizeGuardVote,
+  normalizeReviewResult,
+  guardResultToExplainInput,
+} from "./explain.js";
+export type { LlmFn, ExplainOptions } from "./explain.js";

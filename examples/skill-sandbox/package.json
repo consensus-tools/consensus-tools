@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run src/serve.ts",
+    "dev": "tsx src/serve.ts",
     "test": "echo 'no tests — run demo manually'"
   },
   "dependencies": {
@@ -12,5 +12,8 @@
     "@consensus-tools/guards": "workspace:*",
     "@consensus-tools/schemas": "workspace:*",
     "openai": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

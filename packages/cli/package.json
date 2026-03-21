@@ -22,11 +22,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@consensus-tools/schemas": "workspace:*",
+    "@anthropic-ai/sdk": "^0.78.0",
     "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/sdk-client": "workspace:*",
     "@consensus-tools/telemetry": "workspace:*",
     "commander": "^13.0.0",
+    "openai": "^5.0.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {

@@ -310,6 +310,10 @@ importers:
       openai:
         specifier: ^5.0.0
         version: 5.23.2(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
   examples/skill-version-eval:
     dependencies:
@@ -328,6 +332,13 @@ importers:
       openai:
         specifier: ^5.0.0
         version: 5.23.2(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.0(@opentelemetry/api@1.9.0)(@types/node@20.19.37)(vite@7.3.1(@types/node@20.19.37)(jiti@1.21.7)(tsx@4.21.0))
 
   examples/wrapper-demo:
     dependencies:
@@ -340,6 +351,10 @@ importers:
       '@consensus-tools/wrapper':
         specifier: workspace:*
         version: link:../../packages/wrapper
+    devDependencies:
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
 
   packages/adapters/ai-sdk:
     dependencies:
@@ -406,6 +421,9 @@ importers:
 
   packages/adapters/mcp:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.78.0
+        version: 0.78.0(zod@3.25.76)
       '@consensus-tools/core':
         specifier: workspace:*
         version: link:../../core
@@ -427,6 +445,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
         version: 1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)
+      openai:
+        specifier: ^5.0.0
+        version: 5.23.2(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -487,6 +508,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.78.0
+        version: 0.78.0(zod@3.25.76)
       '@consensus-tools/core':
         specifier: workspace:*
         version: link:../core
@@ -502,6 +526,9 @@ importers:
       commander:
         specifier: ^13.0.0
         version: 13.1.0
+      openai:
+        specifier: ^5.0.0
+        version: 5.23.2(zod@3.25.76)
       zod:
         specifier: ^3.23.0
         version: 3.25.76

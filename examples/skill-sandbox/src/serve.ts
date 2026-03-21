@@ -1,5 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as http from "http";
+import { fileURLToPath } from "url";
 import { listRepos, listSkills, listVersions, fetchSkillAt } from "./fetcher.js";
 import { buildRubric } from "./rubric-builder.js";
 import { executeSkill, loadFixtureReadme, loadFixtureFiles } from "./executor.js";
@@ -7,8 +9,9 @@ import { checkHallucinations } from "./hallucination-checker.js";
 import type { SandboxRunLog } from "./types.js";
 
 const PORT = 3457;
-const DATA_DIR = path.join(import.meta.dir, "..", ".data", "runs");
-const UI_DIR = path.join(import.meta.dir, "..", "ui");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = path.join(__dirname, "..", ".data", "runs");
+const UI_DIR = path.join(__dirname, "..", "ui");
 
 let isRunning = false;
 
@@ -16,174 +19,186 @@ function ensureDataDir() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-function jsonResponse(data: any, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json" },
+function sendJson(res: http.ServerResponse, data: unknown, status = 200) {
+  res.writeHead(status, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(data));
+}
+
+function readBody(req: http.IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+    req.on("end", () => resolve(body));
+    req.on("error", reject);
   });
 }
 
-Bun.serve({
-  port: PORT,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const { pathname } = url;
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || "/", `http://localhost:${PORT}`);
+  const { pathname } = url;
+  const method = req.method || "GET";
 
-    // Serve UI
-    if (pathname === "/" || pathname === "/index.html") {
-      const htmlPath = path.join(UI_DIR, "index.html");
-      try {
-        const html = fs.readFileSync(htmlPath, "utf-8");
-        return new Response(html, {
-          headers: { "Content-Type": "text/html" },
-        });
-      } catch {
-        return new Response("UI not found", { status: 404 });
-      }
+  // Serve UI
+  if (pathname === "/" || pathname === "/index.html") {
+    const htmlPath = path.join(UI_DIR, "index.html");
+    try {
+      const html = fs.readFileSync(htmlPath, "utf-8");
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end(html);
+      return;
+    } catch {
+      res.writeHead(404);
+      res.end("UI not found");
+      return;
+    }
+  }
+
+  // API: list repos
+  if (pathname === "/api/repos" && method === "GET") {
+    return sendJson(res, listRepos());
+  }
+
+  // API: list skills for a repo
+  if (pathname === "/api/skills" && method === "GET") {
+    const repo = url.searchParams.get("repo") || "";
+    return sendJson(res, listSkills(repo));
+  }
+
+  // API: list versions (tags + branches)
+  if (pathname === "/api/versions" && method === "GET") {
+    const owner = url.searchParams.get("owner") || "";
+    const repo = url.searchParams.get("repo") || "";
+    if (!owner || !repo) {
+      return sendJson(res, { error: "owner and repo required" }, 400);
+    }
+    return sendJson(res, listVersions(owner, repo));
+  }
+
+  // API: status
+  if (pathname === "/api/status" && method === "GET") {
+    return sendJson(res, { running: isRunning });
+  }
+
+  // API: run sandbox
+  if (pathname === "/api/run-sandbox" && method === "POST") {
+    if (isRunning) {
+      return sendJson(res, { error: "A sandbox run is already in progress" }, 409);
     }
 
-    // API: list repos
-    if (pathname === "/api/repos" && req.method === "GET") {
-      return jsonResponse(listRepos());
+    let body: any;
+    try {
+      body = JSON.parse(await readBody(req));
+    } catch {
+      return sendJson(res, { error: "Invalid JSON body" }, 400);
     }
 
-    // API: list skills for a repo
-    if (pathname === "/api/skills" && req.method === "GET") {
-      const repo = url.searchParams.get("repo") || "";
-      return jsonResponse(listSkills(repo));
+    const { repo, skill, version, model } = body;
+    if (!repo || !skill || !version || !model) {
+      return sendJson(
+        res,
+        { error: "Missing required fields: repo, skill, version, model" },
+        400,
+      );
     }
 
-    // API: list versions (tags + branches)
-    if (pathname === "/api/versions" && req.method === "GET") {
-      const owner = url.searchParams.get("owner") || "";
-      const repo = url.searchParams.get("repo") || "";
-      if (!owner || !repo) {
-        return jsonResponse({ error: "owner and repo required" }, 400);
-      }
-      return jsonResponse(listVersions(owner, repo));
+    const repoInfo = listRepos().find((r) => r.label === repo);
+    if (!repoInfo) {
+      return sendJson(res, { error: `Unknown repo: ${repo}` }, 400);
     }
 
-    // API: status
-    if (pathname === "/api/status" && req.method === "GET") {
-      return jsonResponse({ running: isRunning });
-    }
+    isRunning = true;
+    const start = Date.now();
 
-    // API: run sandbox
-    if (pathname === "/api/run-sandbox" && req.method === "POST") {
-      if (isRunning) {
-        return jsonResponse({ error: "A sandbox run is already in progress" }, 409);
-      }
-
-      let body: any;
-      try {
-        body = await req.json();
-      } catch {
-        return jsonResponse({ error: "Invalid JSON body" }, 400);
-      }
-
-      const { repo, skill, version, model } = body;
-      if (!repo || !skill || !version || !model) {
-        return jsonResponse(
-          { error: "Missing required fields: repo, skill, version, model" },
-          400,
+    try {
+      // 1. Fetch SKILL.md
+      console.log(`Fetching ${skill}/SKILL.md at ${version}...`);
+      const skillContent = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, version);
+      if (!skillContent) {
+        return sendJson(
+          res,
+          { error: `Could not fetch ${skill}/SKILL.md at ref ${version}` },
+          404,
         );
       }
 
-      const repoInfo = listRepos().find((r) => r.label === repo);
-      if (!repoInfo) {
-        return jsonResponse({ error: `Unknown repo: ${repo}` }, 400);
-      }
+      // 2. Load synthetic repo fixtures
+      const readme = loadFixtureReadme();
+      const { listing } = loadFixtureFiles();
 
-      isRunning = true;
-      const start = Date.now();
+      // 3. Build rubric via consensus
+      console.log("Building rubric via consensus...");
+      const rubric = await buildRubric(skillContent, readme, listing, model as any);
+      console.log(`Rubric built: ${rubric.claims.length} claims, ${rubric.weakPoints.length} weak points`);
 
-      try {
-        // 1. Fetch SKILL.md
-        console.log(`Fetching ${skill}/SKILL.md at ${version}...`);
-        const skillContent = fetchSkillAt(repoInfo.owner, repoInfo.repo, skill, version);
-        if (!skillContent) {
-          return jsonResponse(
-            { error: `Could not fetch ${skill}/SKILL.md at ref ${version}` },
-            404,
-          );
-        }
+      // 4. Execute skill
+      console.log("Executing skill against synthetic repo...");
+      const executionOutput = await executeSkill(skillContent, rubric, model as any);
+      console.log(`Execution complete: ${executionOutput.length} chars`);
 
-        // 2. Load synthetic repo fixtures
-        const readme = loadFixtureReadme();
-        const { listing } = loadFixtureFiles();
+      // 5. Check hallucinations via consensus
+      console.log("Checking for hallucinations...");
+      const hallucinationResult = await checkHallucinations(executionOutput, rubric, model as any);
+      console.log(`Hallucination check: ${hallucinationResult.hallucinationCount} found, decision: ${hallucinationResult.decision}`);
 
-        // 3. Build rubric via consensus
-        console.log("Building rubric via consensus...");
-        const rubric = await buildRubric(skillContent, readme, listing, model as any);
-        console.log(`Rubric built: ${rubric.claims.length} claims, ${rubric.weakPoints.length} weak points`);
+      // 6. Build result
+      const result: SandboxRunLog = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        skill,
+        repo: repo,
+        version,
+        model,
+        rubric,
+        executionOutput,
+        checkResults: hallucinationResult.checkResults,
+        decision: hallucinationResult.decision,
+        combinedRisk: hallucinationResult.combinedRisk,
+        hallucinationCount: hallucinationResult.hallucinationCount,
+        durationMs: Date.now() - start,
+      };
 
-        // 4. Execute skill
-        console.log("Executing skill against synthetic repo...");
-        const executionOutput = await executeSkill(skillContent, rubric, model as any);
-        console.log(`Execution complete: ${executionOutput.length} chars`);
-
-        // 5. Check hallucinations via consensus
-        console.log("Checking for hallucinations...");
-        const hallucinationResult = await checkHallucinations(executionOutput, rubric, model as any);
-        console.log(`Hallucination check: ${hallucinationResult.hallucinationCount} found, decision: ${hallucinationResult.decision}`);
-
-        // 6. Build result
-        const result: SandboxRunLog = {
-          id: crypto.randomUUID(),
-          timestamp: new Date().toISOString(),
-          skill,
-          repo: repo,
-          version,
-          model,
-          rubric,
-          executionOutput,
-          checkResults: hallucinationResult.checkResults,
-          decision: hallucinationResult.decision,
-          combinedRisk: hallucinationResult.combinedRisk,
-          hallucinationCount: hallucinationResult.hallucinationCount,
-          durationMs: Date.now() - start,
-        };
-
-        // 7. Save to .data/runs/
-        ensureDataDir();
-        const runFile = path.join(DATA_DIR, `${result.id}.json`);
-        fs.writeFileSync(runFile, JSON.stringify(result, null, 2));
-        console.log(`Results saved to ${runFile}`);
-
-        return jsonResponse(result);
-      } catch (err: any) {
-        console.error("Sandbox run failed:", err);
-        return jsonResponse({ error: err.message || "Sandbox run failed" }, 500);
-      } finally {
-        isRunning = false;
-      }
-    }
-
-    // API: list past runs
-    if (pathname === "/api/runs" && req.method === "GET") {
+      // 7. Save to .data/runs/
       ensureDataDir();
-      try {
-        const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
-        const runs = files
-          .map((f) => {
-            try {
-              return JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), "utf-8"));
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean)
-          .sort((a: any, b: any) => {
-            return (b.timestamp || "").localeCompare(a.timestamp || "");
-          });
-        return jsonResponse(runs);
-      } catch {
-        return jsonResponse([]);
-      }
-    }
+      const runFile = path.join(DATA_DIR, `${result.id}.json`);
+      fs.writeFileSync(runFile, JSON.stringify(result, null, 2));
+      console.log(`Results saved to ${runFile}`);
 
-    return new Response("Not found", { status: 404 });
-  },
+      return sendJson(res, result);
+    } catch (err: any) {
+      console.error("Sandbox run failed:", err);
+      return sendJson(res, { error: err.message || "Sandbox run failed" }, 500);
+    } finally {
+      isRunning = false;
+    }
+  }
+
+  // API: list past runs
+  if (pathname === "/api/runs" && method === "GET") {
+    ensureDataDir();
+    try {
+      const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
+      const runs = files
+        .map((f) => {
+          try {
+            return JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), "utf-8"));
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => {
+          return (b.timestamp || "").localeCompare(a.timestamp || "");
+        });
+      return sendJson(res, runs);
+    } catch {
+      return sendJson(res, []);
+    }
+  }
+
+  res.writeHead(404);
+  res.end("Not found");
 });
 
-console.log(`Skill Sandbox server running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Skill Sandbox server running on http://localhost:${PORT}`);
+});

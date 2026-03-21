@@ -168,5 +168,76 @@ export function buildProgram(): Command {
       output(await client.getStatus(jobId), opts.json);
     });
 
+  // explain
+  program.command("explain <auditId>")
+    .description("Explain a guard decision in plain language (requires ANTHROPIC_API_KEY or OPENAI_API_KEY)")
+    .option("--json", "JSON output")
+    .option("--verbose", "Print the prompt sent to the LLM")
+    .action(async (auditId: string, opts) => {
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!anthropicKey && !openaiKey) {
+        console.error("Error: Set ANTHROPIC_API_KEY or OPENAI_API_KEY to use explain.");
+        process.exit(1);
+      }
+
+      // Load local storage to find the guard result
+      const { JsonStorage, explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
+      const cfg = await loadCliConfig();
+      const storagePath = (cfg as any).boards?.local?.storagePath ?? "./data/local-board.json";
+      const storage = new JsonStorage(storagePath);
+      await storage.init();
+
+      const state = await storage.getState();
+      const guardResult = state.guardResults.find((r) => r.audit_id === auditId);
+      if (!guardResult) {
+        console.error(`Error: No guard result found for audit ID: ${auditId}`);
+        process.exit(1);
+      }
+
+      const input = guardResultToExplainInput(guardResult);
+
+      // Build LLM function
+      let llm: (prompt: string) => Promise<string>;
+      if (anthropicKey) {
+        const { default: Anthropic } = await import("@anthropic-ai/sdk");
+        const client = new Anthropic({ apiKey: anthropicKey });
+        llm = async (prompt: string) => {
+          const res = await client.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1024,
+            messages: [{ role: "user", content: prompt }],
+          });
+          const block = res.content[0];
+          return block && block.type === "text" ? block.text : "";
+        };
+      } else {
+        const { default: OpenAI } = await import("openai");
+        const client = new OpenAI({ apiKey: openaiKey });
+        llm = async (prompt: string) => {
+          const res = await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 1024,
+          });
+          return res.choices[0]?.message?.content ?? "";
+        };
+      }
+
+      const onPrompt = opts.verbose ? (prompt: string) => console.error("[prompt]\n" + prompt + "\n") : undefined;
+      const result = await explainDecision(input, { llm, onPrompt });
+
+      if (result.status === "error") {
+        console.error(`Error: ${result.error}`);
+        process.exit(1);
+      }
+
+      if (opts.json) {
+        output(result, true);
+      } else {
+        console.log(result.narrative);
+      }
+    });
+
   return program;
 }
