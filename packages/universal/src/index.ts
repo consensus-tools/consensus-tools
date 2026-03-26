@@ -255,19 +255,14 @@ export const consensus = {
   },
 
   /**
-   * LangChain adapter — dynamically loads @consensus-tools/langchain.
+   * LangChain adapter — not yet implemented.
+   * Use consensus.wrap() with a ToolExecutor, or import @consensus-tools/langchain directly.
    */
-  async langchain(chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown> {
-    let mod: Record<string, unknown>;
-    try {
-      mod = await import("@consensus-tools/langchain") as Record<string, unknown>;
-    } catch {
-      throw new MissingDependencyError("@consensus-tools/langchain");
-    }
-    if (typeof mod["createGuardTools"] === "function") {
-      return (mod["createGuardTools"] as (chain: unknown, config?: unknown) => unknown)(chain, config);
-    }
-    throw new Error("@consensus-tools/langchain does not export createGuardTools");
+  async langchain(_chain: unknown, _config?: Partial<UniversalConfig>): Promise<never> {
+    throw new MissingDependencyError(
+      "consensus.langchain() is not yet implemented. " +
+      "Use consensus.wrap() with a ToolExecutor, or import @consensus-tools/langchain directly for guard tools.",
+    );
   },
 
   /**
