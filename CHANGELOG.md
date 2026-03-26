@@ -14,6 +14,10 @@
 - **Guard constants deduplicated** — `BUILT_IN_GUARD_DOMAINS`, `GUARD_DOMAIN_DESCRIPTIONS`, `DEFAULT_GUARD_POLICY` moved from adapters to @consensus-tools/schemas (Tier 0) as single source of truth
 - **`storage.kind: 'memory'`** option added to config schema
 
+### Breaking changes (core)
+- **Storage re-exports removed from @consensus-tools/core** — import `createStorage`, `JsonStorage`, `SqliteStorage`, `IStorage`, `Mutex` directly from `@consensus-tools/storage` instead
+- **`createLlmFn` removed from public exports** — MCP and CLI now construct LLM functions inline; `explainDecision` remains exported
+
 ## 0.8.0 — 2026-03-25
 
 ### Audit & Observability
