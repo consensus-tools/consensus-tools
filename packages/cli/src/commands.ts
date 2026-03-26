@@ -198,6 +198,9 @@ export function buildProgram(): Command {
         process.exit(1);
       }
 
+      // Log which LLM provider is being used (visibility into implicit preference)
+      console.error(`[consensus] Using ${anthropicKey ? "Anthropic" : "OpenAI"} for LLM explanation`);
+
       const maxTokens = 1024;
       let llm;
       if (anthropicKey) {

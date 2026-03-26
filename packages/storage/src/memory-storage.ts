@@ -25,10 +25,12 @@ export class MemoryStorage implements IStorage {
   }
 
   async getState(): Promise<StorageState> {
-    if (this.state === null) {
-      this.state = defaultState();
-    }
-    return this.state;
+    return this.mutex.runExclusive(async () => {
+      if (this.state === null) {
+        this.state = defaultState();
+      }
+      return this.state;
+    });
   }
 
   async saveState(state: StorageState): Promise<void> {
@@ -37,11 +39,14 @@ export class MemoryStorage implements IStorage {
 
   async update<T>(fn: (state: StorageState) => T | Promise<T>): Promise<{ state: StorageState; result: T }> {
     return this.mutex.runExclusive(async () => {
-      const state = await this.getState();
+      if (this.state === null) {
+        this.state = defaultState();
+      }
+      const state = this.state;
       const result = await fn(state);
       applyStorageCaps(state, this.caps);
       await this.saveState(state);
-      return { state, result };
+      return { state: structuredClone(state), result };
     });
   }
 }

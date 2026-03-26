@@ -207,6 +207,9 @@ export async function handle(
           };
         }
 
+        // Log which LLM provider is being used (visibility into implicit preference)
+        console.error(`[consensus] Using ${anthropicKey ? "Anthropic" : "OpenAI"} for LLM explanation`);
+
         // Dynamic import to avoid hard dependency
         const { explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
 

@@ -13,6 +13,14 @@ export const consensusToolsConfigSchema = z.object({
       maxAuditEntries: z.number().optional(),
       maxLedgerEntries: z.number().optional(),
       maxGuardResults: z.number().optional(),
+    }).superRefine((data, ctx) => {
+      if ((data.kind === "sqlite" || data.kind === "json") && !data.path) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `"path" is required when storage kind is "${data.kind}"`,
+          path: ["path"],
+        });
+      }
     }),
     server: z.object({
       enabled: z.boolean(),

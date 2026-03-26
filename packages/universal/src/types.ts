@@ -41,7 +41,7 @@ export interface UniversalConfig {
   /** Logging: true for console.debug, false to disable, or a custom function. Default: true. */
   logger?: boolean | ((event: LogEvent) => void);
   /** Called after every consensus decision. */
-  onDecision?: (decision: DecisionResult<unknown>) => void;
+  onDecision?: (decision: DecisionResult<unknown>) => void | Promise<void>;
   /** Called when an error occurs during deliberation. */
   onError?: (err: Error, action: unknown) => void;
 }
