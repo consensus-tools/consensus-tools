@@ -42,7 +42,16 @@ const resolution = await board.engine.resolveJob("coordinator", job.id);
 // resolution.winners → ["agent-1"]
 ```
 
-### Guard a function call
+### Guard any agent in 3 lines
+
+```typescript
+import { consensus } from "@consensus-tools/universal";
+
+const safe = consensus.wrap(myAgent);
+// Every tool call now goes through multi-persona deliberation before executing
+```
+
+### Guard a function call (advanced)
 
 ```typescript
 import { consensus } from "@consensus-tools/wrapper";
@@ -103,7 +112,7 @@ Tier 0 — Foundation        schemas    secrets
 Tier 1 — Primitives        guards    telemetry    evals    integrations    notifications    sdk-client
 Tier 2 — Engines           core      policies
 Tier 3 — Composition       workflows    wrapper
-Tier 4 — Adapters & Apps   sdk-node    mcp    openclaw    cli    local-board    dashboard
+Tier 4 — Adapters & Apps   universal    sdk-node    mcp    openclaw    cli    local-board    dashboard
 ```
 
 Dependencies flow downward only. `schemas` has zero internal dependencies. Everything else composes these primitives. Enforced by CI via `pnpm dep-check`.
@@ -127,6 +136,10 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 | [`@consensus-tools/integrations`](packages/adapters/integrations) | External platform adapters for GitHub and Linear |
 | [`@consensus-tools/notifications`](packages/adapters/notifications) | Approval prompts and timeout warnings via Slack, Teams, Discord, Telegram, webhooks |
 | [`@consensus-tools/sdk-client`](packages/sdk-client) | HTTP client for remote board API |
+| [`@consensus-tools/storage`](packages/storage) | Storage backends — JSON file, SQLite, and in-memory for dev/test |
+| [`@consensus-tools/personas`](packages/personas) | Persona lifecycle: packs, reputation engine, respawn logic |
+| [`@consensus-tools/langchain`](packages/adapters/langchain) | LangChain adapter — guards as DynamicStructuredTools with callback handler |
+| [`@consensus-tools/ai-sdk`](packages/adapters/ai-sdk) | Vercel AI SDK adapter — guarded generate and stream middleware |
 
 ### Engines
 
@@ -142,10 +155,11 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 | [`@consensus-tools/workflows`](packages/workflows) | DAG-based workflow engine with checkpoint execution, HITL pause/resume, cron scheduling |
 | [`@consensus-tools/wrapper`](packages/wrapper) | Runtime decision firewall — wraps any function with consensus gates |
 
-### Adapters
+### Adapters & Universal
 
 | Package | Description |
 |---------|-------------|
+| [`@consensus-tools/universal`](packages/universal) | Drop-in governance for any agent — 3-line integration with framework shortcuts for LangChain, AI SDK, and MCP |
 | [`@consensus-tools/sdk-node`](packages/sdk-node) | Node.js HTTP server with REST API, webhooks, guard evaluation, and workflow execution |
 | [`@consensus-tools/mcp`](packages/adapters/mcp) | 29 MCP tools exposing the full consensus protocol to any LLM agent |
 | [`@consensus-tools/openclaw`](packages/adapters/openclaw) | OpenClaw plugin adapter |
@@ -174,6 +188,10 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 ### Use as a library
 
 ```bash
+# Quick start — governance for any agent
+pnpm add @consensus-tools/universal
+
+# Full control — core protocol primitives
 pnpm add @consensus-tools/core @consensus-tools/policies
 ```
 

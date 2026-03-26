@@ -7,7 +7,7 @@ Tier 0 — Foundation (zero internal deps)
   schemas, secrets
 
 Tier 1 — Primitives (may depend on Tier 0)
-  guards, telemetry, integrations, notifications, evals, sdk-client
+  guards, telemetry, integrations, notifications, evals, sdk-client, storage, personas, langchain, ai-sdk
 
 Tier 2 — Engines (may depend on Tier 0–1)
   core        → schemas, guards
@@ -18,7 +18,7 @@ Tier 3 — Composition (may depend on Tier 0–2)
   wrapper     → schemas, core, policies
 
 Tier 4 — Adapters & Apps (may depend on anything below)
-  mcp, sdk-node, openclaw, cli
+  universal, mcp, sdk-node, openclaw, cli
   apps/local-board, apps/dashboard
 ```
 

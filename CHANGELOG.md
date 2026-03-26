@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0 — 2026-03-26
+
+### New package: @consensus-tools/universal
+- **Drop-in governance for any AI agent** — `consensus.wrap(myAgent)` adds multi-persona deliberation to any tool executor in 3 lines of code
+- **Framework shortcuts** — `consensus.langchain()`, `consensus.aiSdk()`, `consensus.mcp()` for framework-specific integration via optional peer dependencies
+- **Fail-safe by default** — `failPolicy: 'closed'` blocks actions when deliberation fails; `'open'` mode for dev/test with production warnings
+- **Structured deliberation logging** — DEBUG-level events for every vote, decision, and error; suppressible via `logger: false`
+- **OWASP Agentic Top 10 mapping** — README documents how each guard domain maps to OWASP categories
+
+### Infrastructure
+- **MemoryStorage** in @consensus-tools/storage — in-memory `IStorage` implementation for local dev and testing (no database required)
+- **Guard constants deduplicated** — `BUILT_IN_GUARD_DOMAINS`, `GUARD_DOMAIN_DESCRIPTIONS`, `DEFAULT_GUARD_POLICY` moved from adapters to @consensus-tools/schemas (Tier 0) as single source of truth
+- **`storage.kind: 'memory'`** option added to config schema
+
 ## 0.8.0 — 2026-03-25
 
 ### Audit & Observability
