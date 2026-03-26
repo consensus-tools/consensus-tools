@@ -108,6 +108,10 @@ const decision = aggregateScores(
 | `DecisionResult<T>` | Final decision (action, output, scores, aggregateScore) |
 | `LifecycleHooks<T>` | Hook functions for beforeSubmit, afterResolve, onBlock, onEscalate |
 
+## Looking for a simpler entry point?
+
+[`@consensus-tools/universal`](../universal) wraps this package with sensible defaults — built-in guard reviewers and fail-safe behavior out of the box. Use `universal` for quick setup; use `wrapper` directly when you need full control over reviewers and strategies.
+
 ## Links
 
 [consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)

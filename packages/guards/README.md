@@ -104,6 +104,29 @@ const met = reachesQuorum(tally, 0.6);
 | `createGuardEvaluatorRegistry` | Function | Factory that returns a pre-loaded registry |
 | `EvaluatorFn` | Type | `(input: GuardEvaluateInput) => GuardVote[]` |
 
+## Guard Templates
+
+Create custom guard domains with the template system. Templates integrate with both the evaluator registry and the `@consensus-tools/wrapper` package:
+
+```typescript
+import { createGuardTemplate } from "@consensus-tools/guards";
+
+const myGuard = createGuardTemplate("custom_review", {
+  rules: (payload) => [
+    { evaluator: "custom", vote: "YES", reason: "Looks good", risk: 0.1 },
+  ],
+  description: "Custom review guard",
+});
+
+// Use as a registry evaluator
+myGuard.register(registry);
+
+// Or use as a wrapper reviewer
+const reviewer = myGuard.asReviewer();
+```
+
+> **Tip:** For the simplest integration path, use [`@consensus-tools/universal`](../universal) which composes guards + wrapper with sensible defaults.
+
 ## Links
 
 [consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
