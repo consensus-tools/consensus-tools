@@ -42,16 +42,19 @@ const resolution = await board.engine.resolveJob("coordinator", job.id);
 // resolution.winners → ["agent-1"]
 ```
 
-### Guard any agent in 3 lines
+### Guard any tool executor in 3 lines
 
 ```typescript
 import { consensus } from "@consensus-tools/universal";
 
-const safe = consensus.wrap(myAgent);
-// Every tool call now goes through multi-persona deliberation before executing
+// Wrap any (toolName, args) => Promise function with consensus governance
+const safeTool = consensus.wrap(async (toolName, args) => callTool(toolName, args));
+const result = await safeTool("send_email", { to: "user@example.com", body: "Hello" });
+// Each invocation is screened by 3 rule-based reviewers (security, compliance, user-impact)
+// Decisions are stored in memory by default — pass `storage` option for persistence
 ```
 
-### Guard a function call (advanced)
+### Guard a function call (direct wrapper)
 
 ```typescript
 import { consensus } from "@consensus-tools/wrapper";
@@ -159,7 +162,7 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 
 | Package | Description |
 |---------|-------------|
-| [`@consensus-tools/universal`](packages/universal) | Drop-in governance for any agent — 3-line integration with framework shortcuts for LangChain, AI SDK, and MCP |
+| [`@consensus-tools/universal`](packages/universal) | Drop-in governance for Node.js/TypeScript tool executors — 3-line integration with optional adapters for LangChain, AI SDK, and MCP |
 | [`@consensus-tools/sdk-node`](packages/sdk-node) | Node.js HTTP server with REST API, webhooks, guard evaluation, and workflow execution |
 | [`@consensus-tools/mcp`](packages/adapters/mcp) | 29 MCP tools exposing the full consensus protocol to any LLM agent |
 | [`@consensus-tools/openclaw`](packages/adapters/openclaw) | OpenClaw plugin adapter |
@@ -188,10 +191,10 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 ### Use as a library
 
 ```bash
-# Quick start — governance for any agent
+# Simplest path — wrap any tool executor with consensus governance
 pnpm add @consensus-tools/universal
 
-# Full control — core protocol primitives
+# Full control — core protocol primitives for custom guards and policies
 pnpm add @consensus-tools/core @consensus-tools/policies
 ```
 
