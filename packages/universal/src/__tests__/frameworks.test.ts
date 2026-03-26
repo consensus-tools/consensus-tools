@@ -43,3 +43,64 @@ describe("framework shortcuts", () => {
     await expect(consensus.mcp()).rejects.toThrow("@consensus-tools/mcp");
   });
 });
+
+describe("consensus.langchain() with adapter installed", () => {
+  it("returns a handler instance when adapter is available", async () => {
+    // Create a mock handler class
+    class MockGuardHandler {
+      name = "consensus-guard";
+      config: Record<string, unknown>;
+      constructor(config: Record<string, unknown>) {
+        this.config = config;
+      }
+    }
+
+    // Temporarily override the langchain mock to return a working module
+    const mockMod = {
+      ConsensusGuardCallbackHandler: MockGuardHandler,
+    };
+
+    // We need to test with a fresh import; use vi.doMock to override for a scoped import
+    vi.doMock("@consensus-tools/langchain", () => mockMod);
+
+    // Re-import to pick up the new mock
+    const { consensus: freshConsensus } = await import("../index.js");
+
+    const handler = await freshConsensus.langchain(null, { policy: "supermajority", guards: ["security"] });
+
+    expect(handler).toBeInstanceOf(MockGuardHandler);
+    expect((handler as MockGuardHandler).config).toEqual({
+      policy: "supermajority",
+      guards: ["security"],
+      onDecision: undefined,
+    });
+
+    // Restore the original mock (not installed)
+    vi.doMock("@consensus-tools/langchain", () => {
+      throw new Error("Cannot find module '@consensus-tools/langchain'");
+    });
+  });
+
+  it("uses default policy 'majority' when no config provided", async () => {
+    class MockGuardHandler {
+      name = "consensus-guard";
+      config: Record<string, unknown>;
+      constructor(config: Record<string, unknown>) {
+        this.config = config;
+      }
+    }
+
+    vi.doMock("@consensus-tools/langchain", () => ({
+      ConsensusGuardCallbackHandler: MockGuardHandler,
+    }));
+
+    const { consensus: freshConsensus } = await import("../index.js");
+    const handler = await freshConsensus.langchain(null);
+
+    expect((handler as MockGuardHandler).config.policy).toBe("majority");
+
+    vi.doMock("@consensus-tools/langchain", () => {
+      throw new Error("Cannot find module '@consensus-tools/langchain'");
+    });
+  });
+});

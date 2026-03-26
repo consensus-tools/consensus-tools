@@ -255,14 +255,43 @@ export const consensus = {
   },
 
   /**
-   * LangChain adapter — not yet implemented.
-   * Use consensus.wrap() with a ToolExecutor, or import @consensus-tools/langchain directly.
+   * LangChain adapter — dynamically loads @consensus-tools/langchain.
+   *
+   * Returns a `ConsensusGuardCallbackHandler` that intercepts all tool calls and
+   * runs them through consensus deliberation. Attach it to your chain or agent
+   * via the `callbacks` option to govern all tool calls:
+   *
+   * ```ts
+   * const handler = await consensus.langchain(null, { policy: "majority" });
+   * const result = await agent.invoke({ input: "..." }, { callbacks: [handler] });
+   * ```
    */
-  async langchain(_chain: unknown, _config?: Partial<UniversalConfig>): Promise<never> {
-    throw new MissingDependencyError(
-      "consensus.langchain() is not yet implemented. " +
-      "Use consensus.wrap() with a ToolExecutor, or import @consensus-tools/langchain directly for guard tools.",
-    );
+  async langchain(_chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown> {
+    let mod: Record<string, unknown>;
+    try {
+      mod = await import("@consensus-tools/langchain") as Record<string, unknown>;
+    } catch {
+      throw new MissingDependencyError("@consensus-tools/langchain");
+    }
+
+    // Create a guard callback handler with the user's config
+    const HandlerClass = mod["ConsensusGuardCallbackHandler"] as
+      | (new (config: Record<string, unknown>) => unknown)
+      | undefined;
+
+    if (!HandlerClass) {
+      throw new Error("@consensus-tools/langchain does not export ConsensusGuardCallbackHandler");
+    }
+
+    const handler = new HandlerClass({
+      policy: config?.policy ?? "majority",
+      guards: config?.guards,
+      onDecision: config?.onDecision ? (d: unknown) => config.onDecision?.(d as any) : undefined,
+    });
+
+    // Return the handler — the user attaches it to their chain/agent
+    // This is the LangChain pattern: you don't wrap the chain, you add callbacks
+    return handler;
   },
 
   /**
