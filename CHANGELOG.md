@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.0 — 2026-03-25
+
+### Audit & Observability
+- **`explainDecision()`** in @consensus-tools/core — Human-readable decision narratives with vote normalization and optional LLM enrichment (T14)
+- **`audit.explain` MCP tool** — Expose decision explanations to LLM agents (T14)
+- **`cli explain <auditId>`** — CLI command for human-readable decision narratives (T14)
+- **Cross-guard audit view** — Summarize all guard decisions across a workflow (T9)
+
+### Developer Experience
+- **Shared LLM factory** — Extracted common LLM configuration to reduce duplication (T16)
+- **Type-safe CLI config** — Strongly-typed CLI configuration (T17)
+- **skill-version-eval**: GITHUB_TOKEN auth + enriched 401 errors (T13)
+
+### Infrastructure
+- Bun → vitest migration for skill-version-eval, skill-sandbox, and wrapper-demo (T15)
+- LLM SDK deps moved to devDependencies to pass dep-check CI
+- consensus-engineer skill published to ClawHub/skills.sh with metadata.json
+- GitHub Release automation added to CI release workflow
+
+### All packages bumped to 0.8.0
+
 ## 0.7.0 — 2026-03-20
 
 ### New packages
