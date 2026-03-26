@@ -1,4 +1,7 @@
-import { guardEvaluateInputSchema as guardInputZod } from "@consensus-tools/schemas";
+import {
+  guardEvaluateInputSchema as guardInputZod,
+  BUILT_IN_GUARD_DOMAINS,
+} from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 const guardEvaluateInputSchema = {
@@ -248,15 +251,10 @@ export const tools = [
   ),
 ];
 
-const GUARD_TYPE_MAP: Record<string, string> = {
-  "guard.send_email": "send_email",
-  "guard.code_merge": "code_merge",
-  "guard.publish": "publish",
-  "guard.support_reply": "support_reply",
-  "guard.agent_action": "agent_action",
-  "guard.deployment": "deployment",
-  "guard.permission_escalation": "permission_escalation",
-};
+// Derived from the canonical BUILT_IN_GUARD_DOMAINS — maps MCP tool names to guard types.
+const GUARD_TYPE_MAP: Record<string, string> = Object.fromEntries(
+  BUILT_IN_GUARD_DOMAINS.map((domain) => [`guard.${domain}`, domain]),
+);
 
 export async function handle(
   name: string,

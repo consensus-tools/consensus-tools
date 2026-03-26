@@ -101,6 +101,13 @@ export {
   type TraceSpan,
 } from "./telemetry.js";
 
+// ── Guard Constants ─────────────────────────────────────────────────
+export {
+  BUILT_IN_GUARD_DOMAINS,
+  GUARD_DOMAIN_DESCRIPTIONS,
+  DEFAULT_GUARD_POLICY,
+} from "./guard-constants.js";
+
 // ── Guard ───────────────────────────────────────────────────────────
 export {
   guardTypeSchema,

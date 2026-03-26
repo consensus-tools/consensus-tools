@@ -9,11 +9,15 @@ export async function createStorage(config: ConsensusToolsConfig): Promise<IStor
     maxLedgerEntries: config.local.storage.maxLedgerEntries,
     maxGuardResults: config.local.storage.maxGuardResults,
   };
+  if (config.local.storage.kind === "memory") {
+    const { MemoryStorage } = await import("./memory-storage.js");
+    return new MemoryStorage(caps);
+  }
   if (config.local.storage.kind === "sqlite") {
     // Lazy import to keep sqlite optional
     const { SqliteStorage } = await import("./sqlite.js");
-    return new SqliteStorage(config.local.storage.path, caps);
+    return new SqliteStorage(config.local.storage.path!, caps);
   }
   const { JsonStorage } = await import("./json.js");
-  return new JsonStorage(config.local.storage.path, caps);
+  return new JsonStorage(config.local.storage.path!, caps);
 }
