@@ -3,7 +3,7 @@ import type { GuardEvaluateInput, GuardResult, GuardPolicy } from "@consensus-to
 import { evaluatorVotes, finalizeVotes, normalizeGuardType, type GuardEvaluatorRegistry } from "@consensus-tools/guards";
 import type { IStorage } from "@consensus-tools/storage";
 import type { AgentRegistry } from "./agent-registry.js";
-import { newId } from "../util/ids.js";
+import { newId } from "../util/helpers.js";
 import { nowIso } from "../util/time.js";
 
 export interface GuardEngineOptions {

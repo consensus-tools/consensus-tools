@@ -1,7 +1,7 @@
 import type { ConsensusToolsConfig, LedgerEntry, StorageState } from "@consensus-tools/schemas";
 import type { IStorage } from "@consensus-tools/storage";
 import { computeBalances, ensureNonNegative, getBalance } from "./rules.js";
-import { newId } from "../util/ids.js";
+import { newId } from "../util/helpers.js";
 import { nowIso } from "../util/time.js";
 
 export class LedgerEngine {

@@ -8,7 +8,7 @@ import os from "node:os";
 import { consensus } from "../src/consensus.js";
 import type { ReviewerFn, ReviewResult } from "../src/types.js";
 import { GuardEngine } from "@consensus-tools/core";
-import { JsonStorage } from "@consensus-tools/core";
+import { JsonStorage } from "@consensus-tools/storage";
 import { createGuardEvaluatorRegistry } from "@consensus-tools/guards";
 import type { GuardEvaluateInput, GuardResult } from "@consensus-tools/schemas";
 

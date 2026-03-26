@@ -1,6 +1,6 @@
 import type { Agent, AgentConfig, GuardType } from "@consensus-tools/schemas";
 import type { IStorage } from "@consensus-tools/storage";
-import { newId } from "../util/ids.js";
+import { newId } from "../util/helpers.js";
 import { nowIso } from "../util/time.js";
 
 /**

@@ -12,8 +12,9 @@ import {
 import { tallyVotes, computeEffectiveWeight } from "@consensus-tools/guards";
 import type {
   JobEngine, JobPostInput, ClaimInput, SubmitInput, LedgerEngine,
-  IStorage, AgentRegistry, GuardEngine, HitlTracker,
+  AgentRegistry, GuardEngine, HitlTracker,
 } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
 import { newId, nowIso } from "@consensus-tools/core";
 import { listTemplates, getTemplateById } from "@consensus-tools/workflows";
 import type { CredentialManager } from "@consensus-tools/secrets";

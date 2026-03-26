@@ -5,7 +5,8 @@ import type {
   WeightedGuardVote,
   WeightingMode,
 } from "@consensus-tools/schemas";
-import type { IStorage, GuardEngineOptions } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
+import type { GuardEngineOptions } from "@consensus-tools/core";
 import {
   GuardEngine,
   HitlTracker,

@@ -1,5 +1,6 @@
 import type { ConsensusToolsConfig, Workflow, WorkflowRun, CronSchedule } from "@consensus-tools/schemas";
-import type { JobEngine, LedgerEngine, IStorage, AgentRegistry, GuardEngine, HitlTracker } from "@consensus-tools/core";
+import type { JobEngine, LedgerEngine, AgentRegistry, GuardEngine, HitlTracker } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
 import type { CredentialManager } from "@consensus-tools/secrets";
 
 /** Minimal interface so we don't need a hard dep on @consensus-tools/workflows at compile time. */

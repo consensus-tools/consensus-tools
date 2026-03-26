@@ -1,4 +1,5 @@
-import { JobEngine, LedgerEngine, GuardEngine, HitlTracker, createStorage } from "@consensus-tools/core";
+import { JobEngine, LedgerEngine, GuardEngine, HitlTracker } from "@consensus-tools/core";
+import { createStorage } from "@consensus-tools/storage";
 import { createRegistryResolver } from "@consensus-tools/policies";
 import { ConsensusToolsServer } from "@consensus-tools/sdk-node";
 import { WorkflowRunner } from "@consensus-tools/workflows";

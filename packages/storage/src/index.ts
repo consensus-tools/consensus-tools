@@ -6,4 +6,5 @@ export { defaultState, applyStorageCaps } from "./interface.js";
 export { createStorage } from "./factory.js";
 export { JsonStorage } from "./json.js";
 export { SqliteStorage } from "./sqlite.js";
+export { MemoryStorage } from "./memory-storage.js";
 export { Mutex } from "./mutex.js";

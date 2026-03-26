@@ -86,6 +86,28 @@ const approved = parseHumanApprovalYesNo("yes"); // true
 | Inputs | `jobPostInputSchema`, `claimInputSchema`, `submitInputSchema`, `voteInputSchema`, `resolveInputSchema`, `workflowCreateInputSchema`, `cronRegisterInputSchema`, `participantCreateInputSchema`, `consensusVoteInputSchema` | Matching types |
 | Policy Assignment | `policyAssignmentSchema`, `consensusVoteSchema` | `PolicyAssignment`, `ConsensusVote` |
 | Resolver | -- | `ConsensusInput`, `ConsensusResult`, `PolicyResolver` |
+| Guard Constants | `BUILT_IN_GUARD_DOMAINS`, `GUARD_DOMAIN_DESCRIPTIONS`, `DEFAULT_GUARD_POLICY` | `GuardType` (re-exported) |
+
+## Guard Constants
+
+Canonical source of truth for guard domain definitions, shared across all adapter packages:
+
+```typescript
+import {
+  BUILT_IN_GUARD_DOMAINS,
+  GUARD_DOMAIN_DESCRIPTIONS,
+  DEFAULT_GUARD_POLICY,
+} from "@consensus-tools/schemas";
+
+BUILT_IN_GUARD_DOMAINS;
+// => ["send_email", "code_merge", "publish", "support_reply", "agent_action", "deployment", "permission_escalation"]
+
+GUARD_DOMAIN_DESCRIPTIONS["agent_action"];
+// => "Evaluate autonomous agent action — blocks irreversible actions, flags external side effects"
+
+DEFAULT_GUARD_POLICY;
+// => { policyId: "default-guard", version: "v1", quorum: 0.7, riskThreshold: 0.7, hitlRequiredAboveRisk: 0.7, options: {} }
+```
 
 ## Links
 

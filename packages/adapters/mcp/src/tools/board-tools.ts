@@ -207,11 +207,41 @@ export async function handle(
           };
         }
 
+        // Log which LLM provider is being used (visibility into implicit preference)
+        console.error(`[consensus] Using ${anthropicKey ? "Anthropic" : "OpenAI"} for LLM explanation`);
+
         // Dynamic import to avoid hard dependency
-        const { explainDecision, guardResultToExplainInput, createLlmFn } = await import("@consensus-tools/core");
+        const { explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
 
         const input = guardResultToExplainInput(guardResult);
-        const llm = await createLlmFn({ anthropicKey, openaiKey });
+        const maxTokens = 1024;
+        let llm;
+        if (anthropicKey) {
+          const Anthropic = (await import("@anthropic-ai/sdk" as string)).default;
+          const client = new Anthropic({ apiKey: anthropicKey });
+          const model = "claude-sonnet-4-20250514";
+          llm = async (prompt: string) => {
+            const res = await client.messages.create({
+              model,
+              max_tokens: maxTokens,
+              messages: [{ role: "user", content: prompt }],
+            });
+            const block = res.content?.[0];
+            return block?.type === "text" ? block.text : "";
+          };
+        } else {
+          const OpenAI = (await import("openai" as string)).default;
+          const client = new OpenAI({ apiKey: openaiKey });
+          const model = "gpt-4o-mini";
+          llm = async (prompt: string) => {
+            const res = await client.chat.completions.create({
+              model,
+              messages: [{ role: "user", content: prompt }],
+              max_tokens: maxTokens,
+            });
+            return res.choices?.[0]?.message?.content ?? "";
+          };
+        }
         const result = await explainDecision(input, { llm });
 
         if (result.status === "error") {

@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
-import type { GuardEvaluateInput, GuardType } from "@consensus-tools/schemas";
+import type { GuardEvaluateInput } from "@consensus-tools/schemas";
+import {
+  BUILT_IN_GUARD_DOMAINS,
+  GUARD_DOMAIN_DESCRIPTIONS,
+  DEFAULT_GUARD_POLICY,
+} from "@consensus-tools/schemas";
 import { evaluatorVotes, computeDecision } from "@consensus-tools/guards";
 import type { GuardTemplate } from "@consensus-tools/guards";
 
@@ -12,33 +17,9 @@ import type { GuardTemplate } from "@consensus-tools/guards";
  * and returns the decision as a JSON string.
  */
 
-const BUILT_IN_DOMAINS: GuardType[] = [
-  "send_email",
-  "code_merge",
-  "publish",
-  "support_reply",
-  "agent_action",
-  "deployment",
-  "permission_escalation",
-];
-
-const DOMAIN_DESCRIPTIONS: Record<string, string> = {
-  send_email: "Evaluate email safety — checks for secrets, PII, and restricted content in outbound emails",
-  code_merge: "Evaluate code merge safety — flags sensitive files (auth/security/crypto), failing tests, and vulnerability patterns",
-  publish: "Evaluate content safety — detects profanity, PII patterns, guarantee language, and legal/medical claims",
-  support_reply: "Evaluate customer support reply — flags escalation language, threats, and safety violations",
-  agent_action: "Evaluate autonomous agent action — blocks irreversible actions, flags external side effects",
-  deployment: "Evaluate deployment safety — blocks failed CI, flags missing rollback plans, requires review for production",
-  permission_escalation: "Evaluate permission change — blocks wildcard permissions, flags break-glass and admin escalations",
-};
-
 const DEFAULT_POLICY = {
+  ...DEFAULT_GUARD_POLICY,
   policyId: "langchain-guard",
-  version: "v1",
-  quorum: 0.7,
-  riskThreshold: 0.7,
-  hitlRequiredAboveRisk: 0.7,
-  options: {},
 };
 
 function evaluateGuard(domain: string, payload: Record<string, unknown>) {
@@ -71,7 +52,7 @@ function evaluateGuard(domain: string, payload: Record<string, unknown>) {
 export function createGuardTool(domain: string, description?: string): DynamicStructuredTool {
   return new DynamicStructuredTool({
     name: `consensus_guard_${domain}`,
-    description: description || DOMAIN_DESCRIPTIONS[domain] || `Consensus guard evaluation for ${domain}`,
+    description: description || GUARD_DOMAIN_DESCRIPTIONS[domain] || `Consensus guard evaluation for ${domain}`,
     schema: z.object({
       payload: z.record(z.unknown()).describe("The action payload to evaluate"),
     }),
@@ -86,7 +67,7 @@ export function createGuardTools(
   domains?: string[],
   customTemplates?: GuardTemplate[],
 ): DynamicStructuredTool[] {
-  const domainList = domains ?? BUILT_IN_DOMAINS;
+  const domainList = domains ?? BUILT_IN_GUARD_DOMAINS;
   const tools = domainList.map((d) => createGuardTool(d));
 
   if (customTemplates) {

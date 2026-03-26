@@ -15,6 +15,7 @@
   "dependencies": {
     "@consensus-tools/core": "workspace:*",
     "@consensus-tools/schemas": "workspace:*",
+    "@consensus-tools/storage": "workspace:*",
     "@consensus-tools/policies": "workspace:*",
     "@consensus-tools/sdk-node": "workspace:*",
     "@consensus-tools/telemetry": "workspace:*",

@@ -1,5 +1,6 @@
 import type { GuardEvaluateInput, GuardPolicy } from "@consensus-tools/schemas";
-import type { IStorage, GuardEngine } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
+import type { GuardEngine } from "@consensus-tools/core";
 
 // ── Guard Policy Matrix (ported from legacy tools/registry.ts) ────────
 

@@ -5,9 +5,10 @@ import { randomUUID } from "node:crypto";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
-  JobEngine, LedgerEngine, JsonStorage,
+  JobEngine, LedgerEngine,
   AgentRegistry, GuardEngine, HitlTracker,
 } from "@consensus-tools/core";
+import { JsonStorage } from "@consensus-tools/storage";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { createMcpServer } from "../src/server.js";
 import type { McpContext } from "../src/context.js";

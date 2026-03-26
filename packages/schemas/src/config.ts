@@ -8,11 +8,19 @@ export const consensusToolsConfigSchema = z.object({
   mode: z.enum(["local", "global"]),
   local: z.object({
     storage: z.object({
-      kind: z.enum(["sqlite", "json"]),
-      path: z.string(),
+      kind: z.enum(["sqlite", "json", "memory"]),
+      path: z.string().optional(),
       maxAuditEntries: z.number().optional(),
       maxLedgerEntries: z.number().optional(),
       maxGuardResults: z.number().optional(),
+    }).superRefine((data, ctx) => {
+      if ((data.kind === "sqlite" || data.kind === "json") && !data.path) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `"path" is required when storage kind is "${data.kind}"`,
+          path: ["path"],
+        });
+      }
     }),
     server: z.object({
       enabled: z.boolean(),

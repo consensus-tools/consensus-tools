@@ -4,9 +4,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import {
-  JobEngine, LedgerEngine, JsonStorage,
+  JobEngine, LedgerEngine,
   AgentRegistry, GuardEngine, HitlTracker,
 } from "@consensus-tools/core";
+import { JsonStorage } from "@consensus-tools/storage";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { handle } from "../src/tools/consensus-tools.js";
 import { handle as handleAgent } from "../src/tools/agent-tools.js";

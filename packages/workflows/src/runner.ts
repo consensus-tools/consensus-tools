@@ -1,5 +1,5 @@
 import type { Workflow, WorkflowRun } from "@consensus-tools/schemas";
-import type { IStorage } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
 import { newId, nowIso } from "@consensus-tools/core";
 import {
   NodeExecutor,

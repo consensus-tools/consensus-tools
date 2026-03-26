@@ -1,6 +1,6 @@
 // @consensus-tools/core
-// Protocol engine, ledger, storage, and resolution primitives.
-// Depends only on @consensus-tools/schemas.
+// Protocol engine, ledger, and resolution primitives.
+// Depends on @consensus-tools/schemas and @consensus-tools/guards.
 
 // ── Engine ──────────────────────────────────────────────────────────
 export { JobEngine } from "./engine/engine.js";
@@ -35,12 +35,8 @@ export { LocalBoard } from "./board/board.js";
 export { LedgerEngine } from "./ledger/ledger.js";
 export { computeBalances, getBalance, ensureNonNegative } from "./ledger/rules.js";
 
-// ── Storage (re-exported from @consensus-tools/storage) ─────────────
-export type { IStorage, StorageCaps } from "@consensus-tools/storage";
-export { defaultState, applyStorageCaps, createStorage, JsonStorage, SqliteStorage, Mutex } from "@consensus-tools/storage";
-
 // ── Util ────────────────────────────────────────────────────────────
-export { newId, deepCopy } from "./util/ids.js";
+export { newId, deepCopy } from "./util/helpers.js";
 export { nowIso, addSeconds, isPast } from "./util/time.js";
 
 // ── Explain ──────────────────────────────────────────────────────
@@ -51,7 +47,6 @@ export {
   guardResultToExplainInput,
 } from "./explain.js";
 export type { LlmFn, ExplainOptions } from "./explain.js";
-export { createLlmFn } from "./llm-factory.js";
 
 // ── Audit Summary ────────────────────────────────────────────────
 export { summarizeGuardActivity, summarizeFromState, formatSummaryTable } from "./audit-summary.js";
