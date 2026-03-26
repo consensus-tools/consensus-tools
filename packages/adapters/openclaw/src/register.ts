@@ -1,4 +1,5 @@
-import { JobEngine, LedgerEngine, createStorage } from "@consensus-tools/core";
+import { JobEngine, LedgerEngine } from "@consensus-tools/core";
+import { createStorage } from "@consensus-tools/storage";
 import { ConsensusToolsClient } from "@consensus-tools/sdk-client";
 import { createRegistryResolver } from "@consensus-tools/policies";
 import { loadConfig, resolveAgentId, PLUGIN_ID } from "./config.js";

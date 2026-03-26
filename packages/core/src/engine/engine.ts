@@ -11,7 +11,7 @@ import type {
   PolicyResolver,
 } from "@consensus-tools/schemas";
 import type { IStorage } from "@consensus-tools/storage";
-import { newId } from "../util/ids.js";
+import { newId } from "../util/helpers.js";
 import { addSeconds, nowIso, isPast } from "../util/time.js";
 import { resolveConsensus } from "../resolve/resolve.js";
 import { calculateSlashAmount } from "./slashing.js";

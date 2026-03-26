@@ -175,7 +175,8 @@ export function buildProgram(): Command {
     .option("--verbose", "Print the prompt sent to the LLM")
     .action(async (auditId: string, opts) => {
       // Load local storage to find the guard result
-      const { JsonStorage, explainDecision, guardResultToExplainInput, createLlmFn } = await import("@consensus-tools/core");
+      const { explainDecision, guardResultToExplainInput } = await import("@consensus-tools/core");
+      const { JsonStorage } = await import("@consensus-tools/storage");
       const cfg = await loadCliConfig();
       const storagePath = cfg.boards.local.storagePath ?? "./data/local-board.json";
       const storage = new JsonStorage(storagePath);
@@ -190,12 +191,40 @@ export function buildProgram(): Command {
 
       const input = guardResultToExplainInput(guardResult);
 
-      let llm;
-      try {
-        llm = await createLlmFn();
-      } catch (err: unknown) {
-        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (!anthropicKey && !openaiKey) {
+        console.error("Error: Set ANTHROPIC_API_KEY or OPENAI_API_KEY to use LLM features");
         process.exit(1);
+      }
+
+      const maxTokens = 1024;
+      let llm;
+      if (anthropicKey) {
+        const Anthropic = (await import("@anthropic-ai/sdk" as string)).default;
+        const client = new Anthropic({ apiKey: anthropicKey });
+        const model = "claude-sonnet-4-20250514";
+        llm = async (prompt: string) => {
+          const res = await client.messages.create({
+            model,
+            max_tokens: maxTokens,
+            messages: [{ role: "user", content: prompt }],
+          });
+          const block = res.content?.[0];
+          return block?.type === "text" ? block.text : "";
+        };
+      } else {
+        const OpenAI = (await import("openai" as string)).default;
+        const client = new OpenAI({ apiKey: openaiKey });
+        const model = "gpt-4o-mini";
+        llm = async (prompt: string) => {
+          const res = await client.chat.completions.create({
+            model,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: maxTokens,
+          });
+          return res.choices?.[0]?.message?.content ?? "";
+        };
       }
 
       const onPrompt = opts.verbose ? (prompt: string) => console.error("[prompt]\n" + prompt + "\n") : undefined;
@@ -222,7 +251,8 @@ export function buildProgram(): Command {
     .option("--limit <n>", "Maximum number of rows (default: 50)", parseInt)
     .option("--json", "JSON output")
     .action(async (opts) => {
-      const { JsonStorage, summarizeGuardActivity, formatSummaryTable } = await import("@consensus-tools/core");
+      const { summarizeGuardActivity, formatSummaryTable } = await import("@consensus-tools/core");
+      const { JsonStorage } = await import("@consensus-tools/storage");
       const cfg = await loadCliConfig();
       const storagePath = cfg.boards.local.storagePath ?? "./data/local-board.json";
       const storage = new JsonStorage(storagePath);

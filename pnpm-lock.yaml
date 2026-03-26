@@ -135,6 +135,9 @@ importers:
       '@consensus-tools/secrets':
         specifier: workspace:*
         version: link:../../packages/adapters/secrets
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@consensus-tools/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
@@ -402,6 +405,9 @@ importers:
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../../schemas
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../../storage
       '@consensus-tools/workflows':
         specifier: workspace:*
         version: link:../../workflows
@@ -455,6 +461,9 @@ importers:
       '@consensus-tools/sdk-client':
         specifier: workspace:*
         version: link:../../sdk-client
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../../storage
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -486,6 +495,9 @@ importers:
       '@consensus-tools/sdk-client':
         specifier: workspace:*
         version: link:../sdk-client
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@consensus-tools/telemetry':
         specifier: workspace:*
         version: link:../telemetry
@@ -669,6 +681,9 @@ importers:
       '@consensus-tools/secrets':
         specifier: workspace:*
         version: link:../adapters/secrets
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@consensus-tools/workflows':
         specifier: workspace:*
         version: link:../workflows
@@ -776,6 +791,9 @@ importers:
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../storage
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -801,6 +819,9 @@ importers:
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@consensus-tools/storage':
+        specifier: workspace:*
+        version: link:../storage
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

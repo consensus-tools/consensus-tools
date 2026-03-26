@@ -1,5 +1,5 @@
 import type { CronSchedule } from "@consensus-tools/schemas";
-import type { IStorage } from "@consensus-tools/core";
+import type { IStorage } from "@consensus-tools/storage";
 import { newId } from "@consensus-tools/core";
 
 const CHECK_INTERVAL_MS = 60_000;

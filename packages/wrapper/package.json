@@ -20,6 +20,7 @@
   "dependencies": {
     "@consensus-tools/schemas": "workspace:*",
     "@consensus-tools/core": "workspace:*",
+    "@consensus-tools/storage": "workspace:*",
     "@consensus-tools/guards": "workspace:*",
     "@consensus-tools/policies": "workspace:*"
   },

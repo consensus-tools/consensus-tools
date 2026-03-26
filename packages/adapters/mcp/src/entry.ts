@@ -6,7 +6,8 @@ import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-import { LocalBoard, AgentRegistry, GuardEngine, HitlTracker, createStorage } from "@consensus-tools/core";
+import { LocalBoard, AgentRegistry, GuardEngine, HitlTracker } from "@consensus-tools/core";
+import { createStorage } from "@consensus-tools/storage";
 import { createGuardEvaluatorRegistry } from "@consensus-tools/guards";
 import { WorkflowRunner, CronScheduler, prMergeGuardTemplate, linearTaskDecompTemplate, cronAutoAssignTemplate } from "@consensus-tools/workflows";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";

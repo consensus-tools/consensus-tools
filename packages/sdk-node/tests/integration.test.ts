@@ -4,7 +4,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import net from "node:net";
-import { JobEngine, LedgerEngine, JsonStorage } from "@consensus-tools/core";
+import { JobEngine, LedgerEngine } from "@consensus-tools/core";
+import { JsonStorage } from "@consensus-tools/storage";
 import type { ConsensusToolsConfig } from "@consensus-tools/schemas";
 import { ConsensusToolsServer } from "../src/server.js";
 
