@@ -1,5 +1,11 @@
 # example-openclaw-plugin
 
+## 0.0.3
+
+### Patch Changes
+
+- @consensus-tools/openclaw@0.8.0
+
 ## 0.0.2
 
 ### Patch Changes

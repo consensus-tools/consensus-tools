@@ -1,0 +1,1501 @@
+{
+  "jobs": [
+    {
+      "id": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "creatorPrincipalId": "agent-concise",
+      "title": "What payment methods do you accept?",
+      "description": "Customer question from category: billing",
+      "createdAt": "2026-03-15T03:03:49.056Z",
+      "expiresAt": "2026-03-16T03:03:49.056Z",
+      "opensAt": "2026-03-15T03:03:49.056Z",
+      "closesAt": "2026-03-16T03:03:49.056Z",
+      "createdByAgentId": "agent-concise",
+      "mode": "SUBMISSION",
+      "tags": [],
+      "priority": 0,
+      "requiredCapabilities": [],
+      "inputs": {},
+      "constraints": {},
+      "reward": 0,
+      "stakeRequired": 0,
+      "currency": "CREDITS",
+      "maxParticipants": 3,
+      "minParticipants": 1,
+      "consensusPolicy": {
+        "type": "WEIGHTED_VOTE_SIMPLE"
+      },
+      "slashingPolicy": {
+        "enabled": true,
+        "slashPercent": 0.5,
+        "slashFlat": 0
+      },
+      "escrowPolicy": {
+        "type": "mint"
+      },
+      "status": "RESOLVED"
+    },
+    {
+      "id": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "creatorPrincipalId": "agent-concise",
+      "title": "How long does shipping take?",
+      "description": "Content moderation: product",
+      "createdAt": "2026-03-15T03:05:39.847Z",
+      "expiresAt": "2026-03-16T03:05:39.847Z",
+      "opensAt": "2026-03-15T03:05:39.847Z",
+      "closesAt": "2026-03-16T03:05:39.847Z",
+      "createdByAgentId": "agent-concise",
+      "mode": "SUBMISSION",
+      "tags": [],
+      "priority": 0,
+      "requiredCapabilities": [],
+      "inputs": {},
+      "constraints": {},
+      "reward": 0,
+      "stakeRequired": 0,
+      "currency": "CREDITS",
+      "maxParticipants": 3,
+      "minParticipants": 1,
+      "consensusPolicy": {
+        "type": "APPROVAL_VOTE"
+      },
+      "slashingPolicy": {
+        "enabled": true,
+        "slashPercent": 0.5,
+        "slashFlat": 0
+      },
+      "escrowPolicy": {
+        "type": "mint"
+      },
+      "status": "RESOLVED"
+    },
+    {
+      "id": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "creatorPrincipalId": "agent-concise",
+      "title": "How do I update my billing information?",
+      "description": "Reputation-weighted: billing",
+      "createdAt": "2026-03-15T03:06:18.411Z",
+      "expiresAt": "2026-03-16T03:06:18.411Z",
+      "opensAt": "2026-03-15T03:06:18.411Z",
+      "closesAt": "2026-03-16T03:06:18.411Z",
+      "createdByAgentId": "agent-concise",
+      "mode": "SUBMISSION",
+      "tags": [],
+      "priority": 0,
+      "requiredCapabilities": [],
+      "inputs": {},
+      "constraints": {},
+      "reward": 0,
+      "stakeRequired": 0,
+      "currency": "CREDITS",
+      "maxParticipants": 3,
+      "minParticipants": 1,
+      "consensusPolicy": {
+        "type": "WEIGHTED_VOTE_SIMPLE"
+      },
+      "slashingPolicy": {
+        "enabled": true,
+        "slashPercent": 0.5,
+        "slashFlat": 0
+      },
+      "escrowPolicy": {
+        "type": "mint"
+      },
+      "status": "RESOLVED"
+    }
+  ],
+  "bids": [
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:03:49.059Z"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:03:49.059Z"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:03:49.061Z"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:05:39.852Z"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:05:39.855Z"
+    },
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:05:39.857Z"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:06:18.435Z"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:06:18.437Z"
+    },
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "stakeAmount": 0,
+      "stakeAt": "2026-03-15T03:06:18.440Z"
+    }
+  ],
+  "claims": [
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "claimAt": "2026-03-15T03:03:49.059Z",
+      "leaseUntil": "2026-03-15T04:03:49.059Z",
+      "heartbeatAt": "2026-03-15T03:03:49.059Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "claimAt": "2026-03-15T03:03:49.059Z",
+      "leaseUntil": "2026-03-15T04:03:49.059Z",
+      "heartbeatAt": "2026-03-15T03:03:49.059Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "claimAt": "2026-03-15T03:03:49.061Z",
+      "leaseUntil": "2026-03-15T04:03:49.061Z",
+      "heartbeatAt": "2026-03-15T03:03:49.061Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "claimAt": "2026-03-15T03:05:39.852Z",
+      "leaseUntil": "2026-03-15T04:05:39.852Z",
+      "heartbeatAt": "2026-03-15T03:05:39.852Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "claimAt": "2026-03-15T03:05:39.855Z",
+      "leaseUntil": "2026-03-15T04:05:39.855Z",
+      "heartbeatAt": "2026-03-15T03:05:39.855Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "claimAt": "2026-03-15T03:05:39.857Z",
+      "leaseUntil": "2026-03-15T04:05:39.857Z",
+      "heartbeatAt": "2026-03-15T03:05:39.857Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-empathetic",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "claimAt": "2026-03-15T03:06:18.435Z",
+      "leaseUntil": "2026-03-15T04:06:18.435Z",
+      "heartbeatAt": "2026-03-15T03:06:18.435Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-concise",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "claimAt": "2026-03-15T03:06:18.437Z",
+      "leaseUntil": "2026-03-15T04:06:18.437Z",
+      "heartbeatAt": "2026-03-15T03:06:18.437Z",
+      "status": "ACTIVE"
+    },
+    {
+      "agentId": "agent-technical",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "claimAt": "2026-03-15T03:06:18.440Z",
+      "leaseUntil": "2026-03-15T04:06:18.440Z",
+      "heartbeatAt": "2026-03-15T03:06:18.440Z",
+      "status": "ACTIVE"
+    }
+  ],
+  "submissions": [
+    {
+      "id": "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a",
+      "submitterPrincipalId": "agent-concise",
+      "agentId": "agent-concise",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "submittedAt": "2026-03-15T03:03:49.700Z",
+      "createdAt": "2026-03-15T03:03:49.700Z",
+      "artifacts": {},
+      "summary": "We accept Visa, Mastercard, American Express, PayPal, and Apple Pay.",
+      "confidence": 0.9,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55",
+      "submitterPrincipalId": "agent-technical",
+      "agentId": "agent-technical",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "submittedAt": "2026-03-15T03:03:49.710Z",
+      "createdAt": "2026-03-15T03:03:49.710Z",
+      "artifacts": {},
+      "summary": "We accept Visa, Mastercard, American Express, PayPal, and Apple Pay. All payments are processed securely through our payment provider.",
+      "confidence": 0.8360535581229593,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c",
+      "submitterPrincipalId": "agent-empathetic",
+      "agentId": "agent-empathetic",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "submittedAt": "2026-03-15T03:03:50.298Z",
+      "createdAt": "2026-03-15T03:03:50.298Z",
+      "artifacts": {},
+      "summary": "I understand that knowing the payment options available is important for making a purchase decision. We accept a variety of payment methods to ensure convenience for our customers. You can use Visa, Mastercard, American Express, PayPal, and Apple Pay. Rest assured, all payments are processed securely through our payment provider. If you have any further questions or need assistance during checkout, feel free to reach out. We're here to help!",
+      "confidence": 0.8668646629615234,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_978ab3a2-2ff4-4328-bdee-d19d53d36ca3",
+      "submitterPrincipalId": "agent-concise",
+      "agentId": "agent-concise",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "submittedAt": "2026-03-15T03:05:40.678Z",
+      "createdAt": "2026-03-15T03:05:40.678Z",
+      "artifacts": {},
+      "summary": "Standard shipping takes 5-7 business days, express shipping takes 2-3 business days, and international orders may take 10-14 business days.",
+      "confidence": 0.9,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_1169bc64-a649-491a-a4dc-793c24ae0bd6",
+      "submitterPrincipalId": "agent-empathetic",
+      "agentId": "agent-empathetic",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "submittedAt": "2026-03-15T03:05:40.881Z",
+      "createdAt": "2026-03-15T03:05:40.881Z",
+      "artifacts": {},
+      "summary": "I completely understand how important it is to know when your order will arrive. Standard shipping typically takes 5-7 business days, while express shipping is faster, taking just 2-3 business days. For international orders, you might expect it to take 10-14 business days. If you have any further questions or need assistance with your shipment, please feel free to ask. I'm here to help!",
+      "confidence": 0.8383503517971761,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_962c9212-35c1-4e06-b090-d09607242c48",
+      "submitterPrincipalId": "agent-technical",
+      "agentId": "agent-technical",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "submittedAt": "2026-03-15T03:05:40.882Z",
+      "createdAt": "2026-03-15T03:05:40.882Z",
+      "artifacts": {},
+      "summary": "Standard shipping takes 5-7 business days. Express shipping takes 2-3 business days. For international orders, the shipping time is 10-14 business days. Please let me know if you need any further assistance!",
+      "confidence": 0.8202935637269391,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5",
+      "submitterPrincipalId": "agent-concise",
+      "agentId": "agent-concise",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "submittedAt": "2026-03-15T03:06:18.955Z",
+      "createdAt": "2026-03-15T03:06:18.955Z",
+      "artifacts": {},
+      "summary": "Go to Account Settings > Billing > Payment Methods. Click Edit on your current payment method to update your card details or add a new payment method.",
+      "confidence": 0.9,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_4492956f-de97-41f6-85ec-301ecbef388d",
+      "submitterPrincipalId": "agent-technical",
+      "agentId": "agent-technical",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "submittedAt": "2026-03-15T03:06:19.381Z",
+      "createdAt": "2026-03-15T03:06:19.381Z",
+      "artifacts": {},
+      "summary": "To update your billing information, please follow these steps:\n\n1. Go to Account Settings.\n2. Navigate to the Billing section.\n3. Under Payment Methods, click Edit on your current payment method to update your card details. Alternatively, you can add a new payment method.\n\nIf you encounter any issues during this process, feel free to reach out for further assistance.",
+      "confidence": 0.8702854295753623,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    },
+    {
+      "id": "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067",
+      "submitterPrincipalId": "agent-empathetic",
+      "agentId": "agent-empathetic",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "submittedAt": "2026-03-15T03:06:19.382Z",
+      "createdAt": "2026-03-15T03:06:19.382Z",
+      "artifacts": {},
+      "summary": "I completely understand the importance of keeping your billing information up-to-date, and I'm here to help guide you through the process. To update your billing information, simply go to Account Settings, then select Billing, followed by Payment Methods. From there, click Edit on your current payment method to update your card details, or you can choose to add a new payment method. If you have any trouble along the way, please don't hesitate to reach out. We're here to ensure everything goes smoothly for you.",
+      "confidence": 0.7422660022955677,
+      "requestedPayout": 0,
+      "status": "SUBMITTED"
+    }
+  ],
+  "votes": [
+    {
+      "id": "vote_18b83fbf-f5fb-4bb9-9a50-695a35e2458c",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a",
+      "agentId": "judge",
+      "score": 26,
+      "weight": 26,
+      "rationale": "Accuracy: 10/10, Tone: 8/10, Completeness: 8/10",
+      "createdAt": "2026-03-15T03:03:56.793Z"
+    },
+    {
+      "id": "vote_2bb72bde-cdba-49ab-9982-5ff0b30dde44",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c",
+      "agentId": "judge",
+      "score": 30,
+      "weight": 30,
+      "rationale": "Accuracy: 10/10, Tone: 10/10, Completeness: 10/10",
+      "createdAt": "2026-03-15T03:03:56.795Z"
+    },
+    {
+      "id": "vote_6a80c5ef-b38c-4124-83f8-8081282802ab",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55",
+      "agentId": "judge",
+      "score": 29,
+      "weight": 29,
+      "rationale": "Accuracy: 10/10, Tone: 9/10, Completeness: 10/10",
+      "createdAt": "2026-03-15T03:03:56.796Z"
+    },
+    {
+      "id": "vote_7ae441c4-351c-4d0a-90c1-a64e0ca6f79e",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5",
+      "agentId": "judge",
+      "score": 28,
+      "weight": 28,
+      "rationale": "Accuracy: 10/10, Tone: 8/10, Completeness: 10/10",
+      "createdAt": "2026-03-15T03:06:27.465Z"
+    },
+    {
+      "id": "vote_1a2ed863-be6f-4aff-a041-81a3b4e6111e",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067",
+      "agentId": "judge",
+      "score": 30,
+      "weight": 30,
+      "rationale": "Accuracy: 10/10, Tone: 10/10, Completeness: 10/10",
+      "createdAt": "2026-03-15T03:06:27.471Z"
+    },
+    {
+      "id": "vote_eb5256c5-ab4e-4617-8866-a4160b542804",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "voterPrincipalId": "judge",
+      "submissionId": "sub_4492956f-de97-41f6-85ec-301ecbef388d",
+      "targetType": "SUBMISSION",
+      "targetId": "sub_4492956f-de97-41f6-85ec-301ecbef388d",
+      "agentId": "judge",
+      "score": 29,
+      "weight": 29,
+      "rationale": "Accuracy: 10/10, Tone: 9/10, Completeness: 10/10",
+      "createdAt": "2026-03-15T03:06:27.474Z"
+    }
+  ],
+  "resolutions": [
+    {
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "resolvedAt": "2026-03-15T03:03:56.797Z",
+      "winners": [
+        "agent-empathetic"
+      ],
+      "winningSubmissionIds": [
+        "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c"
+      ],
+      "payouts": [
+        {
+          "agentId": "agent-empathetic",
+          "amount": 0
+        }
+      ],
+      "slashes": [],
+      "consensusTrace": {
+        "policy": "WEIGHTED_VOTE_SIMPLE",
+        "scores": {
+          "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a": 676,
+          "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c": 900,
+          "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55": 841
+        },
+        "voteCounts": {
+          "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a": 1,
+          "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c": 1,
+          "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55": 1
+        }
+      },
+      "finalArtifact": {},
+      "auditLog": [
+        "resolved_by:judge"
+      ]
+    },
+    {
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "resolvedAt": "2026-03-15T03:05:51.146Z",
+      "winners": [],
+      "winningSubmissionIds": [],
+      "payouts": [],
+      "slashes": [],
+      "consensusTrace": {
+        "policy": "APPROVAL_VOTE",
+        "settlement": "immediate",
+        "reason": "no_votes",
+        "scores": {},
+        "voteCounts": {}
+      },
+      "finalArtifact": null,
+      "auditLog": [
+        "resolved_by:agent-empathetic"
+      ]
+    },
+    {
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "resolvedAt": "2026-03-15T03:06:27.478Z",
+      "winners": [
+        "agent-empathetic"
+      ],
+      "winningSubmissionIds": [
+        "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067"
+      ],
+      "payouts": [
+        {
+          "agentId": "agent-empathetic",
+          "amount": 0
+        }
+      ],
+      "slashes": [],
+      "consensusTrace": {
+        "policy": "WEIGHTED_VOTE_SIMPLE",
+        "scores": {
+          "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5": 784,
+          "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067": 900,
+          "sub_4492956f-de97-41f6-85ec-301ecbef388d": 841
+        },
+        "voteCounts": {
+          "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5": 1,
+          "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067": 1,
+          "sub_4492956f-de97-41f6-85ec-301ecbef388d": 1
+        }
+      },
+      "finalArtifact": {},
+      "auditLog": [
+        "resolved_by:judge"
+      ]
+    }
+  ],
+  "ledger": [
+    {
+      "id": "ledger_61979546-7838-444a-8203-bce5f278723e",
+      "at": "2026-03-15T03:03:49.052Z",
+      "type": "FAUCET",
+      "agentId": "agent-concise",
+      "amount": 1000,
+      "reason": "initial_credits"
+    },
+    {
+      "id": "ledger_1eecb3de-c4fb-4407-acaa-400bc88aa8ee",
+      "at": "2026-03-15T03:03:49.053Z",
+      "type": "FAUCET",
+      "agentId": "agent-empathetic",
+      "amount": 1000,
+      "reason": "initial_credits"
+    },
+    {
+      "id": "ledger_cb5b041c-3286-4730-b0be-6da9a94ccffd",
+      "at": "2026-03-15T03:03:49.054Z",
+      "type": "FAUCET",
+      "agentId": "agent-technical",
+      "amount": 1000,
+      "reason": "initial_credits"
+    },
+    {
+      "id": "ledger_fcec00de-717a-4892-af61-3de2b762119b",
+      "at": "2026-03-15T03:03:49.059Z",
+      "type": "STAKE",
+      "agentId": "agent-technical",
+      "amount": 0,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_b6bcdba5-8075-4a75-b5af-de0bd85d17a7",
+      "at": "2026-03-15T03:03:49.059Z",
+      "type": "STAKE",
+      "agentId": "agent-concise",
+      "amount": 0,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_482fafc2-d5d9-4422-94c3-dae3c32dcb53",
+      "at": "2026-03-15T03:03:49.061Z",
+      "type": "STAKE",
+      "agentId": "agent-empathetic",
+      "amount": 0,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_78119ac7-7432-42cc-bf35-105e4316fb40",
+      "at": "2026-03-15T03:03:56.797Z",
+      "type": "PAYOUT",
+      "agentId": "agent-empathetic",
+      "amount": 0,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_fe5b48d9-341f-4f89-a9c2-6232da7ccf60",
+      "at": "2026-03-15T03:03:56.798Z",
+      "type": "PAYOUT",
+      "agentId": "agent-concise",
+      "amount": 5,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_dd145fb6-f1ce-40d7-9973-30362f7fbaaa",
+      "at": "2026-03-15T03:03:56.799Z",
+      "type": "PAYOUT",
+      "agentId": "agent-empathetic",
+      "amount": 5,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_fb683594-f7cd-4bae-8b6c-dabc4eab51d6",
+      "at": "2026-03-15T03:03:56.804Z",
+      "type": "PAYOUT",
+      "agentId": "agent-technical",
+      "amount": 5,
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a"
+    },
+    {
+      "id": "ledger_6a9922a3-ae88-44fb-b151-8e26baf69a3b",
+      "at": "2026-03-15T03:05:39.852Z",
+      "type": "STAKE",
+      "agentId": "agent-concise",
+      "amount": 0,
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f"
+    },
+    {
+      "id": "ledger_e8172d33-b49f-4bcd-96b4-d0656bf5f106",
+      "at": "2026-03-15T03:05:39.855Z",
+      "type": "STAKE",
+      "agentId": "agent-empathetic",
+      "amount": 0,
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f"
+    },
+    {
+      "id": "ledger_f41aa6c2-de78-450f-ab2f-e2a414f597b5",
+      "at": "2026-03-15T03:05:39.857Z",
+      "type": "STAKE",
+      "agentId": "agent-technical",
+      "amount": 0,
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f"
+    },
+    {
+      "id": "ledger_143cf157-3ed1-4ea8-add8-006dce761778",
+      "at": "2026-03-15T03:06:18.435Z",
+      "type": "STAKE",
+      "agentId": "agent-empathetic",
+      "amount": 0,
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5"
+    },
+    {
+      "id": "ledger_ec993c79-94f7-4fc5-aa1a-8aa4ab04ebe1",
+      "at": "2026-03-15T03:06:18.437Z",
+      "type": "STAKE",
+      "agentId": "agent-concise",
+      "amount": 0,
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5"
+    },
+    {
+      "id": "ledger_26b5c16e-5bc4-409b-b19a-c5e2dca25a76",
+      "at": "2026-03-15T03:06:18.440Z",
+      "type": "STAKE",
+      "agentId": "agent-technical",
+      "amount": 0,
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5"
+    },
+    {
+      "id": "ledger_79ff53da-30be-4152-b0d6-34dec5cde106",
+      "at": "2026-03-15T03:06:27.478Z",
+      "type": "PAYOUT",
+      "agentId": "agent-empathetic",
+      "amount": 0,
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5"
+    },
+    {
+      "id": "ledger_d76d4562-9110-4689-9f84-691a5440455e",
+      "at": "2026-03-15T03:06:27.481Z",
+      "type": "PAYOUT",
+      "agentId": "agent-concise",
+      "amount": 5,
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5"
+    }
+  ],
+  "audit": [
+    {
+      "id": "audit_162ce5d8-8a20-4a6b-a122-9d0d112b87c3",
+      "at": "2026-03-15T03:03:49.056Z",
+      "type": "job_posted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "title": "What payment methods do you accept?"
+      }
+    },
+    {
+      "id": "audit_edc7f681-71ac-474e-84fe-640aedd04704",
+      "at": "2026-03-15T03:03:49.059Z",
+      "type": "job_claimed",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_3ff5c3b0-6cbe-4eb5-896f-a8ff1b989823",
+      "at": "2026-03-15T03:03:49.059Z",
+      "type": "job_claimed",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_c396eb9f-27e9-4ca1-859b-a7ed8af2e53a",
+      "at": "2026-03-15T03:03:49.061Z",
+      "type": "job_claimed",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_86765997-8f2f-47ac-944f-9e3f5ef3dbbb",
+      "at": "2026-03-15T03:03:49.700Z",
+      "type": "job_submitted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "submissionId": "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a"
+      }
+    },
+    {
+      "id": "audit_07e24ce0-bee6-42f1-8d37-758c5d73f3cd",
+      "at": "2026-03-15T03:03:49.710Z",
+      "type": "job_submitted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "submissionId": "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55"
+      }
+    },
+    {
+      "id": "audit_ec46f445-b708-422d-ab11-6ce18d8101a5",
+      "at": "2026-03-15T03:03:49.709Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-concise",
+        "actionType": "support_reply",
+        "auditId": "49508876-d2a8-4cd8-9dbd-33aaefa38872"
+      }
+    },
+    {
+      "id": "audit_5b79573f-ae15-4365-b025-d7c26a79fc48",
+      "at": "2026-03-15T03:03:49.709Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "49508876-d2a8-4cd8-9dbd-33aaefa38872",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_f1860072-6888-4902-ad08-40884dccfdfc",
+      "at": "2026-03-15T03:03:49.709Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "49508876-d2a8-4cd8-9dbd-33aaefa38872",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_0e8bd3f5-816e-4a85-97d0-95dd996a53ba",
+      "at": "2026-03-15T03:03:49.713Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-technical",
+        "actionType": "support_reply",
+        "auditId": "bbd290b1-77fc-487f-abbb-294972c97691"
+      }
+    },
+    {
+      "id": "audit_3f3d4975-a850-4c8c-9b1b-e05095226713",
+      "at": "2026-03-15T03:03:49.713Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "bbd290b1-77fc-487f-abbb-294972c97691",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_edc9a515-71fa-4a20-be4d-13ce13ed6a9a",
+      "at": "2026-03-15T03:03:49.713Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "bbd290b1-77fc-487f-abbb-294972c97691",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_31f1ac38-7075-45be-9b90-cdc17d83a00a",
+      "at": "2026-03-15T03:03:50.298Z",
+      "type": "job_submitted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "submissionId": "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c"
+      }
+    },
+    {
+      "id": "audit_19d1da4e-bae3-4436-b24d-a1fb03c80f83",
+      "at": "2026-03-15T03:03:50.303Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-empathetic",
+        "actionType": "support_reply",
+        "auditId": "e8e31e31-5a36-40fb-b641-743cc3cb0b79"
+      }
+    },
+    {
+      "id": "audit_bef1e9e8-4304-4bfa-9a6c-c9f9fbfbfd03",
+      "at": "2026-03-15T03:03:50.303Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "e8e31e31-5a36-40fb-b641-743cc3cb0b79",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_02bd52fa-3aba-49d8-85c3-4e1b6e286faf",
+      "at": "2026-03-15T03:03:50.303Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "e8e31e31-5a36-40fb-b641-743cc3cb0b79",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_c44cbfc8-2cce-4a6a-a5fd-fee32d064837",
+      "at": "2026-03-15T03:03:56.793Z",
+      "type": "job_voted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_f485a002-0ed8-4ca2-ae1e-25c62613fd7a",
+        "score": 26
+      }
+    },
+    {
+      "id": "audit_536aae6b-1b7f-43dc-a398-6ba73cf08e96",
+      "at": "2026-03-15T03:03:56.795Z",
+      "type": "job_voted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_65fcf9ca-40de-4b55-b15c-62a51fcac72c",
+        "score": 30
+      }
+    },
+    {
+      "id": "audit_8e134481-11ae-48c7-b06a-e0865b92b140",
+      "at": "2026-03-15T03:03:56.796Z",
+      "type": "job_voted",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_730c3e59-43a5-4942-bb9b-bc6e5241ea55",
+        "score": 29
+      }
+    },
+    {
+      "id": "audit_b533e599-22f2-4f72-bb73-3d3c261a9a43",
+      "at": "2026-03-15T03:03:56.797Z",
+      "type": "job_resolved",
+      "jobId": "job_30264591-9901-440e-8685-5a5bceac4f6a",
+      "actorAgentId": "judge",
+      "details": {
+        "winners": [
+          "agent-empathetic"
+        ]
+      }
+    },
+    {
+      "id": "audit_995c5faf-10b0-4c56-b200-350f14a5c3a1",
+      "at": "2026-03-15T03:05:39.847Z",
+      "type": "job_posted",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "title": "How long does shipping take?"
+      }
+    },
+    {
+      "id": "audit_4378e1be-cf27-47df-a83e-1b142b0f8f2d",
+      "at": "2026-03-15T03:05:39.852Z",
+      "type": "job_claimed",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_a3815606-f290-4e59-a1de-118e2a30d663",
+      "at": "2026-03-15T03:05:39.855Z",
+      "type": "job_claimed",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_92b27781-3893-4830-a85c-339161c55878",
+      "at": "2026-03-15T03:05:39.857Z",
+      "type": "job_claimed",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_4c877d37-16cb-4fac-b441-eb8e5ba0c778",
+      "at": "2026-03-15T03:05:40.678Z",
+      "type": "job_submitted",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "submissionId": "sub_978ab3a2-2ff4-4328-bdee-d19d53d36ca3"
+      }
+    },
+    {
+      "id": "audit_9dbc074b-7be6-4587-a7d8-64c1e0a4cd3f",
+      "at": "2026-03-15T03:05:40.682Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-concise",
+        "actionType": "support_reply",
+        "auditId": "237e1fa2-723b-4405-a670-5d5630a058dd"
+      }
+    },
+    {
+      "id": "audit_cab0abd5-3934-456c-9085-b91a985122af",
+      "at": "2026-03-15T03:05:40.682Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "237e1fa2-723b-4405-a670-5d5630a058dd",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_38db8044-b431-49c0-9cec-33e59a1d7b27",
+      "at": "2026-03-15T03:05:40.682Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "237e1fa2-723b-4405-a670-5d5630a058dd",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_3d6557ad-10c6-4f52-b5cf-15b59726cc95",
+      "at": "2026-03-15T03:05:40.881Z",
+      "type": "job_submitted",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "submissionId": "sub_1169bc64-a649-491a-a4dc-793c24ae0bd6"
+      }
+    },
+    {
+      "id": "audit_fd4374c2-a31f-4a5c-8639-f95f1d3f04fc",
+      "at": "2026-03-15T03:05:40.882Z",
+      "type": "job_submitted",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "submissionId": "sub_962c9212-35c1-4e06-b090-d09607242c48"
+      }
+    },
+    {
+      "id": "audit_4f03c795-1d1a-43de-a56d-1ddc1a3800da",
+      "at": "2026-03-15T03:05:40.888Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-empathetic",
+        "actionType": "support_reply",
+        "auditId": "dac9114a-aa89-4053-92c7-3096e1a1e969"
+      }
+    },
+    {
+      "id": "audit_5b3c4af9-ff35-4b9c-909e-804c535a8087",
+      "at": "2026-03-15T03:05:40.888Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "dac9114a-aa89-4053-92c7-3096e1a1e969",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_89907436-3e48-4956-afe8-d382ef81c73a",
+      "at": "2026-03-15T03:05:40.888Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "dac9114a-aa89-4053-92c7-3096e1a1e969",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_dd480b33-b2d0-447b-878d-9eb00a7b510c",
+      "at": "2026-03-15T03:05:40.893Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-technical",
+        "actionType": "support_reply",
+        "auditId": "daf88855-f4ee-4ea6-a4ab-8da2cf4bdb03"
+      }
+    },
+    {
+      "id": "audit_4d280922-d30c-4269-a5ee-845d2990890a",
+      "at": "2026-03-15T03:05:40.893Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "daf88855-f4ee-4ea6-a4ab-8da2cf4bdb03",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_d6cfd1f6-1f81-4333-b077-5932a345f59c",
+      "at": "2026-03-15T03:05:40.893Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "daf88855-f4ee-4ea6-a4ab-8da2cf4bdb03",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_35f2f0f8-6d5c-4a60-abf7-f4dbd7587b9e",
+      "at": "2026-03-15T03:05:51.146Z",
+      "type": "job_resolved",
+      "jobId": "job_01e1ba1f-5fe2-4aa6-bfcd-488e09cce86f",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "winners": []
+      }
+    },
+    {
+      "id": "audit_3f5ec712-e147-4ba7-ad9e-433d7010334a",
+      "at": "2026-03-15T03:06:18.411Z",
+      "type": "job_posted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "title": "How do I update my billing information?"
+      }
+    },
+    {
+      "id": "audit_d09739d5-3a63-43eb-9b50-58fa9dbc2ecb",
+      "at": "2026-03-15T03:06:18.435Z",
+      "type": "job_claimed",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_841cd767-e2bf-4e6d-b141-12f9ec5a4d5a",
+      "at": "2026-03-15T03:06:18.437Z",
+      "type": "job_claimed",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_083308c3-ee8b-4da2-8964-b0fbec695660",
+      "at": "2026-03-15T03:06:18.440Z",
+      "type": "job_claimed",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "stakeAmount": 0
+      }
+    },
+    {
+      "id": "audit_b8d70a60-cfa0-4c37-b861-2b046beecc39",
+      "at": "2026-03-15T03:06:18.955Z",
+      "type": "job_submitted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-concise",
+      "details": {
+        "submissionId": "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5"
+      }
+    },
+    {
+      "id": "audit_32a266f9-7711-4cdc-9f7f-af2f3fab3c67",
+      "at": "2026-03-15T03:06:18.958Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-concise",
+        "actionType": "support_reply",
+        "auditId": "bbc0f31f-c59e-4d56-85b6-c2a483505c8c"
+      }
+    },
+    {
+      "id": "audit_48d9e7f6-445a-4c48-ab9b-126b1d97e712",
+      "at": "2026-03-15T03:06:18.958Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "bbc0f31f-c59e-4d56-85b6-c2a483505c8c",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_ccb28be9-77fc-4ae6-95f0-663f4b37dce2",
+      "at": "2026-03-15T03:06:18.958Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "bbc0f31f-c59e-4d56-85b6-c2a483505c8c",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_ae590f57-fe9f-4542-b6ed-389d35b82a85",
+      "at": "2026-03-15T03:06:19.381Z",
+      "type": "job_submitted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-technical",
+      "details": {
+        "submissionId": "sub_4492956f-de97-41f6-85ec-301ecbef388d"
+      }
+    },
+    {
+      "id": "audit_5443cfd7-a991-4e1f-bd74-be694a13e7dc",
+      "at": "2026-03-15T03:06:19.382Z",
+      "type": "job_submitted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "agent-empathetic",
+      "details": {
+        "submissionId": "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067"
+      }
+    },
+    {
+      "id": "audit_6340ec67-8a76-478d-9e2a-5303c6134fc7",
+      "at": "2026-03-15T03:06:19.386Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-technical",
+        "actionType": "support_reply",
+        "auditId": "410733a0-e5ba-4443-abcb-2d366f6e9651"
+      }
+    },
+    {
+      "id": "audit_627bdd95-ebac-4276-881f-27abfd96cb11",
+      "at": "2026-03-15T03:06:19.386Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "410733a0-e5ba-4443-abcb-2d366f6e9651",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_39833ec0-d65d-4324-a3e7-6d5ad0d0682d",
+      "at": "2026-03-15T03:06:19.386Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "410733a0-e5ba-4443-abcb-2d366f6e9651",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_cbbd0f22-9dfb-4054-84b1-7ee36cba7336",
+      "at": "2026-03-15T03:06:19.390Z",
+      "type": "PROPOSED_ACTION",
+      "details": {
+        "boardId": "demo-board",
+        "agentId": "agent-empathetic",
+        "actionType": "support_reply",
+        "auditId": "800653fa-a60b-4cc2-9ecd-226e1bd77f19"
+      }
+    },
+    {
+      "id": "audit_cb975d7a-1923-45cc-a3de-9f3cbb8d12b0",
+      "at": "2026-03-15T03:06:19.390Z",
+      "type": "EVALUATOR_VOTE",
+      "details": {
+        "auditId": "800653fa-a60b-4cc2-9ecd-226e1bd77f19",
+        "evaluator": "support-risk-custom",
+        "vote": "YES",
+        "reason": "Standard support reply",
+        "risk": 0.15
+      }
+    },
+    {
+      "id": "audit_6c77fc89-600a-4eb7-b55d-09b1b9ac1bfd",
+      "at": "2026-03-15T03:06:19.390Z",
+      "type": "FINAL_DECISION",
+      "details": {
+        "auditId": "800653fa-a60b-4cc2-9ecd-226e1bd77f19",
+        "decision": "ALLOW",
+        "reason": "Standard support reply",
+        "riskScore": 0.15,
+        "guardType": "support_reply"
+      }
+    },
+    {
+      "id": "audit_f4f0cf05-fa49-47d4-b133-100db69b6ae8",
+      "at": "2026-03-15T03:06:27.465Z",
+      "type": "job_voted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_dbcf7e21-27fb-4192-9a43-5215c63c8fd5",
+        "score": 28
+      }
+    },
+    {
+      "id": "audit_f6094dcc-6da6-4463-934f-2d4d51a66469",
+      "at": "2026-03-15T03:06:27.471Z",
+      "type": "job_voted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_450bd7ae-0e20-4f4c-b9cf-2134d01bf067",
+        "score": 30
+      }
+    },
+    {
+      "id": "audit_66ed79e9-e30a-4d3f-b972-961551ce97df",
+      "at": "2026-03-15T03:06:27.474Z",
+      "type": "job_voted",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "judge",
+      "details": {
+        "submissionId": "sub_4492956f-de97-41f6-85ec-301ecbef388d",
+        "score": 29
+      }
+    },
+    {
+      "id": "audit_b2a1082f-314d-41ae-baac-e3e7cf3bf5a5",
+      "at": "2026-03-15T03:06:27.478Z",
+      "type": "job_resolved",
+      "jobId": "job_e6224664-925d-4554-9489-658c1633ffb5",
+      "actorAgentId": "judge",
+      "details": {
+        "winners": [
+          "agent-empathetic"
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "agents": [
+    {
+      "id": "agent-concise",
+      "name": "Concise Agent",
+      "kind": "internal",
+      "scopes": [
+        "support_reply"
+      ],
+      "apiKeyHash": null,
+      "status": "active",
+      "metadata": {
+        "systemPrompt": "You are a customer service agent. Be brief and direct. Answer in 1-2 sentences. Stick to the facts.",
+        "temperature": 0.3
+      },
+      "createdAt": "2026-03-15T03:03:49.048Z"
+    },
+    {
+      "id": "agent-empathetic",
+      "name": "Empathetic Agent",
+      "kind": "internal",
+      "scopes": [
+        "support_reply"
+      ],
+      "apiKeyHash": null,
+      "status": "active",
+      "metadata": {
+        "systemPrompt": "You are a warm, empathetic customer service agent. Acknowledge the customer's feelings first, then provide a thorough answer. Be reassuring and helpful.",
+        "temperature": 0.7
+      },
+      "createdAt": "2026-03-15T03:03:49.049Z"
+    },
+    {
+      "id": "agent-technical",
+      "name": "Technical Agent",
+      "kind": "internal",
+      "scopes": [
+        "support_reply"
+      ],
+      "apiKeyHash": null,
+      "status": "active",
+      "metadata": {
+        "systemPrompt": "You are a precise, policy-focused customer service agent. Reference specific policies and procedures. Be accurate and detailed.",
+        "temperature": 0.5
+      },
+      "createdAt": "2026-03-15T03:03:49.050Z"
+    },
+    {
+      "id": "judge",
+      "name": "LLM Judge",
+      "kind": "internal",
+      "scopes": [
+        "support_reply"
+      ],
+      "apiKeyHash": null,
+      "status": "active",
+      "metadata": {},
+      "createdAt": "2026-03-15T03:03:49.055Z"
+    }
+  ],
+  "participants": [],
+  "workflows": [],
+  "workflowRuns": [],
+  "cronSchedules": [],
+  "hitlApprovals": [],
+  "guardResults": [
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "49508876-d2a8-4cd8-9dbd-33aaefa38872",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "bbd290b1-77fc-487f-abbb-294972c97691",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "e8e31e31-5a36-40fb-b641-743cc3cb0b79",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "237e1fa2-723b-4405-a670-5d5630a058dd",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "dac9114a-aa89-4053-92c7-3096e1a1e969",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "daf88855-f4ee-4ea6-a4ab-8da2cf4bdb03",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "bbc0f31f-c59e-4d56-85b6-c2a483505c8c",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "410733a0-e5ba-4443-abcb-2d366f6e9651",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    },
+    {
+      "decision": "ALLOW",
+      "reason": "Standard support reply",
+      "risk_score": 0.15,
+      "audit_id": "800653fa-a60b-4cc2-9ecd-226e1bd77f19",
+      "votes": [
+        {
+          "evaluator": "support-risk-custom",
+          "vote": "YES",
+          "reason": "Standard support reply",
+          "risk": 0.15
+        }
+      ],
+      "guard_type": "support_reply"
+    }
+  ],
+  "policyAssignments": [],
+  "consensusVotes": []
+}

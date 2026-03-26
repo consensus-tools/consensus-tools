@@ -1,5 +1,12 @@
 # @consensus-tools/telemetry
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/schemas@0.8.0
+
 ## 0.5.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/notifications",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "description": "Multi-adapter notification dispatch for HITL approval flows",
   "type": "module",
   "main": "./dist/index.js",

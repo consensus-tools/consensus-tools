@@ -1,5 +1,15 @@
 # example-cs-demo
 
+## 2.0.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/schemas@0.8.0
+  - @consensus-tools/evals@0.8.0
+  - @consensus-tools/guards@0.8.0
+  - @consensus-tools/telemetry@0.8.0
+
 ## 2.0.3
 
 ### Patch Changes

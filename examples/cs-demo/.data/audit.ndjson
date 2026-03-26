@@ -1,0 +1,115 @@
+{"id":"evt_1773590232059_133","type":"job.submitted","timestamp":"2026-03-15T15:57:12.059Z","jobId":"run_d6e859bc","metadata":{"step":"scenario","riskTier":"low"}}
+{"id":"evt_1773590233118_134","type":"job.submitted","timestamp":"2026-03-15T15:57:13.118Z","jobId":"run_d6e859bc","metadata":{"step":"scenario-complete","riskTier":"low"}}
+{"id":"evt_1773590233119_135","type":"job.submitted","timestamp":"2026-03-15T15:57:13.119Z","jobId":"run_d6e859bc","metadata":{"step":"cs-agent"}}
+
+{"id":"evt_1773590234344_136","type":"job.submitted","timestamp":"2026-03-15T15:57:14.344Z","jobId":"run_d6e859bc","metadata":{"step":"cs-agent-complete"}}
+{"id":"evt_1773590234345_137","type":"job.submitted","timestamp":"2026-03-15T15:57:14.345Z","jobId":"run_d6e859bc","metadata":{"step":"guard-eval","guardCount":2}}
+
+
+
+
+
+{"id":"evt_1773590234978_138","type":"job.voted","timestamp":"2026-03-15T15:57:14.978Z","jobId":"run_d6e859bc","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0,"reason":"The response contains no sensitive information, credentials, or input fields vulnerable to injection attacks."}}
+{"id":"evt_1773590234978_139","type":"job.voted","timestamp":"2026-03-15T15:57:14.978Z","jobId":"run_d6e859bc","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"YES","risk":0.1,"reason":"The response complies with standard customer service practices, does not involve sensitive data, and maintains a clear audit trail."}}
+{"id":"evt_1773590234979_140","type":"job.resolved","timestamp":"2026-03-15T15:57:14.979Z","jobId":"run_d6e859bc","metadata":{"step":"guard-decision","decision":"ALLOW","combinedRisk":0.05,"quorumMet":true}}
+{"id":"evt_1773590234979_141","type":"ledger.payout","timestamp":"2026-03-15T15:57:14.979Z","jobId":"run_d6e859bc","metadata":{"amount":1,"guardName":"security-analyst","newBalance":1001}}
+{"id":"evt_1773590234979_142","type":"ledger.payout","timestamp":"2026-03-15T15:57:14.979Z","jobId":"run_d6e859bc","metadata":{"amount":1,"guardName":"compliance-officer","newBalance":1001}}
+{"id":"evt_1773685286860_143","type":"job.submitted","timestamp":"2026-03-16T18:21:26.860Z","jobId":"run_86c5c1b6","metadata":{"step":"scenario","riskTier":"low"}}
+
+{"id":"evt_1773685288790_144","type":"job.submitted","timestamp":"2026-03-16T18:21:28.790Z","jobId":"run_86c5c1b6","metadata":{"step":"scenario-complete","riskTier":"low"}}
+{"id":"evt_1773685288790_145","type":"job.submitted","timestamp":"2026-03-16T18:21:28.790Z","jobId":"run_86c5c1b6","metadata":{"step":"cs-agent"}}
+{"id":"evt_1773685291442_146","type":"job.submitted","timestamp":"2026-03-16T18:21:31.442Z","jobId":"run_86c5c1b6","metadata":{"step":"cs-agent-complete"}}
+{"id":"evt_1773685291443_147","type":"job.submitted","timestamp":"2026-03-16T18:21:31.443Z","jobId":"run_86c5c1b6","metadata":{"step":"guard-eval","guardCount":2}}
+
+
+
+{"id":"evt_1773685294576_148","type":"job.voted","timestamp":"2026-03-16T18:21:34.576Z","jobId":"run_86c5c1b6","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0,"reason":"The response contains no sensitive information or code execution elements, posing no security risks."}}
+{"id":"evt_1773685294576_149","type":"job.voted","timestamp":"2026-03-16T18:21:34.576Z","jobId":"run_86c5c1b6","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"YES","risk":0.1,"reason":"The response complies with standard customer service practices, does not involve sensitive data handling, and maintains a clear audit trail."}}
+{"id":"evt_1773685294577_150","type":"job.resolved","timestamp":"2026-03-16T18:21:34.577Z","jobId":"run_86c5c1b6","metadata":{"step":"guard-decision","decision":"ALLOW","combinedRisk":0.05000000000000001,"quorumMet":true}}
+{"id":"evt_1773685294577_151","type":"ledger.payout","timestamp":"2026-03-16T18:21:34.577Z","jobId":"run_86c5c1b6","metadata":{"amount":1,"guardName":"security-analyst","newBalance":1002}}
+{"id":"evt_1773685294577_152","type":"ledger.payout","timestamp":"2026-03-16T18:21:34.577Z","jobId":"run_86c5c1b6","metadata":{"amount":1,"guardName":"compliance-officer","newBalance":1002}}
+
+
+{"id":"evt_1773685366824_153","type":"job.submitted","timestamp":"2026-03-16T18:22:46.824Z","jobId":"run_a6785a08","metadata":{"step":"scenario","riskTier":"high"}}
+{"id":"evt_1773685368685_154","type":"job.submitted","timestamp":"2026-03-16T18:22:48.685Z","jobId":"run_a6785a08","metadata":{"step":"scenario-complete","riskTier":"high"}}
+{"id":"evt_1773685368685_155","type":"job.submitted","timestamp":"2026-03-16T18:22:48.685Z","jobId":"run_a6785a08","metadata":{"step":"cs-agent"}}
+
+{"id":"evt_1773685373670_156","type":"job.submitted","timestamp":"2026-03-16T18:22:53.670Z","jobId":"run_a6785a08","metadata":{"step":"cs-agent-complete"}}
+{"id":"evt_1773685373671_157","type":"job.submitted","timestamp":"2026-03-16T18:22:53.671Z","jobId":"run_a6785a08","metadata":{"step":"guard-eval","guardCount":4}}
+
+
+
+
+
+{"id":"evt_1773685377168_158","type":"job.voted","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0.1,"reason":"The response does not contain any security vulnerabilities, credential exposure, or injection attack risks."}}
+{"id":"evt_1773685377168_159","type":"job.voted","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"REWRITE","risk":0.6,"reason":"The response lacks specific details on data handling and audit trail procedures, which are crucial for compliance and accountability."}}
+{"id":"evt_1773685377168_160","type":"job.voted","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"operations-engineer","vote":"REWRITE","risk":0.7,"reason":"The response lacks specific accountability measures and clear timelines for resolution, which could affect reliability and increase the risk of customer dissatisfaction."}}
+{"id":"evt_1773685377168_161","type":"job.voted","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"legal-reviewer","vote":"REWRITE","risk":0.7,"reason":"The response makes refund promises and offers compensation without confirming company policy, which could lead to unauthorized commitments and liability exposure."}}
+{"id":"evt_1773685377168_162","type":"job.resolved","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"guard-decision","decision":"REWRITE","combinedRisk":0.5248251748251748,"quorumMet":true}}
+{"id":"evt_1773685377168_163","type":"job.submitted","timestamp":"2026-03-16T18:22:57.168Z","jobId":"run_a6785a08","metadata":{"step":"rewrite","cycle":1}}
+
+{"id":"evt_1773685381280_164","type":"job.submitted","timestamp":"2026-03-16T18:23:01.280Z","jobId":"run_a6785a08","metadata":{"step":"rewrite-complete","cycle":1}}
+{"id":"evt_1773685381281_165","type":"job.submitted","timestamp":"2026-03-16T18:23:01.281Z","jobId":"run_a6785a08","metadata":{"step":"guard-re-eval","cycle":1}}
+
+{"id":"evt_1773685382446_166","type":"job.voted","timestamp":"2026-03-16T18:23:02.446Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0.1,"cycle":1}}
+{"id":"evt_1773685382446_167","type":"job.voted","timestamp":"2026-03-16T18:23:02.446Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"REWRITE","risk":0.7,"cycle":1}}
+{"id":"evt_1773685382446_168","type":"job.voted","timestamp":"2026-03-16T18:23:02.446Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"operations-engineer","vote":"REWRITE","risk":0.7,"cycle":1}}
+{"id":"evt_1773685382447_169","type":"job.voted","timestamp":"2026-03-16T18:23:02.447Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"legal-reviewer","vote":"REWRITE","risk":0.6,"cycle":1}}
+{"id":"evt_1773685382447_170","type":"job.resolved","timestamp":"2026-03-16T18:23:02.447Z","jobId":"run_a6785a08","metadata":{"step":"guard-decision","decision":"REWRITE","cycle":1}}
+{"id":"evt_1773685382447_171","type":"job.submitted","timestamp":"2026-03-16T18:23:02.447Z","jobId":"run_a6785a08","metadata":{"step":"rewrite","cycle":2}}
+
+
+
+
+
+
+{"id":"evt_1773685386563_172","type":"job.submitted","timestamp":"2026-03-16T18:23:06.563Z","jobId":"run_a6785a08","metadata":{"step":"rewrite-complete","cycle":2}}
+{"id":"evt_1773685386563_173","type":"job.submitted","timestamp":"2026-03-16T18:23:06.563Z","jobId":"run_a6785a08","metadata":{"step":"guard-re-eval","cycle":2}}
+{"id":"evt_1773685388155_174","type":"job.voted","timestamp":"2026-03-16T18:23:08.155Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0.1,"cycle":2}}
+{"id":"evt_1773685388155_175","type":"job.voted","timestamp":"2026-03-16T18:23:08.155Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"REWRITE","risk":0.6,"cycle":2}}
+{"id":"evt_1773685388155_176","type":"job.voted","timestamp":"2026-03-16T18:23:08.155Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"operations-engineer","vote":"REWRITE","risk":0.7,"cycle":2}}
+{"id":"evt_1773685388155_177","type":"job.voted","timestamp":"2026-03-16T18:23:08.155Z","jobId":"run_a6785a08","metadata":{"step":"guard-vote","evaluator":"legal-reviewer","vote":"REWRITE","risk":0.6,"cycle":2}}
+{"id":"evt_1773685388155_178","type":"job.resolved","timestamp":"2026-03-16T18:23:08.155Z","jobId":"run_a6785a08","metadata":{"step":"guard-decision","decision":"REQUIRE_HUMAN","cycle":2}}
+{"id":"evt_1773685388156_179","type":"ledger.slash","timestamp":"2026-03-16T18:23:08.156Z","jobId":"run_a6785a08","metadata":{"amount":5,"guardName":"security-analyst","reason":"missed_issues_in_rewrite","newBalance":997}}
+{"id":"evt_1773685388156_180","type":"ledger.payout","timestamp":"2026-03-16T18:23:08.156Z","jobId":"run_a6785a08","metadata":{"amount":3,"guardName":"compliance-officer","newBalance":1005}}
+{"id":"evt_1773685388156_181","type":"ledger.payout","timestamp":"2026-03-16T18:23:08.156Z","jobId":"run_a6785a08","metadata":{"amount":3,"guardName":"operations-engineer","newBalance":1003}}
+{"id":"evt_1773685388156_182","type":"ledger.payout","timestamp":"2026-03-16T18:23:08.156Z","jobId":"run_a6785a08","metadata":{"amount":3,"guardName":"legal-reviewer","newBalance":1003}}
+
+
+
+
+
+
+
+
+{"id":"evt_1773685448942_183","type":"job.resolved","timestamp":"2026-03-16T18:24:08.942Z","jobId":"run_a6785a08","metadata":{"step":"hitl-approve"}}
+{"id":"evt_1773685454869_184","type":"job.submitted","timestamp":"2026-03-16T18:24:14.869Z","jobId":"run_c085d3da","metadata":{"step":"scenario","riskTier":"high"}}
+{"id":"evt_1773685456819_185","type":"job.submitted","timestamp":"2026-03-16T18:24:16.819Z","jobId":"run_c085d3da","metadata":{"step":"scenario-complete","riskTier":"high"}}
+{"id":"evt_1773685456819_186","type":"job.submitted","timestamp":"2026-03-16T18:24:16.819Z","jobId":"run_c085d3da","metadata":{"step":"cs-agent"}}
+
+{"id":"evt_1773685462464_187","type":"job.submitted","timestamp":"2026-03-16T18:24:22.464Z","jobId":"run_c085d3da","metadata":{"step":"cs-agent-complete"}}
+{"id":"evt_1773685462465_188","type":"job.submitted","timestamp":"2026-03-16T18:24:22.465Z","jobId":"run_c085d3da","metadata":{"step":"guard-eval","guardCount":4}}
+
+{"id":"evt_1773685464038_189","type":"job.voted","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0.1,"reason":"The response does not contain any security vulnerabilities, credential exposure, or injection attack risks."}}
+{"id":"evt_1773685464038_190","type":"job.voted","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"REWRITE","risk":0.6,"reason":"The response lacks specific data handling assurances and audit trail documentation, which are crucial for compliance and accountability."}}
+{"id":"evt_1773685464038_191","type":"job.voted","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"operations-engineer","vote":"REWRITE","risk":0.7,"reason":"The response lacks specific details on how the billing issue will be prevented in the future, and it should confirm the customer's consent before sending another replacement to minimize further dissatisfaction."}}
+{"id":"evt_1773685464038_192","type":"job.voted","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"legal-reviewer","vote":"REWRITE","risk":0.7,"reason":"The response makes refund commitments and promises a replacement without confirming eligibility, which could expose the company to liability if not authorized."}}
+{"id":"evt_1773685464038_193","type":"job.resolved","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"guard-decision","decision":"REWRITE","combinedRisk":0.5256729810568295,"quorumMet":true}}
+{"id":"evt_1773685464038_194","type":"job.submitted","timestamp":"2026-03-16T18:24:24.038Z","jobId":"run_c085d3da","metadata":{"step":"rewrite","cycle":1}}
+
+
+
+
+
+{"id":"evt_1773685468000_195","type":"job.submitted","timestamp":"2026-03-16T18:24:28.000Z","jobId":"run_c085d3da","metadata":{"step":"rewrite-complete","cycle":1}}
+{"id":"evt_1773685468001_196","type":"job.submitted","timestamp":"2026-03-16T18:24:28.001Z","jobId":"run_c085d3da","metadata":{"step":"guard-re-eval","cycle":1}}
+
+
+
+
+{"id":"evt_1773685469612_197","type":"job.voted","timestamp":"2026-03-16T18:24:29.612Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"security-analyst","vote":"YES","risk":0,"cycle":1}}
+{"id":"evt_1773685469613_198","type":"job.voted","timestamp":"2026-03-16T18:24:29.613Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"compliance-officer","vote":"REWRITE","risk":0.7,"cycle":1}}
+{"id":"evt_1773685469613_199","type":"job.voted","timestamp":"2026-03-16T18:24:29.613Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"operations-engineer","vote":"REWRITE","risk":0.7,"cycle":1}}
+{"id":"evt_1773685469613_200","type":"job.voted","timestamp":"2026-03-16T18:24:29.613Z","jobId":"run_c085d3da","metadata":{"step":"guard-vote","evaluator":"legal-reviewer","vote":"REWRITE","risk":0.7,"cycle":1}}
+{"id":"evt_1773685469613_201","type":"job.resolved","timestamp":"2026-03-16T18:24:29.613Z","jobId":"run_c085d3da","metadata":{"step":"guard-decision","decision":"BLOCK","cycle":1}}
+

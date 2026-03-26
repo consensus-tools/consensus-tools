@@ -1,5 +1,13 @@
 # @consensus-tools/langchain
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @consensus-tools/schemas@0.8.0
+  - @consensus-tools/guards@0.8.0
+
 ## 0.7.0
 
 ### Minor Changes

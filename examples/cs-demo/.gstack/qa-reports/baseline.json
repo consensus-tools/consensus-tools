@@ -1,0 +1,21 @@
+{
+  "date": "2026-03-15",
+  "url": "http://localhost:3000",
+  "healthScore": 78,
+  "issues": [
+    { "id": "ISSUE-001", "title": "Mobile layout completely broken", "severity": "high", "category": "visual" },
+    { "id": "ISSUE-002", "title": "Tier cards not keyboard accessible", "severity": "medium", "category": "accessibility" },
+    { "id": "ISSUE-003", "title": "Excessive reputation API calls", "severity": "low", "category": "performance" },
+    { "id": "ISSUE-004", "title": "No responsive breakpoint for tablet", "severity": "medium", "category": "visual" }
+  ],
+  "categoryScores": {
+    "console": 100,
+    "links": 100,
+    "visual": 92,
+    "functional": 100,
+    "ux": 85,
+    "performance": 92,
+    "content": 100,
+    "accessibility": 75
+  }
+}

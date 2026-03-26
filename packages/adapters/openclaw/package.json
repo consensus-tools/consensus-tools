@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/openclaw",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "OpenClaw plugin adapter for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",
