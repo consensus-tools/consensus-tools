@@ -6,6 +6,8 @@ export { detectHardBlockFlags, HARD_BLOCK_FLAGS, type HardBlockFlag } from "./ta
 export { GuardHandler, type GuardHandlerOptions } from "./handler.js";
 export { createGuardTemplate, type GuardTemplate, type GuardTemplateConfig } from "./templates.js";
 
+export { extractStrings, GUARD_CONFIGS, DEFAULT_PERSONA_TRIO } from "./persona-configs.js";
+
 // SEO guard evaluators
 export { seoFixTemplate } from "./evaluators/seo-fix.js";
 export { diffCheckTemplate } from "./evaluators/diff-check.js";

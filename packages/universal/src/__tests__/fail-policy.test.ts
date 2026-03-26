@@ -13,6 +13,12 @@ vi.mock("@consensus-tools/guards", () => ({
   createGuardTemplate: vi.fn((_name: string, _config: unknown) => ({
     asReviewer: () => vi.fn(),
   })),
+  GUARD_CONFIGS: {
+    security: { description: "Security reviewer", rules: () => [] },
+    compliance: { description: "Compliance reviewer", rules: () => [] },
+    "user-impact": { description: "User-impact reviewer", rules: () => [] },
+  },
+  DEFAULT_PERSONA_TRIO: ["security", "compliance", "user-impact"],
 }));
 
 const { consensus } = await import("../index.js");

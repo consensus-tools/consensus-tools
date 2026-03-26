@@ -1,15 +1,13 @@
 import type { StrategyConfig } from "@consensus-tools/wrapper";
 import type { UniversalConfig } from "./types.js";
 import { ConfigError } from "./errors.js";
+export { DEFAULT_PERSONA_TRIO } from "@consensus-tools/guards";
 
 // ── Default Configuration ────────────────────────────────────────────
 
 export const DEFAULT_GUARD = "agent_action";
 export const DEFAULT_POLICY = "majority";
 export const DEFAULT_PERSONA_COUNT = 3;
-
-/** The three default reviewer perspectives used when no guards are specified. */
-export const DEFAULT_PERSONA_TRIO = ["security", "compliance", "user-impact"] as const;
 
 export const DEFAULTS: Required<
   Pick<UniversalConfig, "policy" | "guards" | "failPolicy" | "storage" | "logger">
