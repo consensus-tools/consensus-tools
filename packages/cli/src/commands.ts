@@ -213,5 +213,34 @@ export function buildProgram(): Command {
       }
     });
 
+  // audit
+  program.command("audit")
+    .description("Show a summary of recent guard decisions")
+    .option("--since <iso>", "Only include decisions after this ISO timestamp")
+    .option("--domain <type>", "Filter by guard domain (e.g., send_email, code_merge)")
+    .option("--decision <decision>", "Filter by decision (e.g., BLOCK, ALLOW)")
+    .option("--limit <n>", "Maximum number of rows (default: 50)", parseInt)
+    .option("--json", "JSON output")
+    .action(async (opts) => {
+      const { JsonStorage, summarizeGuardActivity, formatSummaryTable } = await import("@consensus-tools/core");
+      const cfg = await loadCliConfig();
+      const storagePath = cfg.boards.local.storagePath ?? "./data/local-board.json";
+      const storage = new JsonStorage(storagePath);
+      await storage.init();
+
+      const summary = await summarizeGuardActivity(storage, {
+        since: opts.since,
+        domain: opts.domain,
+        decision: opts.decision,
+        limit: opts.limit,
+      });
+
+      if (opts.json) {
+        output(summary, true);
+      } else {
+        console.log(formatSummaryTable(summary));
+      }
+    });
+
   return program;
 }

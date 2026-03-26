@@ -3,7 +3,7 @@
 ## Priority Order (updated 2026-03-20)
 
 ```
-P2: T7 (Guard Playground), T9 (Audit View)
+P2: T7 (Guard Playground)
 P3: T1, T2 (tech debt)
 P4: T3, T4, T8, T12 (deferred / blocked)
 ```
@@ -106,19 +106,9 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 ---
 
-## T9: Cross-Guard Audit View
+## ~~T9: Cross-Guard Audit View~~ DONE (2026-03-25)
 
-**What:** Aggregate view of all guard decisions across domains. `pnpm guard:audit --last 24h` renders a summary table: domain, timestamp, decision, vote split, persona set.
-
-**Why:** First-ever aggregate view of consensus activity. Currently decisions are only visible per-guard.
-
-**Pros:** Quick to build (~30 min), uses existing board read APIs.
-
-**Cons:** Low priority — `jq` on board artifacts gets 80% of the way there.
-
-**Context:** Depends on @consensus-tools/storage being queryable. Uses guardResults from StorageState.
-
-**Depends on:** Storage package extraction.
+Shipped `summarizeGuardActivity()` + `formatSummaryTable()` in `@consensus-tools/core`. Correlates guardResults with audit events for timestamps. Filterable by time, domain, decision. Exposed via MCP tool (`audit.summary`) and CLI command (`consensus-tools audit`). 10 tests covering filters, limits, edge cases, and table formatting.
 
 ---
 

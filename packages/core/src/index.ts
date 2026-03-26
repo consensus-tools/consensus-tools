@@ -52,3 +52,7 @@ export {
 } from "./explain.js";
 export type { LlmFn, ExplainOptions } from "./explain.js";
 export { createLlmFn } from "./llm-factory.js";
+
+// ── Audit Summary ────────────────────────────────────────────────
+export { summarizeGuardActivity, summarizeFromState, formatSummaryTable } from "./audit-summary.js";
+export type { GuardActivityRow, GuardActivityStats, GuardActivitySummary, SummaryFilters } from "./audit-summary.js";

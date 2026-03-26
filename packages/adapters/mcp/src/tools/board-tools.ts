@@ -61,6 +61,32 @@ export const tools = [
       required: ["auditId"],
     },
   },
+  {
+    name: "audit.summary",
+    description:
+      "Get an aggregate summary of recent guard decisions — domains, outcomes, risk scores, and vote breakdowns.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        since: {
+          type: "string",
+          description: "ISO timestamp — only include decisions after this time (e.g., '2026-03-25T00:00:00Z')",
+        },
+        domain: {
+          type: "string",
+          description: "Filter by guard domain (e.g., 'send_email', 'code_merge')",
+        },
+        decision: {
+          type: "string",
+          description: "Filter by decision (e.g., 'BLOCK', 'ALLOW')",
+        },
+        limit: {
+          type: "number",
+          description: "Maximum number of rows (default: 50)",
+        },
+      },
+    },
+  },
 ];
 
 export async function handle(
@@ -194,6 +220,19 @@ export async function handle(
 
         return {
           content: [{ type: "text", text: JSON.stringify({ auditId, narrative: result.narrative }) }],
+        };
+      }
+
+      case "audit.summary": {
+        const { summarizeGuardActivity } = await import("@consensus-tools/core");
+        const summary = await summarizeGuardActivity(ctx.storage, {
+          since: args.since as string | undefined,
+          domain: args.domain as string | undefined,
+          decision: args.decision as string | undefined,
+          limit: args.limit as number | undefined,
+        });
+        return {
+          content: [{ type: "text", text: JSON.stringify(summary) }],
         };
       }
 
