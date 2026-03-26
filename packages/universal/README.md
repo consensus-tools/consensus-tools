@@ -1,8 +1,8 @@
 # @consensus-tools/universal
 
-Universal facade — wrap any tool executor with consensus governance in one line.
+**Single-model AI pipelines are a reliability failure.** One model, one prompt, one answer — no accountability. When an autonomous agent decides to send an email, merge code, or escalate permissions, nothing checks whether that's a good idea.
 
-Three built-in reviewers (security, compliance, user-impact) deliberate before every tool call. Block, allow, or escalate based on a configurable policy. Adapters for LangChain, Vercel AI SDK, and MCP are loaded on demand.
+`@consensus-tools/universal` adds a governance layer in one line. Three rule-based reviewers (security, compliance, user-impact) screen every tool call using pattern matching — no LLM calls, no network requests, sub-millisecond overhead. Block, allow, or escalate based on a configurable policy. Adapters for LangChain, Vercel AI SDK, and MCP are loaded on demand.
 
 ## Install
 
@@ -250,6 +250,20 @@ Guard domain names to use as reviewers. Defaults to `["agent_action"]`. The seve
 | `"closed"` (default) | Throw `ConsensusBlockedError` — the tool call does not execute |
 | `"open"` | Allow the tool call to proceed despite the deliberation result |
 
+**`failPolicy: "open"` effectively disables governance.** It exists for development and testing only. In production, use `"closed"` (the default) and handle `ConsensusBlockedError` in your error path.
+
+If you want to observe governance decisions without blocking in production, use `onDecision` instead:
+
+```typescript
+consensus.wrap(executor, {
+  failPolicy: "closed",
+  onDecision: (result) => {
+    // Shadow mode: log every decision, including blocks, for analysis
+    metrics.track("consensus.decision", { action: result.action, score: result.aggregateScore });
+  },
+});
+```
+
 **Production warning:** `failPolicy: "open"` and `storage: "memory"` both emit `console.warn` when `NODE_ENV=production`.
 
 ### `storage`
@@ -360,21 +374,51 @@ The table below maps each guard domain to the OWASP Agentic AI Security Initiati
 | 9 | **Unintended Autonomy** | `agent_action`, `permission_escalation` |
 | 10 | **Trust Boundary Violations** | `permission_escalation`, `code_merge`, `deployment` |
 
-### How each guard maps
+### What happens at runtime
 
-**send_email** — prevents bulk/unauthorized sends (Insecure Outputs, Data Leakage, Denial of Wallet). The compliance reviewer flags email PII; the user-impact reviewer flags mass-broadcast operations.
+When you call a wrapped tool executor, here's the exact sequence:
 
-**code_merge** — prevents unauthorized merges of sensitive files (Tool Misuse, Supply Chain Attacks, Trust Boundary Violations). The security reviewer flags destructive patterns; the compliance reviewer flags regulated file paths.
+```
+safe("send_email", { to: "user@example.com", body: "Your invoice" })
+  │
+  ├─ 1. Serialize args to text
+  │
+  ├─ 2. Run 3 reviewers IN PARALLEL (rule-based, no LLM calls):
+  │     ├─ security:    regex scan for destructive ops, secrets, injection
+  │     ├─ compliance:  regex scan for SSN patterns, PII, email addresses
+  │     └─ user-impact: regex scan for mass ops, irreversible actions
+  │
+  ├─ 3. Each reviewer returns: { vote: YES|NO|REWRITE, risk: 0-1, reason }
+  │
+  ├─ 4. Aggregate scores via policy (majority/supermajority/unanimous/threshold)
+  │     └─ Any reviewer can hard-block regardless of policy
+  │
+  ├─ 5. Decision: allow | block | retry | escalate
+  │
+  ├─ 6. Write audit artifact (to memory or configured storage)
+  │
+  └─ 7. Return result or throw ConsensusBlockedError
+```
 
-**publish** — prevents unreviewed or policy-violating content reaching users (Insecure Outputs, Data Leakage). All three reviewers apply.
+**Latency:** Sub-millisecond. Reviewers are synchronous regex evaluators, not LLM calls. The only async operation is the audit artifact write. Target: <10ms total overhead for the default 3-reviewer configuration.
 
-**support_reply** — prevents prompt-injected or tone-violating customer replies (Prompt Injection, Insecure Outputs, Data Leakage). The compliance reviewer flags PII in reply bodies.
+**DecisionResult object:**
 
-**agent_action** (default) — the broadest domain, covering autonomous actions of any kind (Excessive Agency, Tool Misuse, Prompt Injection, Unauthorized Actions, Denial of Wallet, Unintended Autonomy). All three built-in reviewers deliberate on every call.
+```typescript
+{
+  action: "allow",           // "allow" | "block" | "retry" | "escalate"
+  output: { ... },           // return value from the tool executor
+  scores: [
+    { score: 0.9, rationale: "No security concerns", block: false },
+    { score: 0.5, rationale: "Email PII detected", block: false },
+    { score: 0.9, rationale: "Low user impact", block: false },
+  ],
+  aggregateScore: 0.77,      // weighted average across reviewers
+  attempt: 1,                // retry count
+}
+```
 
-**deployment** — prevents unauthorized releases to production environments (Tool Misuse, Unauthorized Actions, Supply Chain Attacks, Trust Boundary Violations). The security reviewer hard-blocks destructive deploy patterns.
-
-**permission_escalation** — prevents IAM scope creep and privilege abuse (Excessive Agency, Unauthorized Actions, Unintended Autonomy, Trust Boundary Violations). The security reviewer hard-blocks admin-scope operations; the compliance reviewer flags regulated roles.
+**Cost:** Zero. No API calls, no tokens consumed. The governance layer is pure computation.
 
 ---
 
