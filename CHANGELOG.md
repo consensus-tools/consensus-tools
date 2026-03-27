@@ -1,8 +1,20 @@
 # Changelog
 
-## 0.9.0 — 2026-03-26
+## 0.9.0 — 2026-03-27
 
-### New package: @consensus-tools/universal
+### LLM Persona Mode — the facade gets its real engine
+- **Multi-model deliberation** — `consensus.wrap(executor, { model })` creates LLM-backed persona reviewers that deliberate on every tool call using your agent's own LLM
+- **Reputation tracking** — each persona tracks accuracy over time via human feedback (`onFeedback`); misaligned personas lose influence
+- **Persona respawn** — when reputation drops below threshold (default 0.15), underperforming personas are replaced with successors that inherit their failure modes
+- **All 9 consensus policies** — `resolveConsensus()` powers the facade directly: MAJORITY_VOTE, WEIGHTED_REPUTATION, APPROVAL_VOTE, and 6 more
+- **Risk tier classification** — read-only tools (get, list, search) fast-path through regex only; write/send/delete tools get full LLM deliberation
+- **Shadow mode** — `mode: "shadow"` runs LLM personas but never blocks, for safe production observation before enforcement
+- **Persona packs** — `pack: "governance"` selects from pre-built persona sets (default: security/compliance/operations, governance: 5 lifecycle specialists)
+- **Per-persona timeout** — 3-second default with regex fallback, prevents one slow LLM from blocking governance
+- **Structured ModelAdapter** — `(messages: ModelMessage[]) => Promise<string>` works with any LLM provider
+- **Backward compatible** — `consensus.wrap(executor)` without `model` is identical to v0.8.0
+
+### @consensus-tools/universal (initial release)
 - **Drop-in governance for any AI agent** — `consensus.wrap(myAgent)` adds multi-persona deliberation to any tool executor in 3 lines of code
 - **Framework shortcuts** — `consensus.langchain()`, `consensus.aiSdk()`, `consensus.mcp()` for framework-specific integration via optional peer dependencies
 - **Fail-safe by default** — `failPolicy: 'closed'` blocks actions when deliberation fails; `'open'` mode for dev/test with production warnings
@@ -13,6 +25,7 @@
 - **MemoryStorage** in @consensus-tools/storage — in-memory `IStorage` implementation for local dev and testing (no database required)
 - **Guard constants deduplicated** — `BUILT_IN_GUARD_DOMAINS`, `GUARD_DOMAIN_DESCRIPTIONS`, `DEFAULT_GUARD_POLICY` moved from adapters to @consensus-tools/schemas (Tier 0) as single source of truth
 - **`storage.kind: 'memory'`** option added to config schema
+- **Telemetry events** — added `reputation.updated` and `persona.respawned` event types to @consensus-tools/schemas
 
 ### Breaking changes (core)
 - **Storage re-exports removed from @consensus-tools/core** — import `createStorage`, `JsonStorage`, `SqliteStorage`, `IStorage`, `Mutex` directly from `@consensus-tools/storage` instead

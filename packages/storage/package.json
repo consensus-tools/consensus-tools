@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/storage",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Storage layer for consensus-tools — IStorage, JsonStorage, SqliteStorage, Mutex",
   "type": "module",
   "main": "./dist/index.js",

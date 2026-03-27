@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/universal",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Universal facade — wrap any tool executor with consensus governance in one line",
   "type": "module",
   "main": "./dist/index.js",
