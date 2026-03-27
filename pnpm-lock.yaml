@@ -751,6 +751,9 @@ importers:
       '@consensus-tools/mcp':
         specifier: workspace:*
         version: link:../adapters/mcp
+      '@consensus-tools/personas':
+        specifier: workspace:*
+        version: link:../personas
       '@consensus-tools/policies':
         specifier: workspace:*
         version: link:../policies

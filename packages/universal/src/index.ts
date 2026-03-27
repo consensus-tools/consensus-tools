@@ -1,16 +1,26 @@
 import { consensus as wrapWithConsensus } from "@consensus-tools/wrapper";
 import type { DecisionResult, ReviewerFn, LifecycleHooks } from "@consensus-tools/wrapper";
 import { createGuardTemplate, GUARD_CONFIGS } from "@consensus-tools/guards";
+import { getPersonasByPack } from "@consensus-tools/personas";
 import { MemoryStorage } from "@consensus-tools/storage";
 import type { IStorage } from "@consensus-tools/storage";
-import type { Wrappable, UniversalConfig, ToolExecutor } from "./types.js";
+import type { Wrappable, UniversalConfig, ToolExecutor, LlmDecisionResult } from "./types.js";
 import { resolveWrappable } from "./resolve.js";
-import { DEFAULTS, DEFAULT_PERSONA_TRIO, policyToStrategy } from "./defaults.js";
+import {
+  DEFAULTS,
+  DEFAULT_PERSONA_TRIO,
+  DEFAULT_PACK,
+  DEFAULT_PERSONA_TIMEOUT_MS,
+  DEFAULT_RESPAWN_THRESHOLD,
+  policyToStrategy,
+  resolvePolicyType,
+} from "./defaults.js";
 import { createLogger } from "./logger.js";
 import { ConsensusBlockedError, MissingDependencyError } from "./errors.js";
+import { ReputationManager } from "./reputation-manager.js";
+import { deliberate } from "./persona-reviewer-factory.js";
 
-// ── Persona-as-guard templates ───────────────────────────────────────
-// Each "persona" is a lightweight guard template focused on a risk area.
+// ── Persona-as-guard templates (regex-only mode) ─────────────────────
 
 function createDefaultReviewers(): ReviewerFn[] {
   return DEFAULT_PERSONA_TRIO.map((domain) => {
@@ -87,11 +97,124 @@ function mergeHooks(...hookSets: LifecycleHooks[]): LifecycleHooks {
   };
 }
 
+// ── LLM Persona Mode Setup ──────────────────────────────────────────
+
+function createLlmExecutor(
+  fn: ToolExecutor,
+  config: Required<Pick<UniversalConfig, "policy" | "failPolicy">> & Partial<UniversalConfig>,
+): ToolExecutor {
+  const pack = config.pack ?? DEFAULT_PACK;
+  const personas = config.personas ?? getPersonasByPack(pack);
+  const policyType = resolvePolicyType(config.policy);
+  const timeoutMs = config.personaTimeout ?? DEFAULT_PERSONA_TIMEOUT_MS;
+  const respawnThreshold = config.respawnThreshold ?? DEFAULT_RESPAWN_THRESHOLD;
+  const mode = config.mode ?? "enforce";
+
+  // Create reputation manager
+  const reputationManager = new ReputationManager(
+    personas,
+    respawnThreshold,
+    config.reputationStore,
+  );
+
+  // Wire respawn events to logger
+  reputationManager.setRespawnHandler((event) => {
+    if (config.logger !== false) {
+      const logFn = typeof config.logger === "function"
+        ? config.logger
+        : (e: any) => console.debug("[consensus]", e.event, e.data); // eslint-disable-line no-console
+      logFn({
+        event: "persona.respawned",
+        data: {
+          oldPersonaId: event.oldPersona.id,
+          newPersonaId: event.newPersona.id,
+          reputation: event.reputation,
+          reason: event.reason,
+        },
+        timestamp: Date.now(),
+      });
+    }
+  });
+
+  // Load persisted reputation if store is configured
+  if (config.reputationStore) {
+    reputationManager.load().catch(() => {});
+  }
+
+  // Build the deliberation config
+  const deliberateConfig = {
+    model: config.model!,
+    pack,
+    personas: config.personas,
+    guards: config.guards ?? DEFAULTS.guards,
+    policyType,
+    riskTiers: config.riskTiers,
+    reputationManager,
+    timeoutMs,
+  };
+
+  return async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
+    try {
+      const decision: LlmDecisionResult = await deliberate(deliberateConfig, toolName, args);
+
+      // Fire onDecision callback
+      if (config.onDecision) {
+        await config.onDecision(decision);
+      }
+
+      // Shadow mode: always allow, just log
+      if (mode === "shadow") {
+        return fn(toolName, args);
+      }
+
+      // Enforce mode: act on decision
+      if (decision.action === "allow") {
+        return fn(toolName, args);
+      }
+
+      // Blocked or escalated
+      if (config.failPolicy === "closed") {
+        const rationales = decision.votes.map((v) => `${v.personaName}: ${v.rationale}`).join("; ");
+        throw new ConsensusBlockedError(
+          `Consensus ${decision.action}: score ${decision.aggregateScore.toFixed(2)} ` +
+          `[${decision.policy}] (${rationales})`,
+        );
+      }
+
+      // failPolicy: 'open' — execute anyway
+      return fn(toolName, args);
+    } catch (err) {
+      if (err instanceof ConsensusBlockedError) {
+        throw err;
+      }
+
+      // Unexpected error during LLM deliberation — fall back to executing the tool
+      const error = err instanceof Error ? err : new Error(String(err));
+      config.onError?.(error, { toolName, args });
+
+      if (config.failPolicy === "closed") {
+        throw new ConsensusBlockedError("LLM deliberation failed", error);
+      }
+
+      // failPolicy: 'open' — execute despite error
+      return fn(toolName, args);
+    }
+  };
+}
+
 // ── Main Facade ──────────────────────────────────────────────────────
 
 export const consensus = {
   /**
    * Wrap any tool executor with consensus governance.
+   *
+   * Two modes:
+   * - **Regex mode** (default): Fast, deterministic pattern-matching guards.
+   *   `consensus.wrap(executor)` or `consensus.wrap(executor, { policy: "majority" })`
+   *
+   * - **LLM persona mode**: Multi-model deliberation with reputation tracking.
+   *   `consensus.wrap(executor, { model: myLlm, policy: "weighted_reputation" })`
+   *   Activated when `model` is provided in config.
    *
    * @param wrappable - A function, or object with .execute/.invoke/.call
    * @param config - Optional configuration overrides
@@ -101,25 +224,26 @@ export const consensus = {
     wrappable: Wrappable,
     config?: Partial<UniversalConfig>,
   ): ToolExecutor {
-    // 1. Resolve the wrappable to a plain function
     const fn = resolveWrappable(wrappable);
-
-    // 2. Merge config with defaults
     const merged = { ...DEFAULTS, ...config };
-    const strategy = policyToStrategy(merged.policy);
 
-    // 3. Production warnings
+    // Production warnings
     const isProduction = typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production";
     if (isProduction && merged.failPolicy === "open") {
-      // eslint-disable-next-line no-console
-      console.warn("[consensus] WARNING: failPolicy 'open' in production — errors will pass through unchecked");
+      console.warn("[consensus] WARNING: failPolicy 'open' in production — errors will pass through unchecked"); // eslint-disable-line no-console
     }
-    if (isProduction && merged.storage === "memory") {
-      // eslint-disable-next-line no-console
-      console.warn("[consensus] WARNING: storage 'memory' in production — decisions are not persisted");
+    if (isProduction && merged.storage === "memory" && !config?.model) {
+      console.warn("[consensus] WARNING: storage 'memory' in production — decisions are not persisted"); // eslint-disable-line no-console
     }
 
-    // 4. Create guard reviewers — use custom guards if provided and different from default
+    // ── LLM Persona Mode ──────────────────────────────────────────────
+    if (config?.model) {
+      return createLlmExecutor(fn, merged);
+    }
+
+    // ── Regex-Only Mode (unchanged from v0.8.0) ───────────────────────
+    const strategy = policyToStrategy(merged.policy);
+
     const isDefaultGuards =
       Array.isArray(merged.guards) &&
       merged.guards.length === DEFAULTS.guards.length &&
@@ -129,19 +253,14 @@ export const consensus = {
       ? createDefaultReviewers()
       : createReviewersForGuards(merged.guards);
 
-    // 5. Create logger hooks
     const loggerHooks = createLogger({ logger: merged.logger });
-
-    // 6. Wire storage for audit artifacts
     const store = resolveStorage(merged.storage);
     const storageHooks = createStorageHooks(store);
     const hooks = mergeHooks(loggerHooks, storageHooks);
 
-    // 7. Compose with wrapper/consensus<T>()
     const wrapped = wrapWithConsensus<unknown>({
       name: "universal",
       fn: async (...args: unknown[]) => {
-        // The wrapped fn receives (toolName, toolArgs) as its arguments
         const [toolName, toolArgs] = args as [string, Record<string, unknown>];
         return fn(toolName, toolArgs);
       },
@@ -150,12 +269,10 @@ export const consensus = {
       hooks,
     });
 
-    // 8. Return a ToolExecutor that catches errors and applies failPolicy
     return async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
       try {
         const result: DecisionResult<unknown> = await wrapped(toolName, args);
 
-        // Fire onDecision callback (await to ensure it completes before throwing)
         if (merged.onDecision) {
           await merged.onDecision(result);
         }
@@ -164,7 +281,6 @@ export const consensus = {
           return result.output;
         }
 
-        // Blocked, escalated, or retried-out
         if (merged.failPolicy === "closed") {
           throw new ConsensusBlockedError(
             `Consensus ${result.action}: aggregate score ${result.aggregateScore.toFixed(2)} ` +
@@ -172,14 +288,12 @@ export const consensus = {
           );
         }
 
-        // failPolicy: 'open' — execute anyway
         return fn(toolName, args);
       } catch (err) {
         if (err instanceof ConsensusBlockedError) {
           throw err;
         }
 
-        // Unexpected error during deliberation
         const error = err instanceof Error ? err : new Error(String(err));
         merged.onError?.(error, { toolName, args });
 
@@ -187,7 +301,6 @@ export const consensus = {
           throw new ConsensusBlockedError("Consensus deliberation failed", error);
         }
 
-        // failPolicy: 'open' — execute despite error
         return fn(toolName, args);
       }
     };
@@ -195,15 +308,6 @@ export const consensus = {
 
   /**
    * LangChain adapter — dynamically loads @consensus-tools/langchain.
-   *
-   * Returns a `ConsensusGuardCallbackHandler` that intercepts all tool calls and
-   * runs them through consensus deliberation. Attach it to your chain or agent
-   * via the `callbacks` option to govern all tool calls:
-   *
-   * ```ts
-   * const handler = await consensus.langchain(null, { policy: "majority" });
-   * const result = await agent.invoke({ input: "..." }, { callbacks: [handler] });
-   * ```
    */
   async langchain(_chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown> {
     let mod: Record<string, unknown>;
@@ -213,7 +317,6 @@ export const consensus = {
       throw new MissingDependencyError("@consensus-tools/langchain");
     }
 
-    // Create a guard callback handler with the user's config
     const HandlerClass = mod["ConsensusGuardCallbackHandler"] as
       | (new (config: Record<string, unknown>) => unknown)
       | undefined;
@@ -228,8 +331,6 @@ export const consensus = {
       onDecision: config?.onDecision ? (d: unknown) => config.onDecision?.(d as any) : undefined,
     });
 
-    // Return the handler — the user attaches it to their chain/agent
-    // This is the LangChain pattern: you don't wrap the chain, you add callbacks
     return handler;
   },
 
@@ -268,7 +369,14 @@ export const consensus = {
 
 // ── Re-exports ───────────────────────────────────────────────────────
 export { resolveWrappable } from "./resolve.js";
-export { policyToStrategy, DEFAULTS, DEFAULT_GUARD, DEFAULT_POLICY, DEFAULT_PERSONA_TRIO, DEFAULT_PERSONA_COUNT } from "./defaults.js";
+export { policyToStrategy, resolvePolicyType, DEFAULTS, DEFAULT_GUARD, DEFAULT_POLICY, DEFAULT_PERSONA_TRIO, DEFAULT_PERSONA_COUNT, DEFAULT_PACK } from "./defaults.js";
 export { createLogger } from "./logger.js";
 export { ConsensusBlockedError, MissingDependencyError, ConfigError } from "./errors.js";
-export type { Wrappable, ToolExecutor, UniversalConfig, FailPolicy, LogEvent } from "./types.js";
+export { ReputationManager } from "./reputation-manager.js";
+export { classifyTool } from "./risk-tiers.js";
+export { deliberate } from "./persona-reviewer-factory.js";
+export type {
+  Wrappable, ToolExecutor, UniversalConfig, FailPolicy, ExecutionMode,
+  LogEvent, ModelAdapter, ModelMessage, LlmDecisionResult, FeedbackSignal,
+  RiskTier, RiskTierMap,
+} from "./types.js";

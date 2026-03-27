@@ -23,6 +23,7 @@
     "@consensus-tools/storage": "workspace:*",
     "@consensus-tools/core": "workspace:*",
     "@consensus-tools/guards": "workspace:*",
+    "@consensus-tools/personas": "workspace:*",
     "@consensus-tools/policies": "workspace:*",
     "@consensus-tools/wrapper": "workspace:*"
   },
