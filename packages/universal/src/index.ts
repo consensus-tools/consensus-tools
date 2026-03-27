@@ -138,7 +138,11 @@ function createLlmExecutor(
 
   // Load persisted reputation if store is configured
   if (config.reputationStore) {
-    reputationManager.load().catch(() => {});
+    reputationManager.load().catch((err) => {
+      if (config.logger !== false) {
+        console.warn("[consensus] Failed to load persisted reputation, starting with defaults:", err); // eslint-disable-line no-console
+      }
+    });
   }
 
   // Build the deliberation config

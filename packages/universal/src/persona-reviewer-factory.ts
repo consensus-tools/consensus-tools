@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import { resolveConsensus } from "@consensus-tools/core";
 import { createGuardTemplate, GUARD_CONFIGS } from "@consensus-tools/guards";
-import { getPersonasByPack } from "@consensus-tools/personas";
 import type { PersonaConfig, EvalPersonaConfig } from "@consensus-tools/personas";
 import type { ConsensusInput, ConsensusResult } from "@consensus-tools/schemas";
 import type { ModelAdapter, ModelMessage, LlmDecisionResult } from "./types.js";
