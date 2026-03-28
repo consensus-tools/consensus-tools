@@ -130,6 +130,22 @@ Shipped `summarizeGuardActivity()` + `formatSummaryTable()` in `@consensus-tools
 
 ---
 
+## T18: Evaluate util.styleText as chalk replacement for CLI
+
+**What:** Node 20.12+ ships `util.styleText()` for terminal colors. Evaluate whether it can replace chalk in the CLI package, eliminating ~8 transitive dependencies.
+
+**Why:** chalk is the only external runtime dependency (besides commander/zod) in the CLI package. If `util.styleText` covers the needed features (red/green/yellow text, auto-detection of TTY), it reduces the published package's install footprint.
+
+**Pros:** Zero new deps, smaller install, one less thing to audit.
+
+**Cons:** `util.styleText` is newer and less battle-tested. May lack chalk features like nested styles or hex colors (though playground doesn't need those).
+
+**Context:** The Guard Playground (T7) adds chalk for colored vote tables. If `util.styleText` is sufficient, the playground could use it instead. Can also be applied retroactively after T7 ships.
+
+**Depends on:** Nothing. Independent evaluation.
+
+---
+
 ## ~~T16: Extract shared LLM client factory~~ DONE (2026-03-21)
 
 Extracted `createLlmFn()` into `packages/core/src/llm-factory.ts`. Single source of truth for model names, max_tokens, and Anthropic/OpenAI selection. Both MCP board-tools and CLI commands now import from core.
