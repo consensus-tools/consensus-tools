@@ -20,17 +20,27 @@ Peer dependency: `@consensus-tools/schemas`
 
 ## Quick Start
 
+For most use cases, instantiate a storage backend directly:
+
+```typescript
+import { JsonStorage, SqliteStorage, MemoryStorage } from "@consensus-tools/storage";
+
+const json = new JsonStorage("./state.json");
+const sqlite = new SqliteStorage("./state.db");
+const memory = new MemoryStorage();
+
+await memory.init(); // all backends require init()
+```
+
+### Factory (config-driven)
+
+`createStorage` takes a full `ConsensusToolsConfig` and reads `config.local.storage.kind` to pick the backend:
+
 ```typescript
 import { createStorage } from "@consensus-tools/storage";
 
-// JSON file storage
-const json = await createStorage({ storage: { kind: "json", path: "./state.json" } });
-
-// SQLite storage
-const sqlite = await createStorage({ storage: { kind: "sqlite", path: "./state.db" } });
-
-// In-memory storage (no persistence — data lost on process exit)
-const memory = await createStorage({ storage: { kind: "memory" } });
+// config must be a full ConsensusToolsConfig with config.local.storage.kind set
+const storage = await createStorage(config);
 ```
 
 ## Direct Usage

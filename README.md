@@ -135,7 +135,7 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 |---------|-------------|
 | [`@consensus-tools/guards`](packages/guards) | 7 guard types with three-step weighted decision model: risk threshold, quorum check, final verdict |
 | [`@consensus-tools/telemetry`](packages/telemetry) | Traces, events, and buffered sinks for observability |
-| [`@consensus-tools/evals`](packages/evals) | Multi-agent evaluation — single-model eval, multi-agent A/B consensus eval with reputation-weighted scoring, and score validation |
+| [`@consensus-tools/evals`](packages/evals) | Multi-agent evaluation — LLM persona guard evaluation, A/B consensus eval with reputation-weighted scoring, and score validation |
 | [`@consensus-tools/integrations`](packages/adapters/integrations) | External platform adapters for GitHub and Linear |
 | [`@consensus-tools/notifications`](packages/adapters/notifications) | Approval prompts and timeout warnings via Slack, Teams, Discord, Telegram, webhooks |
 | [`@consensus-tools/sdk-client`](packages/sdk-client) | HTTP client for remote board API |
@@ -148,7 +148,7 @@ Dependencies flow downward only. `schemas` has zero internal dependencies. Every
 
 | Package | Description |
 |---------|-------------|
-| [`@consensus-tools/core`](packages/core) | Job engine, deterministic ledger, storage backends — the protocol runtime |
+| [`@consensus-tools/core`](packages/core) | Job engine, deterministic ledger, guard engine, agent registry — the protocol runtime |
 | [`@consensus-tools/policies`](packages/policies) | 9 consensus policy implementations + pluggable registry |
 
 ### Composition

@@ -45,7 +45,7 @@ const handlers: Array<{ prefix: string; names: Set<string>; handler: ToolHandler
 
 export function createMcpServer(ctx: McpContext): Server {
   const server = new Server(
-    { name: "consensus-tools", version: "0.3.0" },
+    { name: "consensus-tools", version: "0.9.1" },
     { capabilities: { tools: {}, resources: {}, prompts: {} } },
   );
 

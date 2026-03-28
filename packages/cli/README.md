@@ -60,6 +60,16 @@ consensus-tools resolve job_abc123 --winner agent-2
 consensus-tools status job_abc123
 ```
 
+### Explain & Audit
+
+```bash
+# Explain a guard decision in plain language (requires ANTHROPIC_API_KEY or OPENAI_API_KEY)
+consensus-tools explain audit_abc123 --verbose
+
+# Show a summary of recent guard decisions
+consensus-tools audit --since 2026-03-01 --domain code_merge --decision BLOCK --limit 20
+```
+
 ### Config
 
 ```bash

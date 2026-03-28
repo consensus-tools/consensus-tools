@@ -12,9 +12,10 @@ pnpm add @consensus-tools/workflows
 
 ```typescript
 import { WorkflowRunner } from "@consensus-tools/workflows";
-import { createStorage } from "@consensus-tools/core";
+import { MemoryStorage } from "@consensus-tools/storage";
 
-const storage = await createStorage(config);
+const storage = new MemoryStorage();
+await storage.init();
 const runner = new WorkflowRunner(storage);
 
 // Create and run a workflow
@@ -28,7 +29,7 @@ const workflow = await runner.createWorkflow("My Review", {
 });
 
 const run = await runner.run(workflow.id);
-// run.status => "completed" | "waiting" | "failed"
+// run.status => "pending" | "running" | "completed" | "failed" | "cancelled" | "waiting"
 
 // Resume after human approval
 const resumed = await runner.resume(workflow.id, run.runId, "approved", "alice");

@@ -25,7 +25,7 @@ pnpm typecheck
 ## Project Structure
 
 ```
-packages/       # 16 npm packages under @consensus-tools/*
+packages/       # 21 npm packages under @consensus-tools/*
 apps/           # Applications (API server, web dashboard)
 examples/       # Integration examples
 scripts/        # CI and build scripts

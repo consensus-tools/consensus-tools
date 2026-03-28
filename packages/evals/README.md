@@ -14,17 +14,27 @@ For `consensusEval()`, you also need the Vercel AI SDK and a provider:
 pnpm add ai @ai-sdk/anthropic
 ```
 
-## Single-model evaluation
+## Guard evaluation with LLM personas
+
+Use `evaluateWithAiSdk` to have AI personas evaluate a guard action and return weighted votes:
 
 ```typescript
 import { evaluateWithAiSdk, generatePersonas } from "@consensus-tools/evals";
+import type { GuardEvaluateInput } from "@consensus-tools/schemas";
 
-const personas = await generatePersonas({ count: 3 });
+const personas = generatePersonas(3); // returns EvalPersonaConfig[]
 
-const result = await evaluateWithAiSdk({
-  model: "claude-sonnet-4-20250514",
-  prompt: "Evaluate this submission...",
+const input: GuardEvaluateInput = {
+  agentId: "bot-1",
+  action: { type: "code_merge", payload: { diff: "..." } },
+};
+
+const votes = await evaluateWithAiSdk(input, personas, {
+  model: "gpt-4o-mini",     // optional, defaults to env AI_MODEL or gpt-4o-mini
+  apiKey: "sk-...",          // optional, defaults to env OPENAI_API_KEY
+  allowDeterministicFallback: true, // use regex fallback when no API key
 });
+// votes: GuardVote[] — one vote per persona
 ```
 
 ## Multi-agent consensus evaluation
@@ -38,7 +48,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 
 const anthropic = createAnthropic();
 const model = anthropic("claude-sonnet-4-20250514");
-const personas = await generatePersonas({ count: 5 });
+const personas = generatePersonas(5);
 const agents = personas.map((p) => ({ ...p, reputation: 100 }));
 
 const result = await consensusEval(versionA, versionB, agents, model, (agent, a, b) => {
@@ -128,7 +138,7 @@ validateJudgeScore({ clarity: 4, completeness: "bad", actionability: 6 });
 
 | Export | Description |
 |--------|-------------|
-| `evaluateWithAiSdk` | Single-model evaluation via Vercel AI SDK |
+| `evaluateWithAiSdk` | LLM persona guard evaluation (returns `GuardVote[]`) |
 | `generatePersonas` | Generate diverse evaluator personas |
 | `respawnPersona` | Replace a persona with a new one |
 | `consensusEval` | Multi-agent A/B comparative evaluation |

@@ -13,11 +13,12 @@ pnpm add @consensus-tools/core
 `LocalBoard` is the fastest way to get a working consensus board:
 
 ```typescript
-import { LocalBoard, createStorage } from "@consensus-tools/core";
-import { defaultConfig } from "@consensus-tools/schemas";
+import { LocalBoard } from "@consensus-tools/core";
+import { MemoryStorage } from "@consensus-tools/storage";
 
-const storage = await createStorage(defaultConfig);
-const board = new LocalBoard(defaultConfig, storage);
+const storage = new MemoryStorage();
+await storage.init();
+const board = new LocalBoard(config, storage);
 await board.init();
 
 // Post a job
@@ -40,9 +41,11 @@ console.log(resolution.winners); // ["agent-2"]
 ## JobEngine -- Full Job Lifecycle
 
 ```typescript
-import { JobEngine, LedgerEngine, createStorage } from "@consensus-tools/core";
+import { JobEngine, LedgerEngine } from "@consensus-tools/core";
+import { MemoryStorage } from "@consensus-tools/storage";
 
-const storage = await createStorage(config);
+const storage = new MemoryStorage();
+await storage.init();
 const ledger = new LedgerEngine(storage, config);
 const engine = new JobEngine(storage, ledger, config);
 
@@ -68,15 +71,14 @@ const all = await ledger.getBalances();         // { "agent-1": 105, ... }
 
 ## Storage Backends
 
+Storage classes live in [`@consensus-tools/storage`](../storage):
+
 ```typescript
-import { createStorage, JsonStorage, SqliteStorage } from "@consensus-tools/core";
+import { JsonStorage, SqliteStorage, MemoryStorage } from "@consensus-tools/storage";
 
-// Auto-create from config (reads config.local.storage.kind)
-const storage = await createStorage(config);
-
-// Or instantiate directly
 const jsonStore = new JsonStorage("./state.json");
 const sqliteStore = new SqliteStorage("./state.db");
+const memStore = new MemoryStorage();
 ```
 
 ## Advanced -- GuardEngine, AgentRegistry, HitlTracker
@@ -89,7 +91,7 @@ await registry.createAgent({ id: "bot-1", name: "Bot", kind: "internal", scopes:
 
 const guard = new GuardEngine({ storage, agentRegistry: registry });
 const result = await guard.evaluate({ agentId: "bot-1", action: { type: "code_merge", payload: diff } });
-// result.decision => "ALLOW" | "BLOCK" | "ESCALATE"
+// result.decision => "ALLOW" | "BLOCK" | "REWRITE" | "REQUIRE_HUMAN"
 ```
 
 ## Resolution Policies
@@ -113,13 +115,13 @@ const result = resolveConsensus({ job, submissions, votes, reputation });
 | `GuardEngine` | Evaluate agent actions against guard policies |
 | `AgentRegistry` | Create, suspend, scope-check agents |
 | `HitlTracker` | Human-in-the-loop approval tracking |
-| `createStorage` | Factory: returns JsonStorage or SqliteStorage |
-| `JsonStorage` / `SqliteStorage` | Storage backends |
+| `computeBalances` / `getBalance` | Ledger balance computation helpers |
 | `resolveConsensus` | Dispatch to policy by type |
 | `firstSubmissionWins`, `highestConfidenceSingle`, `approvalVote`, `ownerPick`, `trustedArbiter`, `topKSplit`, `majorityVote`, `weightedVoteSimple`, `weightedReputation` | Individual policy resolvers |
 | `checkEligibility` | Check agent eligibility for a job |
 | `calculateSlashAmount` | Compute slash penalty |
-| `newId`, `deepCopy`, `Mutex`, `nowIso`, `addSeconds`, `isPast` | Utilities |
+| `newId`, `deepCopy`, `nowIso`, `addSeconds`, `isPast` | Utilities |
+| `explainDecision`, `summarizeGuardActivity` | Decision explanation and audit summary |
 
 ## Links
 
