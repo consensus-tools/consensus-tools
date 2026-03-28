@@ -6,6 +6,7 @@ LangChain integration. Exposes consensus guards as LangChain tools with callback
 
 - `createGuardTool(guardId)` / `createGuardTools()` — guard as LangChain StructuredTool
 - `ConsensusCallbackHandler` — decision lifecycle tracking
+- `ConsensusGuardCallbackHandler` — guard policy enforcement (this is what `consensus.langchain()` wires up)
 - `LangSmithTracer` — traces guard/wrapper execution
 
 ## Gotchas

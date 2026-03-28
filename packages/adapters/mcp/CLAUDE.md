@@ -1,6 +1,6 @@
 # @consensus-tools/mcp
 
-MCP server exposing 29 consensus-tools as Model Context Protocol tools, resources, and prompts.
+MCP server exposing 24 consensus-tools as Model Context Protocol tools, resources, and prompts.
 
 ## Key Exports
 
@@ -9,10 +9,10 @@ MCP server exposing 29 consensus-tools as Model Context Protocol tools, resource
 
 ## Architecture
 
-- 6 tool handler namespaces: `guard.*`, `agent.*`, `consensus_*`, `human.*`, `board.|run.|audit.*`, `workflow.|cron.*`
+- Tool prefixes: `board.*`, `run.*`, `audit.*`, `human.*`, `workflow.*`, `cron.*`, `agent.*`, `consensus_*`, `policy.*`, `guard.*`
 - Depends on `@modelcontextprotocol/sdk` (>= 1.0.0)
 
 ## Gotchas
 
 - Adding a new tool requires updating both the tools array and the handler namespace.
-- Env vars: `CONSENSUS_STORAGE_PATH` (default `~/.local/share/consensus-tools/state.json`), `CONSENSUS_AGENT_ID` (default `mcp-agent`).
+- Env vars: `CONSENSUS_STORAGE_PATH` (respects `$XDG_DATA_HOME`, defaults to `~/.local/share/consensus-tools/state.json`), `CONSENSUS_AGENT_ID` (default `mcp-agent`).

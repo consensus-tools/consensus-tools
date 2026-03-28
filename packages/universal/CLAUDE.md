@@ -8,7 +8,7 @@ Single-line governance facade for autonomous agents. Two modes:
 ## Key Exports
 
 - `consensus.wrap(wrappable, config?)` — wrap function/executor with governance
-- `consensus.langchain(chain, config?)` — LangChain adapter (dynamically loads @consensus-tools/langchain)
+- `consensus.langchain(_, config?)` — returns a `ConsensusGuardCallbackHandler` for LangChain (dynamically loads @consensus-tools/langchain; chain argument is unused, attach the handler to your chain's callbacks)
 - `consensus.aiSdk(fn, config?)` — Vercel AI SDK adapter (dynamically loads @consensus-tools/ai-sdk)
 - `consensus.mcp(config?)` — MCP adapter (dynamically loads @consensus-tools/mcp)
 - Error types: `ConsensusBlockedError`, `MissingDependencyError`, `ConfigError`

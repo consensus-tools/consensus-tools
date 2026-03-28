@@ -20,5 +20,5 @@ Abstraction layer for state persistence. `IStorage` interface with three backend
 
 - **Must call `await storage.init()` before use.**
 - `update()` is the primary API — rarely use `getState()` + `saveState()` separately.
-- `StorageState` is large (13+ entity arrays).
+- `StorageState` is large (18 entity arrays).
 - `better-sqlite3` is optional — only needed for SQLite backend.

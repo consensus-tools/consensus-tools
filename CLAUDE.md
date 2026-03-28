@@ -34,6 +34,8 @@ packages/           # Published npm packages (pnpm workspace)
     integrations/   # Tier 1 — GitHub + Linear adapters
     langchain/      # Tier 1 — LangChain tools + callbacks
     notifications/  # Tier 1 — Multi-channel HITL dispatch
+    mcp/            # Tier 4 — MCP server (24 tools)
+    openclaw/       # Tier 4 — OpenClaw plugin adapter
   guards/           # Tier 1 — Deterministic guard evaluation engine
   telemetry/        # Tier 1 — Event buffering, spans, redaction
   sdk-client/       # Tier 1 — HTTP client with retry/backoff
@@ -47,9 +49,6 @@ packages/           # Published npm packages (pnpm workspace)
   universal/        # Tier 4 — Single-line governance facade
   sdk-node/         # Tier 4 — HTTP server (full REST API)
   cli/              # Tier 4 — CLI tool
-  adapters/
-    mcp/            # Tier 4 — MCP server (29 tools)
-    openclaw/       # Tier 4 — OpenClaw plugin adapter
 apps/               # Private apps (not published)
   local-board/      # All-in-one API server (port 9888)
   dashboard/        # React/Vite web UI (port 5000)

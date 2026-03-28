@@ -10,6 +10,7 @@ Protocol engine, ledger, and resolution primitives. Post jobs, collect submissio
 - `GuardEngine` — evaluate actions against guard rules
 - `HitlTracker` — human-in-the-loop decision tracking
 - `LocalBoard` — convenience wrapper combining engine + ledger
+- `AgentRegistry` — track agents and their capabilities
 
 **Resolution (9 policies):**
 - `firstSubmissionWins`, `highestConfidenceSingle`, `approvalVote`, `ownerPick`, `trustedArbiter`, `topKSplit`, `majorityVote`, `weightedVoteSimple`, `weightedReputation`

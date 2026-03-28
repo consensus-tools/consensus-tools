@@ -18,4 +18,4 @@ All other packages import types from here. Every schema doubles as both a Zod ru
 - **Never add internal dependencies** to this package. It is the foundation of the tier system.
 - Schema changes impact all downstream packages immediately — make changes carefully.
 - Guard decisions: ALLOW, BLOCK, REWRITE, REQUIRE_HUMAN.
-- Guard types (9): send_email, code_merge, publish, support_reply, agent_action, deployment, permission_escalation, seo_fix, diff_check.
+- Guard types (9 in `guardTypeSchema`): send_email, code_merge, publish, support_reply, agent_action, deployment, permission_escalation, seo_fix, diff_check. Note: `BUILT_IN_GUARD_DOMAINS` only contains 7 (excludes seo_fix and diff_check).
