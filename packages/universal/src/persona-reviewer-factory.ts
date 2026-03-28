@@ -206,9 +206,59 @@ export interface PersonaReviewerConfig {
   personas?: PersonaConfig[];
   guards?: string[];
   policyType: string;
+  originalPolicy: string;
   riskTiers?: RiskTierMap;
   reputationManager: ReputationManager;
   timeoutMs: number;
+}
+
+// Policies that use voteBased() in resolveConsensus — score-based action.
+const VOTE_BASED_POLICIES = new Set([
+  "MAJORITY_VOTE",
+  "WEIGHTED_VOTE_SIMPLE",
+  "WEIGHTED_REPUTATION",
+]);
+
+// Compute minScore for APPROVAL_VOTE from user-facing policy string.
+// Vote scores: YES=+1, NO=-1, REWRITE=0. Range: [-N, +N].
+// Formula: minScore = N * (2 * threshold - 1)
+function computeApprovalMinScore(originalPolicy: string, personaCount: number): number {
+  if (originalPolicy === "unanimous") return personaCount;
+  if (originalPolicy === "supermajority") return personaCount * (2 * 0.67 - 1);
+  if (originalPolicy.startsWith("threshold:")) {
+    const threshold = parseFloat(originalPolicy.slice("threshold:".length));
+    if (!Number.isNaN(threshold)) return personaCount * (2 * threshold - 1);
+  }
+  // Default for unmapped APPROVAL_VOTE: simple majority (any net positive)
+  return 0.01;
+}
+
+function determineAction(
+  voteResults: Array<{ vote: "YES" | "NO" | "REWRITE" }>,
+  consensusResult: ConsensusResult,
+  submissionId: string,
+  policyType: string,
+): "allow" | "block" | "escalate" {
+  // 1. Rewrite majority → escalate (universal override)
+  const rewriteCount = voteResults.filter((v) => v.vote === "REWRITE").length;
+  if (rewriteCount > voteResults.length / 2) return "escalate";
+
+  // 2. APPROVAL_VOTE: has built-in threshold checks. Empty winners = block.
+  if (policyType === "APPROVAL_VOTE") {
+    return consensusResult.winningSubmissionIds.length > 0 ? "allow" : "block";
+  }
+
+  // 3. voteBased policies: read score from consensus trace. Positive = allow.
+  if (VOTE_BASED_POLICIES.has(policyType)) {
+    const traceScores = consensusResult.consensusTrace?.scores as Record<string, number> | undefined;
+    const score = traceScores?.[submissionId] ?? 0;
+    return score > 0 ? "allow" : "block";
+  }
+
+  // 4. All other policies: fall back to raw vote counting.
+  const yesCount = voteResults.filter((v) => v.vote === "YES").length;
+  const noCount = voteResults.filter((v) => v.vote === "NO").length;
+  return yesCount > noCount ? "allow" : "block";
 }
 
 /**
@@ -309,7 +359,13 @@ export async function deliberate(
     createdAt: now,
     updatedAt: now,
     mode: "VOTING" as const,
-    consensusPolicy: { type: config.policyType as any },
+    consensusPolicy: {
+      type: config.policyType as any,
+      ...(config.policyType === "APPROVAL_VOTE" ? {
+        minScore: computeApprovalMinScore(config.originalPolicy, personas.length),
+        minMargin: 0,
+      } : {}),
+    },
     stakeRequired: 0,
     reward: 0,
     maxParticipants: personas.length,
@@ -353,14 +409,13 @@ export async function deliberate(
   };
 
   let consensusTrace: Record<string, unknown>;
+  let consensusResult: ConsensusResult | null = null;
 
   try {
     const result: ConsensusResult = resolveConsensus(consensusInput);
+    consensusResult = result;
     consensusTrace = result.consensusTrace;
 
-    // Extract the actual weighted score from the consensus trace.
-    // resolveConsensus always returns a "winner" (the single submission),
-    // but the score may be negative (more NO than YES votes).
     const traceScores = (consensusTrace as any)?.scores as Record<string, number> | undefined;
     const submissionScore = traceScores?.[submissionId] ?? 0;
     consensusTrace = { ...consensusTrace, submissionScore };
@@ -368,21 +423,18 @@ export async function deliberate(
     consensusTrace = { policy: "fallback_majority", reason: "resolve_error" };
   }
 
-  // 6. Determine action from vote distribution (direct counting)
-  // resolveConsensus provides the audit trace; vote counting determines the action.
-  // This avoids the "always-a-winner" problem where resolveConsensus returns
-  // a winner even when the score is negative.
-  const yesCount = voteResults.filter((v) => v.vote === "YES").length;
-  const noCount = voteResults.filter((v) => v.vote === "NO").length;
-  const rewriteCount = voteResults.filter((v) => v.vote === "REWRITE").length;
-
+  // 6. Determine action from consensus result (policy-aware)
   let action: "allow" | "block" | "escalate";
-  if (rewriteCount > voteResults.length / 2) {
-    action = "escalate";
-  } else if (yesCount > noCount) {
-    action = "allow";
+  if (consensusResult) {
+    action = determineAction(voteResults, consensusResult, submissionId, config.policyType);
   } else {
-    action = "block";
+    // resolveConsensus failed — fall back to raw vote counting
+    const rewriteCount = voteResults.filter((v) => v.vote === "REWRITE").length;
+    const yesCount = voteResults.filter((v) => v.vote === "YES").length;
+    const noCount = voteResults.filter((v) => v.vote === "NO").length;
+    if (rewriteCount > voteResults.length / 2) action = "escalate";
+    else if (yesCount > noCount) action = "allow";
+    else action = "block";
   }
 
   // Compute aggregate score

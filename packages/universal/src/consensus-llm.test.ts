@@ -277,3 +277,131 @@ describe("consensus.wrap with LLM - policy support", () => {
     expect(result).toBeDefined();
   });
 });
+
+describe("policy-aware action determination", () => {
+  it("supermajority: blocks when only simple majority approves (2/3 YES)", async () => {
+    let callIndex = 0;
+    const model: ModelAdapter = async () => {
+      callIndex++;
+      if (callIndex <= 2) {
+        return "VOTE: YES\nCONFIDENCE: 0.8\nRATIONALE: ok";
+      }
+      return "VOTE: NO\nCONFIDENCE: 0.8\nRATIONALE: not safe";
+    };
+
+    const executor = createMockExecutor();
+    const safe = consensus.wrap(executor, {
+      model,
+      policy: "supermajority",
+      failPolicy: "closed",
+      logger: false,
+    });
+
+    // 2/3 = 66.7% which is below 67% supermajority threshold
+    // Raw vote counting would allow (2 > 1). Policy-aware should block.
+    await expect(
+      safe("send_email", { to: "test@test.com" }),
+    ).rejects.toThrow(ConsensusBlockedError);
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it("unanimous: blocks when any persona votes NO", async () => {
+    let callIndex = 0;
+    const model: ModelAdapter = async () => {
+      callIndex++;
+      if (callIndex <= 2) {
+        return "VOTE: YES\nCONFIDENCE: 0.9\nRATIONALE: fine";
+      }
+      return "VOTE: NO\nCONFIDENCE: 0.9\nRATIONALE: no way";
+    };
+
+    const executor = createMockExecutor();
+    const safe = consensus.wrap(executor, {
+      model,
+      policy: "unanimous",
+      failPolicy: "closed",
+      logger: false,
+    });
+
+    // 2/3 YES. Unanimous requires all. Raw counting would allow. Policy-aware blocks.
+    await expect(
+      safe("send_email", { to: "test@test.com" }),
+    ).rejects.toThrow(ConsensusBlockedError);
+    expect(executor).not.toHaveBeenCalled();
+  });
+
+  it("rewrite majority triggers escalate regardless of policy", async () => {
+    const model: ModelAdapter = async () => {
+      return "VOTE: REWRITE\nCONFIDENCE: 0.8\nRATIONALE: needs changes";
+    };
+
+    const onDecision = vi.fn();
+    const executor = createMockExecutor();
+    const safe = consensus.wrap(executor, {
+      model,
+      policy: "majority",
+      failPolicy: "closed",
+      onDecision,
+      logger: false,
+    });
+
+    await expect(
+      safe("send_email", { to: "test@test.com" }),
+    ).rejects.toThrow(ConsensusBlockedError);
+
+    const decision = onDecision.mock.calls[0]![0] as LlmDecisionResult;
+    expect(decision.action).toBe("escalate");
+  });
+
+  it("majority: allows when more YES than NO (2/3)", async () => {
+    let callIndex = 0;
+    const model: ModelAdapter = async () => {
+      callIndex++;
+      if (callIndex <= 2) {
+        return "VOTE: YES\nCONFIDENCE: 0.8\nRATIONALE: ok";
+      }
+      return "VOTE: NO\nCONFIDENCE: 0.8\nRATIONALE: not safe";
+    };
+
+    const onDecision = vi.fn();
+    const executor = createMockExecutor();
+    const safe = consensus.wrap(executor, {
+      model,
+      policy: "majority",
+      onDecision,
+      logger: false,
+    });
+
+    const result = await safe("send_email", { to: "test@test.com" });
+    expect(result).toBeDefined();
+    expect(executor).toHaveBeenCalled();
+
+    const decision = onDecision.mock.calls[0]![0] as LlmDecisionResult;
+    expect(decision.action).toBe("allow");
+  });
+
+  it("threshold:0.8: blocks when below 80% approval", async () => {
+    let callIndex = 0;
+    const model: ModelAdapter = async () => {
+      callIndex++;
+      if (callIndex <= 2) {
+        return "VOTE: YES\nCONFIDENCE: 0.8\nRATIONALE: ok";
+      }
+      return "VOTE: NO\nCONFIDENCE: 0.8\nRATIONALE: not safe";
+    };
+
+    const executor = createMockExecutor();
+    const safe = consensus.wrap(executor, {
+      model,
+      policy: "threshold:0.8",
+      failPolicy: "closed",
+      logger: false,
+    });
+
+    // 2/3 YES = 67% < 80% threshold → block
+    await expect(
+      safe("send_email", { to: "test@test.com" }),
+    ).rejects.toThrow(ConsensusBlockedError);
+    expect(executor).not.toHaveBeenCalled();
+  });
+});

@@ -145,6 +145,7 @@ function createLlmExecutor(
     personas: config.personas,
     guards: config.guards ?? DEFAULTS.guards,
     policyType,
+    originalPolicy: config.policy,
     riskTiers: config.riskTiers,
     reputationManager,
     timeoutMs,
