@@ -154,14 +154,33 @@ describe("consensus.wrap with LLM persona mode", () => {
   });
 
   describe("per-persona timeout", () => {
-    it("falls back to regex for timed-out personas", async () => {
+    it("falls back to regex for timed-out personas and blocks (fail-closed)", async () => {
+      const onDecision = vi.fn();
       const executor = createMockExecutor();
       const safe = consensus.wrap(executor, {
-        model: createSlowModel(5000), // 5 second delay, will exceed default 3s timeout
-        personaTimeout: 100, // 100ms timeout for fast test
+        model: createSlowModel(5000),
+        personaTimeout: 100,
+        onDecision,
         logger: false,
       });
-      // Should not hang, should fall back to regex
+      // LLM times out, regex fallback votes NO (fail-closed), tool is blocked
+      await expect(safe("send_email", { to: "user@test.com" })).rejects.toThrow(ConsensusBlockedError);
+      expect(executor).not.toHaveBeenCalled();
+      // onDecision should still fire with regex_fallback votes
+      expect(onDecision).toHaveBeenCalled();
+      const decision = onDecision.mock.calls[0]![0] as LlmDecisionResult;
+      expect(decision.votes.every((v) => v.source === "regex_fallback")).toBe(true);
+    });
+
+    it("allows with failPolicy open when LLM times out", async () => {
+      const executor = createMockExecutor();
+      const safe = consensus.wrap(executor, {
+        model: createSlowModel(5000),
+        personaTimeout: 100,
+        failPolicy: "open",
+        logger: false,
+      });
+      // failPolicy open: even if regex fallback blocks, tool executes
       const result = await safe("send_email", { to: "user@test.com" });
       expect(result).toBeDefined();
     });

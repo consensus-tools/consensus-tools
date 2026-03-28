@@ -33,4 +33,12 @@ describe("classifyTool", () => {
     expect(classifyTool("send_email", { send_email: "low" })).toBe("low");
     expect(classifyTool("get_weather", { get_weather: "high" })).toBe("high");
   });
+
+  it("prevents bypass via compound names (high-risk checked first)", () => {
+    // These start with read-like prefixes but contain destructive operations
+    expect(classifyTool("execute_and_log")).toBe("high");
+    expect(classifyTool("run_cleanup")).toBe("high");
+    expect(classifyTool("delete_then_verify")).toBe("high");
+    expect(classifyTool("send_and_check")).toBe("high");
+  });
 });

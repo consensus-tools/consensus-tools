@@ -69,7 +69,11 @@ export function resolvePolicyType(policy: string): string {
   // threshold:X -> APPROVAL_VOTE with custom config
   if (policy.startsWith("threshold:")) return "APPROVAL_VOTE";
 
-  // Default to MAJORITY_VOTE
+  // Unknown policy — warn and fall back
+  console.warn( // eslint-disable-line no-console
+    `[consensus] Unknown LLM policy "${policy}", falling back to MAJORITY_VOTE. ` +
+    `Valid: ${[...CORE_POLICY_TYPES].join(", ")} or friendly names: ${Object.keys(FRIENDLY_TO_CORE).join(", ")}`,
+  );
   return "MAJORITY_VOTE";
 }
 
@@ -107,10 +111,12 @@ export function policyToStrategy(policy: string): StrategyConfig {
         return { strategy: "threshold", threshold: value };
       }
 
-      // In LLM mode, core policy names are valid. In regex mode, they're not.
-      // Let the caller decide — we just throw for truly unknown strings.
+      // LLM-mode policy used without a model — warn loudly, this is a config mistake
       if (CORE_POLICY_TYPES.has(policy) || FRIENDLY_TO_CORE[policy]) {
-        // Valid LLM-mode policy used in regex mode — fall back to majority
+        console.warn( // eslint-disable-line no-console
+          `[consensus] Policy "${policy}" requires LLM mode (provide a model). ` +
+          `Falling back to majority in regex mode. This may not match your intended security posture.`,
+        );
         return { strategy: "majority" };
       }
 

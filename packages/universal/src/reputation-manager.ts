@@ -9,6 +9,9 @@ import type { FeedbackSignal, LlmDecisionResult } from "./types.js";
 // Updates from human feedback signals (onFeedback), not self-consensus.
 // Triggers persona respawn when reputation drops below threshold.
 
+const MAX_DECISION_LOOKBACK = 100;
+const MAX_FEEDBACK_LOOKBACK = 500;
+
 export interface RespawnEvent {
   oldPersona: PersonaConfig;
   newPersona: PersonaConfig;
@@ -51,9 +54,15 @@ export class ReputationManager {
   recordDecision(result: LlmDecisionResult): void {
     this.decisions.set(result.decisionId, result);
     this.decisionHistory.push(result);
-    // Keep last 100 decisions for respawn analysis
-    if (this.decisionHistory.length > 100) {
+
+    // Cap both collections to prevent memory leaks
+    if (this.decisionHistory.length >= MAX_DECISION_LOOKBACK) {
       this.decisionHistory.shift();
+    }
+    // Trim the feedback correlation map (keep most recent N entries)
+    if (this.decisions.size > MAX_FEEDBACK_LOOKBACK) {
+      const oldest = this.decisions.keys().next().value;
+      if (oldest) this.decisions.delete(oldest);
     }
   }
 
@@ -85,7 +94,7 @@ export class ReputationManager {
       this.scores.set(change.persona_id, change.reputation_after);
     }
 
-    // Check for respawn
+    // Check for respawn (collect respawns, then apply)
     this.checkRespawn();
 
     // Persist if store configured
@@ -94,38 +103,43 @@ export class ReputationManager {
     return result.changes;
   }
 
-  /** Check if any persona needs respawn. */
+  /** Check if any persona needs respawn. Collects replacements first to avoid mutation during iteration. */
   private checkRespawn(): void {
+    const replacements: Array<{ index: number; old: PersonaConfig; rep: number }> = [];
+
+    // Collect personas that need respawn (don't mutate during scan)
     for (let i = 0; i < this.personas.length; i++) {
       const persona = this.personas[i]!;
       const rep = this.scores.get(persona.id) ?? 0.55;
-
       if (rep < this.threshold) {
-        // Build learning summary from decision history
-        const decisionRecords = this.decisionHistory.map((d) => ({
-          final_decision: d.action === "allow" ? "ALLOW" : "BLOCK",
-          votes: d.votes.map((v) => ({
-            persona_id: v.personaId,
-            vote: v.vote,
-            confidence: v.confidence,
-          })),
-        }));
-
-        const learning = buildLearningSummary(persona.id, decisionRecords);
-        const successor = mutatePersona(persona, learning);
-
-        // Replace persona
-        this.personas[i] = successor;
-        this.scores.delete(persona.id);
-        this.scores.set(successor.id, successor.reputation ?? 0.55);
-
-        this.onRespawn?.({
-          oldPersona: persona,
-          newPersona: successor,
-          reputation: rep,
-          reason: `Reputation ${rep.toFixed(3)} below threshold ${this.threshold}`,
-        });
+        replacements.push({ index: i, old: persona, rep });
       }
+    }
+
+    // Apply replacements after scan
+    for (const { index, old, rep } of replacements) {
+      const decisionRecords = this.decisionHistory.map((d) => ({
+        final_decision: d.action === "allow" ? "ALLOW" : "BLOCK",
+        votes: d.votes.map((v) => ({
+          persona_id: v.personaId,
+          vote: v.vote,
+          confidence: v.confidence,
+        })),
+      }));
+
+      const learning = buildLearningSummary(old.id, decisionRecords);
+      const successor = mutatePersona(old, learning);
+
+      this.personas[index] = successor;
+      this.scores.delete(old.id);
+      this.scores.set(successor.id, successor.reputation ?? 0.55);
+
+      this.onRespawn?.({
+        oldPersona: old,
+        newPersona: successor,
+        reputation: rep,
+        reason: `Reputation ${rep.toFixed(3)} below threshold ${this.threshold}`,
+      });
     }
   }
 
@@ -143,8 +157,9 @@ export class ReputationManager {
     }
     this.store.update((state) => {
       (state as any).reputation = data;
-    }).catch(() => {
-      // Persistence failure is non-fatal
+    }).catch((err) => {
+      // Log persistence failures instead of silently swallowing
+      console.warn("[consensus] Reputation persistence failed:", err); // eslint-disable-line no-console
     });
   }
 
