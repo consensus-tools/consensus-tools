@@ -10,3 +10,4 @@ _legacy_mcp/
 .DS_Store
 .claude/
 .worktrees/
+docs/
