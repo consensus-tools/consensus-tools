@@ -1,0 +1,10 @@
+{
+  "domain": "agent_action",
+  "description": "Safe agent action — reversible, low risk, no side effects",
+  "payload": {
+    "irreversible": false,
+    "risk_level": "low",
+    "external_side_effect": false,
+    "description": "Read user preferences from database"
+  }
+}

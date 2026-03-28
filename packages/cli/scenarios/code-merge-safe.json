@@ -1,0 +1,9 @@
+{
+  "domain": "code_merge",
+  "description": "Clean PR — all tests pass, no sensitive files",
+  "payload": {
+    "files": ["src/utils/format.ts", "src/utils/parse.ts"],
+    "diff_summary": "Refactored date formatting utilities",
+    "tests_passed": true
+  }
+}

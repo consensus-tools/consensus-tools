@@ -1,0 +1,10 @@
+{
+  "domain": "permission_escalation",
+  "description": "Standard permission change — specific resource, non-admin role",
+  "payload": {
+    "permission": "read",
+    "resource": "reports/quarterly",
+    "breakGlass": false,
+    "target_role": "analyst"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "domain": "send_email",
+  "description": "Dangerous email — contains API key and SSN pattern",
+  "payload": {
+    "to": "external-partner@vendor.com",
+    "body": "Here is the api_key: sk-12345 and the SSN is 123-45-6789 for verification.",
+    "attachment": "credentials.csv"
+  }
+}

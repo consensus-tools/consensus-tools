@@ -1,0 +1,9 @@
+{
+  "domain": "code_merge",
+  "description": "Dangerous PR — SQL injection in diff, tests failing, touches auth",
+  "payload": {
+    "files": ["src/auth/login.ts", "db/migrations/drop-users.sql"],
+    "diff_summary": "DROP TABLE users; adds sql injection bypass for admin login",
+    "tests_passed": false
+  }
+}

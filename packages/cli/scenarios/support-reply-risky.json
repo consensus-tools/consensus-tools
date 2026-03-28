@@ -1,0 +1,7 @@
+{
+  "domain": "support_reply",
+  "description": "Risky reply — escalation language, legal threat",
+  "payload": {
+    "message": "We understand your frustration about the refund. Our legal action team will review your lawsuit claim immediately."
+  }
+}

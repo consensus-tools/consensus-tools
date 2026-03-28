@@ -1,0 +1,10 @@
+{
+  "domain": "permission_escalation",
+  "description": "Dangerous escalation — wildcard permission, admin role, break-glass",
+  "payload": {
+    "permission": "*",
+    "resource": "*",
+    "breakGlass": true,
+    "target_role": "superuser"
+  }
+}
