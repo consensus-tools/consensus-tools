@@ -28,7 +28,8 @@ const LOW_RISK_PATTERNS = [
 /**
  * Classify a tool name into a risk tier.
  *
- * Priority: user overrides > low-risk patterns > high-risk patterns > default high.
+ * Priority: user overrides > high-risk patterns > low-risk patterns > default high.
+ * High-risk checked FIRST to prevent bypass via naming (e.g., "get_and_delete_user").
  * Unknown tools default to high-risk (safe by default).
  */
 export function classifyTool(toolName: string, overrides?: RiskTierMap): RiskTier {
@@ -36,12 +37,13 @@ export function classifyTool(toolName: string, overrides?: RiskTierMap): RiskTie
     return overrides[toolName];
   }
 
-  for (const pattern of LOW_RISK_PATTERNS) {
-    if (pattern.test(toolName)) return "low";
-  }
-
+  // Check high-risk FIRST to prevent bypass via compound names
   for (const pattern of HIGH_RISK_PATTERNS) {
     if (pattern.test(toolName)) return "high";
+  }
+
+  for (const pattern of LOW_RISK_PATTERNS) {
+    if (pattern.test(toolName)) return "low";
   }
 
   // Unknown tools default to high-risk (safe by default)

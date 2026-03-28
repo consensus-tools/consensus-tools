@@ -17,9 +17,23 @@ import type { RiskTierMap } from "./types.js";
 //   2. Risk tier check (low = fast-path regex only)
 //   3. Parallel LLM calls per persona (with timeout + fallback)
 //   4. Parse votes from LLM responses
-//   5. Synthesize ConsensusInput (Job, Submissions, Votes)
-//   6. Call resolveConsensus() with the configured policy
+//   5. Synthesize ConsensusInput: ONE "allow" submission, all personas
+//      vote on it (YES = +1, NO = -1). resolveConsensus aggregates.
+//   6. Determine action from consensus result
 //   7. Return LlmDecisionResult
+
+// ── Safe JSON Serialization ──────────────────────────────────────────
+
+function safeStringify(obj: unknown, indent?: number): string {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (_key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) return "[Circular]";
+      seen.add(value);
+    }
+    return value;
+  }, indent);
+}
 
 // ── Vote Parsing ─────────────────────────────────────────────────────
 
@@ -29,18 +43,22 @@ interface ParsedVote {
   rationale: string;
 }
 
-const VOTE_PATTERN = /\b(YES|NO|REWRITE)\b/i;
+// Match VOTE: YES/NO/REWRITE on its own line (anchored to reduce injection risk)
+const VOTE_LINE_PATTERN = /^(?:VOTE:\s*)?(YES|NO|REWRITE)\s*$/im;
+// Fallback: match anywhere but only as a last resort
+const VOTE_FALLBACK_PATTERN = /\b(YES|NO|REWRITE)\b/i;
 const CONFIDENCE_PATTERN = /confidence[:\s]*([0-9]*\.?[0-9]+)/i;
 
 function parseVoteFromLlm(response: string): ParsedVote | null {
-  const voteMatch = response.match(VOTE_PATTERN);
+  // Prefer line-anchored match (harder to inject)
+  const lineMatch = response.match(VOTE_LINE_PATTERN);
+  const voteMatch = lineMatch ?? response.match(VOTE_FALLBACK_PATTERN);
   if (!voteMatch) return null;
 
   const vote = voteMatch[1]!.toUpperCase() as "YES" | "NO" | "REWRITE";
   const confMatch = response.match(CONFIDENCE_PATTERN);
   const confidence = confMatch?.[1] ? Math.min(1, Math.max(0, parseFloat(confMatch[1]))) : 0.5;
 
-  // Use the full response as rationale (stripped of vote/confidence lines)
   const rationale = response
     .replace(/^.*\b(YES|NO|REWRITE)\b.*$/im, "")
     .replace(/^.*confidence.*$/im, "")
@@ -58,7 +76,6 @@ function buildPersonaPrompt(
   args: Record<string, unknown>,
   regexSignals: string[],
 ): ModelMessage[] {
-  // Use systemPrompt if available (EvalPersonaConfig), otherwise construct from role/bias
   const evalPersona = persona as Partial<EvalPersonaConfig>;
   const systemPrompt = evalPersona.systemPrompt ??
     `You are a ${persona.role} reviewer named ${persona.name}.` +
@@ -68,18 +85,22 @@ function buildPersonaPrompt(
       : "") +
     (persona.failure_modes?.length
       ? ` Watch for: ${persona.failure_modes.join(", ")}.`
-      : "");
+      : "") +
+    ` Respond ONLY with a VOTE line, CONFIDENCE line, and RATIONALE line. Do not echo the tool arguments.`;
 
   const regexContext = regexSignals.length > 0
     ? `\n\nRegex pre-screen detected these signals:\n${regexSignals.map((s) => `- ${s}`).join("\n")}`
     : "\n\nRegex pre-screen: no pattern matches detected.";
 
+  // Sanitize args: truncate to prevent prompt stuffing, use safe serialization
+  const argsStr = safeStringify(args, 2).slice(0, 2000);
+
   const userPrompt =
     `Evaluate this tool call for risks:\n\n` +
     `Tool: ${toolName}\n` +
-    `Arguments: ${JSON.stringify(args, null, 2)}\n` +
+    `Arguments:\n${argsStr}\n` +
     regexContext +
-    `\n\nRespond with:\n` +
+    `\n\nRespond with exactly these three lines:\n` +
     `VOTE: YES (safe to proceed), NO (block this action), or REWRITE (needs modification)\n` +
     `CONFIDENCE: 0.0 to 1.0\n` +
     `RATIONALE: Brief explanation of your decision`;
@@ -92,14 +113,21 @@ function buildPersonaPrompt(
 
 // ── Regex Pre-Screen ─────────────────────────────────────────────────
 
+// Fallback guard domains when configured guards have no matching configs
+const FALLBACK_GUARDS = ["security", "compliance", "user-impact"];
+
 function runRegexPreScreen(
   toolName: string,
   args: Record<string, unknown>,
   guards: string[],
 ): string[] {
   const signals: string[] = [];
+  // Use provided guards, falling back to DEFAULT_PERSONA_TRIO
+  const effectiveGuards = guards.filter((g) => GUARD_CONFIGS[g]).length > 0
+    ? guards
+    : FALLBACK_GUARDS;
 
-  for (const domain of guards) {
+  for (const domain of effectiveGuards) {
     const config = GUARD_CONFIGS[domain];
     if (!config) continue;
 
@@ -130,28 +158,25 @@ async function callLlmWithTimeout(
   messages: ModelMessage[],
   timeoutMs: number,
 ): Promise<string> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let timer: ReturnType<typeof setTimeout> | undefined;
 
   try {
     const result = await Promise.race([
       model(messages),
       new Promise<never>((_, reject) => {
-        controller.signal.addEventListener("abort", () =>
-          reject(new Error("LLM call timed out")),
-        );
+        timer = setTimeout(() => reject(new Error("LLM call timed out")), timeoutMs);
       }),
     ]);
     return result;
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 
 // ── Regex Fallback Vote ──────────────────────────────────────────────
 
 function regexFallbackVote(
-  persona: PersonaConfig,
+  _persona: PersonaConfig,
   toolName: string,
   args: Record<string, unknown>,
   guards: string[],
@@ -164,10 +189,12 @@ function regexFallbackVote(
       rationale: `Regex fallback: ${signals.join("; ")}`,
     };
   }
+  // When LLM is unavailable AND regex finds nothing, default to block for safety.
+  // This prevents fail-open when all LLMs are down.
   return {
-    vote: "YES",
-    confidence: 0.4,
-    rationale: "Regex fallback: no pattern matches (LLM unavailable)",
+    vote: "NO",
+    confidence: 0.3,
+    rationale: "Regex fallback: no pattern matches but LLM unavailable (fail-closed)",
   };
 }
 
@@ -197,7 +224,7 @@ export async function deliberate(
 ): Promise<LlmDecisionResult> {
   const decisionId = `dec_${crypto.randomUUID().slice(0, 12)}`;
   const personas = config.reputationManager.getPersonas();
-  const guards = config.guards ?? ["security", "compliance", "user-impact"];
+  const guards = config.guards ?? FALLBACK_GUARDS;
 
   // 1. Regex pre-screen
   const regexSignals = runRegexPreScreen(toolName, args, guards);
@@ -205,7 +232,6 @@ export async function deliberate(
   // 2. Risk tier check
   const tier = classifyTool(toolName, config.riskTiers);
   if (tier === "low") {
-    // Fast-path: regex only, no LLM calls
     const hasRisk = regexSignals.length > 0;
     return {
       decisionId,
@@ -244,7 +270,6 @@ export async function deliberate(
           };
         }
 
-        // Unparseable response, fall back to regex
         const fallback = regexFallbackVote(persona, toolName, args, guards);
         return {
           personaId: persona.id,
@@ -253,7 +278,6 @@ export async function deliberate(
           source: "regex_fallback" as const,
         };
       } catch {
-        // LLM failure, fall back to regex
         const fallback = regexFallbackVote(persona, toolName, args, guards);
         return {
           personaId: persona.id,
@@ -266,17 +290,21 @@ export async function deliberate(
   );
 
   // 4. Synthesize ConsensusInput for resolveConsensus()
-  //    Each persona creates a "submission" (their evaluation) and votes for it
+  //
+  // FIXED: Use a SINGLE "allow" submission. All personas vote on it.
+  // YES voters score +1, NO voters score -1, REWRITE voters score 0.
+  // This way resolveConsensus sees N votes on 1 submission, not N
+  // submissions with 1 vote each.
   const now = new Date().toISOString();
   const jobId = `job_facade_${decisionId}`;
+  const submissionId = `sub_${decisionId}_allow`;
 
-  // Create a minimal Job with the configured policy
   const job = {
     id: jobId,
     boardId: "",
     status: "SUBMITTED" as const,
     title: `Deliberation: ${toolName}`,
-    description: JSON.stringify(args),
+    description: "",
     createdByAgentId: "facade",
     createdAt: now,
     updatedAt: now,
@@ -288,33 +316,31 @@ export async function deliberate(
     minParticipants: 1,
   };
 
-  // Each persona submits their evaluation
-  const submissions = voteResults.map((v, i) => ({
-    id: `sub_${decisionId}_${i}`,
+  // Single submission representing "allow this tool call"
+  const submissions = [{
+    id: submissionId,
     jobId,
-    agentId: v.personaId,
+    agentId: "facade",
     submittedAt: now,
-    summary: v.rationale,
-    artifacts: { vote: v.vote, confidence: v.confidence, source: v.source },
-    confidence: v.confidence,
+    summary: `Allow ${toolName}`,
+    artifacts: {},
+    confidence: 1.0,
     requestedPayout: 0,
     status: "SUBMITTED" as const,
-  }));
+  }];
 
-  // Each persona votes YES (+1) on their own submission
-  // and scores based on their confidence
+  // Each persona votes on the single submission
   const votes = voteResults.map((v, i) => ({
     id: `vote_${decisionId}_${i}`,
     jobId,
     agentId: v.personaId,
-    submissionId: `sub_${decisionId}_${i}`,
+    submissionId,
     score: v.vote === "YES" ? 1 : v.vote === "NO" ? -1 : 0,
     weight: v.confidence,
     rationale: v.rationale,
     createdAt: now,
   }));
 
-  // Reputation function from the manager
   const reputation = (agentId: string) =>
     config.reputationManager.getReputation(agentId);
 
@@ -326,45 +352,40 @@ export async function deliberate(
     reputation,
   };
 
-  let consensusResult: ConsensusResult;
+  let consensusTrace: Record<string, unknown>;
+
   try {
-    consensusResult = resolveConsensus(consensusInput);
+    const result: ConsensusResult = resolveConsensus(consensusInput);
+    consensusTrace = result.consensusTrace;
+
+    // Extract the actual weighted score from the consensus trace.
+    // resolveConsensus always returns a "winner" (the single submission),
+    // but the score may be negative (more NO than YES votes).
+    const traceScores = (consensusTrace as any)?.scores as Record<string, number> | undefined;
+    const submissionScore = traceScores?.[submissionId] ?? 0;
+    consensusTrace = { ...consensusTrace, submissionScore };
   } catch {
-    // If resolution fails, fall back to simple majority
-    const yesCount = voteResults.filter((v) => v.vote === "YES").length;
-    const majority = yesCount > voteResults.length / 2;
-    consensusResult = {
-      winners: majority ? ["allow"] : ["block"],
-      winningSubmissionIds: [],
-      consensusTrace: { policy: "fallback_majority", reason: "resolve_error" },
-      finalArtifact: null,
-    };
+    consensusTrace = { policy: "fallback_majority", reason: "resolve_error" };
   }
 
-  // 6. Determine final action
-  const winnerIds = new Set(consensusResult.winners);
-  const winningVotes = voteResults.filter((v) => winnerIds.has(v.personaId));
-  const dominantVote = winningVotes.length > 0
-    ? winningVotes[0]!.vote
-    : voteResults[0]?.vote ?? "YES";
+  // 6. Determine action from vote distribution (direct counting)
+  // resolveConsensus provides the audit trace; vote counting determines the action.
+  // This avoids the "always-a-winner" problem where resolveConsensus returns
+  // a winner even when the score is negative.
+  const yesCount = voteResults.filter((v) => v.vote === "YES").length;
+  const noCount = voteResults.filter((v) => v.vote === "NO").length;
+  const rewriteCount = voteResults.filter((v) => v.vote === "REWRITE").length;
 
   let action: "allow" | "block" | "escalate";
-  if (dominantVote === "YES") {
-    action = "allow";
-  } else if (dominantVote === "NO") {
-    action = "block";
-  } else {
+  if (rewriteCount > voteResults.length / 2) {
     action = "escalate";
+  } else if (yesCount > noCount) {
+    action = "allow";
+  } else {
+    action = "block";
   }
 
-  // If no clear winner (empty winners), use simple vote counting
-  if (consensusResult.winners.length === 0) {
-    const yesCount = voteResults.filter((v) => v.vote === "YES").length;
-    const noCount = voteResults.filter((v) => v.vote === "NO").length;
-    action = yesCount >= noCount ? "allow" : "block";
-  }
-
-  // Compute aggregate score (0-1 based on vote distribution)
+  // Compute aggregate score
   const totalConfidence = voteResults.reduce((s, v) => s + v.confidence, 0);
   const yesConfidence = voteResults
     .filter((v) => v.vote === "YES")
@@ -376,11 +397,10 @@ export async function deliberate(
     action,
     votes: voteResults,
     policy: config.policyType,
-    consensusTrace: consensusResult.consensusTrace,
+    consensusTrace,
     aggregateScore,
   };
 
-  // 7. Record decision for reputation tracking
   config.reputationManager.recordDecision(result);
 
   return result;

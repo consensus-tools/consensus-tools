@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { consensus as wrapWithConsensus } from "@consensus-tools/wrapper";
 import type { DecisionResult, ReviewerFn, LifecycleHooks } from "@consensus-tools/wrapper";
 import { createGuardTemplate, GUARD_CONFIGS } from "@consensus-tools/guards";
@@ -53,24 +54,14 @@ function resolveStorage(storage: "memory" | IStorage): IStorage {
 
 function createStorageHooks(store: IStorage): LifecycleHooks {
   return {
+    // afterResolve fires for ALL outcomes (allow, block, escalate).
+    // No separate onBlock hook needed (was duplicating audit entries).
     async afterResolve(result: DecisionResult) {
       await store.update((state) => {
         state.audit.push({
-          id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          id: `audit-${crypto.randomUUID()}`,
           at: new Date().toISOString(),
           action: result.action,
-          aggregateScore: result.aggregateScore,
-          attempt: result.attempt,
-          scoresCount: result.scores.length,
-        } as any);
-      });
-    },
-    async onBlock(result: DecisionResult) {
-      await store.update((state) => {
-        state.audit.push({
-          id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          at: new Date().toISOString(),
-          action: "block",
           aggregateScore: result.aggregateScore,
           attempt: result.attempt,
           scoresCount: result.scores.length,
@@ -136,9 +127,11 @@ function createLlmExecutor(
     }
   });
 
-  // Load persisted reputation if store is configured
+  // Load persisted reputation if store is configured.
+  // Track readiness so early calls don't race against the load.
+  let reputationReady: Promise<void> | undefined;
   if (config.reputationStore) {
-    reputationManager.load().catch((err) => {
+    reputationReady = reputationManager.load().catch((err) => {
       if (config.logger !== false) {
         console.warn("[consensus] Failed to load persisted reputation, starting with defaults:", err); // eslint-disable-line no-console
       }
@@ -158,15 +151,26 @@ function createLlmExecutor(
   };
 
   return async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
+    // Wait for reputation load before first deliberation
+    if (reputationReady) {
+      await reputationReady;
+      reputationReady = undefined;
+    }
+
     try {
       const decision: LlmDecisionResult = await deliberate(deliberateConfig, toolName, args);
 
-      // Fire onDecision callback
+      // Fire onDecision callback (wrapped in try/catch so user callback errors
+      // don't affect governance decisions)
       if (config.onDecision) {
-        await config.onDecision(decision);
+        try {
+          await config.onDecision(decision);
+        } catch (callbackErr) {
+          config.onError?.(callbackErr instanceof Error ? callbackErr : new Error(String(callbackErr)), { toolName, args, phase: "onDecision" });
+        }
       }
 
-      // Shadow mode: always allow, just log
+      // Shadow mode: always allow, just log. Never blocks, even if callback threw.
       if (mode === "shadow") {
         return fn(toolName, args);
       }
