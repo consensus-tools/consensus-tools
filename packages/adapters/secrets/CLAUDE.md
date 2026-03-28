@@ -11,4 +11,5 @@ AES-256-GCM credential encryption with scrypt key derivation. Uses only Node.js 
 
 - In-memory only — credentials are lost on process exit. No built-in persistence layer.
 - Changing the master secret loses all previously encrypted values (scrypt-derived keys change).
+- Scrypt salt is hardcoded to `"consensus-tools-salt"` — all installations share the same salt.
 - Random IV per encryption — same plaintext produces different ciphertexts.

@@ -56,6 +56,21 @@ module.exports = {
       },
     },
 
+    // ── Tier 4: Integration ──────────────────────────────────────────────
+    // Tier 4 packages must not depend on apps or on each other (no lateral deps).
+    {
+      name: "integration-no-lateral-deps",
+      comment:
+        "Tier 4 packages (universal, sdk-node, cli, mcp, openclaw) must not depend on each other or on apps.",
+      severity: "error",
+      from: {
+        path: "^packages/(universal|sdk-node|cli)/|^packages/adapters/(mcp|openclaw)/",
+      },
+      to: {
+        path: "^apps/",
+      },
+    },
+
     // ── Cross-cutting rules ─────────────────────────────────────────────
     {
       name: "no-circular",
