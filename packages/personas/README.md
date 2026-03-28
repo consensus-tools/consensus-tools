@@ -38,19 +38,12 @@ Deterministic reputation engine. Aligned voters gain reputation, misaligned vote
 ```typescript
 import { updateReputation, DEFAULT_RULESET } from "@consensus-tools/personas";
 
-const result = updateReputation({
-  boardId: "board-1",
-  decisionId: "decision-1",
-  personaSetId: "pset-1",
-  votes: [
-    { persona_id: "security-analyst", vote: "BLOCK", confidence: 0.9 },
-    { persona_id: "compliance-officer", vote: "ALLOW", confidence: 0.7 },
-  ],
-  finalDecision: "BLOCK",
-  ruleset: DEFAULT_RULESET,
-  personas: voters,
-});
+const votes = [
+  { persona_id: "security-analyst", vote: "NO", confidence: 0.9 },
+  { persona_id: "compliance-officer", vote: "YES", confidence: 0.7 },
+];
 
+const result = updateReputation(votes, "BLOCK", voters, DEFAULT_RULESET);
 // result.changes: ReputationChange[] — per-persona delta and new reputation
 ```
 

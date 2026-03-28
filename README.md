@@ -61,7 +61,7 @@ import { consensus } from "@consensus-tools/wrapper";
 
 const safeSend = consensus(sendEmail, {
   reviewers: [humanReviewer, aiSafetyReviewer],
-  strategy: { mode: "unanimous" },
+  strategy: { strategy: "unanimous" },
   hooks: { onBlock: (ctx) => audit.log("blocked", ctx) },
 });
 
@@ -112,7 +112,7 @@ Human -------/            │ Policies    │
 
 ```
 Tier 0 — Foundation        schemas    secrets
-Tier 1 — Primitives        guards    telemetry    evals    integrations    notifications    sdk-client
+Tier 1 — Primitives        guards    telemetry    evals    integrations    notifications    sdk-client    storage    personas
 Tier 2 — Engines           core      policies
 Tier 3 — Composition       workflows    wrapper
 Tier 4 — Adapters & Apps   universal    sdk-node    mcp    openclaw    cli    local-board    dashboard
