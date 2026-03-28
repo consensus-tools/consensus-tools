@@ -4,8 +4,8 @@
 
 `@consensus-tools/universal` adds a governance layer in one line. Two operating modes:
 
-- **Regex mode** (default): Three rule-based reviewers (security, compliance, user-impact) screen every tool call using pattern matching — no LLM calls, no network requests, sub-millisecond overhead.
-- **LLM Persona mode** (activated when `config.model` is provided): Multiple AI personas deliberate on each tool call with reputation-weighted voting, automatic persona respawn, and risk-tier classification.
+- **Regex mode** (default): Three rule-based reviewers (security, compliance, user-impact) review tool output using pattern matching — no LLM calls, no network requests, sub-millisecond review overhead. The tool executes first, then reviewers evaluate.
+- **LLM Persona mode** (activated when `config.model` is provided): Multiple AI personas deliberate on each tool call BEFORE execution, with reputation-weighted voting, automatic persona respawn, and risk-tier classification.
 
 Both modes support the same `consensus.wrap()` API. Block, allow, or escalate based on a configurable policy. Adapters for LangChain, Vercel AI SDK, and MCP are loaded on demand.
 
@@ -104,24 +104,25 @@ const safe = consensus.wrap(myExecutor, {
 
 ---
 
-### langchain — LangChain chain adapter
+### langchain — LangChain callback handler
 
 ```typescript
 import { consensus } from "@consensus-tools/universal";
 import { ChatOpenAI } from "@langchain/openai";
-import { createOpenAIFunctionsAgent } from "langchain/agents";
+import { AgentExecutor } from "langchain/agents";
 
 const model = new ChatOpenAI({ model: "gpt-4o" });
-const chain = createOpenAIFunctionsAgent({ llm: model, tools, prompt });
 
-// Wrap the chain — consensus reviews every tool call before execution
-const safeChain = await consensus.langchain(chain, {
+// Returns a ConsensusGuardCallbackHandler — attach it to your chain's callbacks
+const handler = await consensus.langchain(null, {
   policy: "supermajority",
   failPolicy: "closed",
 });
+
+const executor = AgentExecutor.fromAgentAndTools({ agent, tools, callbacks: [handler] });
 ```
 
-Requires `@consensus-tools/langchain` as a peer dependency.
+Requires `@consensus-tools/langchain` as a peer dependency. The first argument is unused (retained for API compatibility).
 
 ---
 
@@ -139,7 +140,7 @@ async function generate(prompt: string) {
 // Wrap the generate function
 const safeGenerate = await consensus.aiSdk(generate, {
   policy: "majority",
-  guards: ["agent_action", "publish"],
+  guards: ["security", "compliance"],
 });
 
 const result = await safeGenerate("Summarize last quarter's results.");
@@ -309,12 +310,12 @@ function wrap(wrappable: Wrappable, config?: Partial<UniversalConfig>): ToolExec
 
 ---
 
-### `consensus.langchain(chain, config?)`
+### `consensus.langchain(_chain, config?)`
 
-Async adapter for LangChain chains. Dynamically imports `@consensus-tools/langchain`.
+Returns a `ConsensusGuardCallbackHandler` for LangChain. Dynamically imports `@consensus-tools/langchain`. The first argument is unused (attach the returned handler to your chain's `callbacks` array).
 
 ```typescript
-async function langchain(chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown>
+async function langchain(_chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown>
 ```
 
 Throws `MissingDependencyError` if `@consensus-tools/langchain` is not installed.
@@ -379,26 +380,31 @@ Maps to an aggregation strategy for reviewers.
 
 | Value | Mode | Strategy |
 |---|---|---|
-| `"majority"` (default) | Both | More than half of reviewers approve |
-| `"supermajority"` | Both | Weighted average score >= 0.67 |
-| `"unanimous"` | Both | Every reviewer must approve |
+| `"majority"` (default) | Both | More than half of reviewers approve. Regex: threshold strategy. LLM: net positive vote score. |
+| `"supermajority"` | Both | Regex: threshold >= 0.67. LLM: APPROVAL_VOTE with minScore requiring >= 67% approval. |
+| `"unanimous"` | Both | Regex: all must approve. LLM: APPROVAL_VOTE with minScore requiring all YES votes. |
 | `"threshold:X"` | Both | Weighted average score >= X (0–1) |
-| `"weighted_reputation"` | LLM only | Votes weighted by persona reputation score |
+| `"weighted_reputation"` | LLM only | Votes weighted by persona reputation score (alias for `WEIGHTED_REPUTATION`) |
+| `"first_wins"` | LLM only | First persona's vote wins (alias for `FIRST_SUBMISSION_WINS`) |
+| `"highest_confidence"` | LLM only | Highest confidence vote wins (alias for `HIGHEST_CONFIDENCE_SINGLE`) |
+| `"top_k"` | LLM only | Top-K scoring split (alias for `TOP_K_SPLIT`) |
+| `"owner_pick"` | LLM only | Designated owner persona decides (alias for `OWNER_PICK`) |
+| `"arbiter"` | LLM only | Trusted arbiter persona decides (alias for `TRUSTED_ARBITER`) |
 | `"MAJORITY_VOTE"` | LLM only | Direct majority vote count |
-| `"WEIGHTED_REPUTATION"` | LLM only | Same as `weighted_reputation` |
+| `"WEIGHTED_REPUTATION"` | LLM only | Reputation-weighted vote scoring |
+| `"WEIGHTED_VOTE_SIMPLE"` | LLM only | Explicit vote weight scoring |
 | `"APPROVAL_VOTE"` | LLM only | Approval threshold-based voting |
 | `"FIRST_SUBMISSION_WINS"` | LLM only | First persona's vote wins |
 | `"HIGHEST_CONFIDENCE_SINGLE"` | LLM only | Highest confidence vote wins |
 | `"OWNER_PICK"` | LLM only | Designated owner persona decides |
 | `"TOP_K_SPLIT"` | LLM only | Top-K scoring split |
-| `"WEIGHTED_VOTE_SIMPLE"` | LLM only | Simple weighted vote aggregation |
 | `"TRUSTED_ARBITER"` | LLM only | Trusted arbiter persona decides |
 
 Using an LLM-only policy without providing `model` emits a warning and falls back to `majority`.
 
 ### `guards`
 
-Guard domain names to use as reviewers. Defaults to `["agent_action"]`. The seven built-in domains are documented in the Guard Domains section below.
+Guard domain names to use as reviewers. Defaults to `["agent_action"]`. When the default is used, the actual reviewers are `security`, `compliance`, and `user-impact` (the three domains with implemented rule sets). Custom domain names are accepted but fall back to a permissive placeholder.
 
 ### `failPolicy`
 
@@ -407,7 +413,7 @@ Guard domain names to use as reviewers. Defaults to `["agent_action"]`. The seve
 | `"closed"` (default) | Throw `ConsensusBlockedError` — the tool call does not execute |
 | `"open"` | Allow the tool call to proceed despite the deliberation result |
 
-**`failPolicy: "open"` effectively disables governance.** It exists for development and testing only. In production, use `"closed"` (the default) and handle `ConsensusBlockedError` in your error path.
+**`failPolicy: "open"` disables enforcement.** Governance still runs (decisions are made, `onDecision` fires), but blocked actions execute anyway. It exists for development and testing only. In production, use `"closed"` (the default) and handle `ConsensusBlockedError` in your error path.
 
 If you want to observe governance decisions without blocking in production, use `onDecision` instead:
 
@@ -464,7 +470,7 @@ consensus.wrap(executor, {
 
 ### `onError`
 
-Called when an unexpected error occurs during deliberation, audit writes, or callbacks. The `context` object includes a `phase` field indicating where the error occurred: `"deliberation"`, `"onDecision"`, or `"audit_write"`.
+Called when an unexpected error occurs during deliberation, audit writes, or callbacks. In LLM mode, the `context` object may include a `phase` field: `"onDecision"` (callback error) or `"audit_write"` (storage error). General deliberation errors have no `phase` field. In regex mode, context contains `{ toolName, args }`.
 
 ```typescript
 consensus.wrap(executor, {
@@ -549,17 +555,17 @@ The `.feedback()` method is only available in LLM mode. In regex mode, the retur
 
 ## Guard Domains
 
-The seven built-in guard domains correspond to the guard packages in this monorepo.
+Three guard domains have implemented rule sets with regex pattern matching:
 
 | Domain | Description |
 |---|---|
-| `agent_action` | Pre-execution governance for autonomous agent actions (default) |
-| `send_email` | Email automation governance — flags mass sends, PII in bodies |
-| `code_merge` | PR / branch merge governance — flags sensitive file changes |
-| `publish` | Content publishing governance — flags unreviewed or regulated content |
-| `support_reply` | Customer support reply governance — flags tone, policy, escalation |
-| `deployment` | Release deployment governance — flags prod, rollback risk |
-| `permission_escalation` | IAM / privilege escalation governance — flags scope creep |
+| `security` | Flags destructive operations (`delete`, `rm -rf`), secret exposure, injection risks |
+| `compliance` | Flags SSN patterns, PII (email addresses), regulated data |
+| `user-impact` | Flags mass operations (`broadcast`, `mass_delete`), irreversible actions |
+
+These are the default reviewers in regex mode. The `guards` config accepts any string, but unrecognized domains fall back to a permissive placeholder (always votes YES, risk 0.1).
+
+The broader consensus-tools monorepo defines seven guard categories (`agent_action`, `send_email`, `code_merge`, `publish`, `support_reply`, `deployment`, `permission_escalation`) as standalone guard packages. These are separate from the universal package's built-in regex reviewers.
 
 ---
 
@@ -588,7 +594,7 @@ try {
 
 ## OWASP Agentic Top 10 Mapping
 
-The table below maps each guard domain to the OWASP Agentic AI Security Initiative Top 10 categories it addresses.
+The table below maps the consensus-tools monorepo's guard domains to OWASP Agentic AI categories. The universal package's built-in regex reviewers (`security`, `compliance`, `user-impact`) cover categories 1, 3, 4, 6, 8, and 9. The full set of 7 domains is available via the standalone guard packages.
 
 | # | OWASP Category | Addressed by guard domain(s) |
 |---|---|---|
@@ -610,28 +616,30 @@ The table below maps each guard domain to the OWASP Agentic AI Security Initiati
 ```
 safe("send_email", { to: "user@example.com", body: "Your invoice" })
   │
-  ├─ 1. Serialize args to text
+  ├─ 1. Execute the tool function (the call runs first)
   │
-  ├─ 2. Run 3 reviewers IN PARALLEL (rule-based, no LLM calls):
+  ├─ 2. Review the output with 3 reviewers IN PARALLEL (rule-based, no LLM calls):
   │     ├─ security:    regex scan for destructive ops, secrets, injection
   │     ├─ compliance:  regex scan for SSN patterns, PII, email addresses
   │     └─ user-impact: regex scan for mass ops, irreversible actions
   │
-  ├─ 3. Each reviewer returns: { vote: YES|NO|REWRITE, risk: 0-1, reason }
+  ├─ 3. Each reviewer returns: { score: 0-1, rationale: string, block?: boolean }
   │
   ├─ 4. Aggregate scores via policy (majority/supermajority/unanimous/threshold)
-  │     └─ Any reviewer can hard-block regardless of policy
+  │     └─ Any reviewer can hard-block (block: true) regardless of policy
   │
   ├─ 5. Decision: allow | block | retry | escalate
   │
   ├─ 6. Write audit artifact (to memory or configured storage)
   │
-  └─ 7. Return result or throw ConsensusBlockedError
+  └─ 7. Return output or throw ConsensusBlockedError
 ```
 
-**Latency:** Sub-millisecond. Reviewers are synchronous regex evaluators. Target: <10ms total overhead.
+> **Note:** In regex mode, the tool executes BEFORE reviewers run. Reviewers evaluate the output, not the input. If blocked, the output is discarded but the side effect already occurred. For pre-execution governance (input screening before the tool runs), use LLM Persona Mode.
 
-**Cost:** Zero. No API calls, no tokens consumed.
+**Latency:** Sub-millisecond for the review phase. Reviewers are synchronous regex evaluators. Total overhead includes tool execution time.
+
+**Cost:** Zero for the governance layer. No API calls, no tokens consumed.
 
 **DecisionResult object:**
 
@@ -644,7 +652,7 @@ safe("send_email", { to: "user@example.com", body: "Your invoice" })
     { score: 0.5, rationale: "Email PII detected", block: false },
     { score: 0.9, rationale: "Low user impact", block: false },
   ],
-  aggregateScore: 0.77,      // weighted average across reviewers
+  aggregateScore: 0.77,      // arithmetic mean across reviewers
   attempt: 1,                // retry count
 }
 ```
@@ -671,14 +679,15 @@ safe("deploy_to_prod", { service: "api", version: "2.1.0" })
   │     └─ YES → +1, NO → -1, REWRITE → 0
   │
   ├─ 6. Resolve consensus via policy (resolveConsensus)
-  │     └─ Direct vote counting: yesCount > noCount → allow
+  │     └─ APPROVAL_VOTE: threshold check (empty winners → block)
+  │     └─ MAJORITY/WEIGHTED: score-based (positive → allow)
   │     └─ Rewrite majority → escalate
   │
   ├─ 7. Record decision for feedback correlation (capped at 500 entries)
   │
-  ├─ 8. Fire onDecision callback (errors routed to onError, never affect decision)
+  ├─ 8. Write audit entry to storage
   │
-  ├─ 9. Check respawn: personas below threshold are replaced
+  ├─ 9. Fire onDecision callback (errors routed to onError, never affect decision)
   │
   └─ 10. enforce mode → block/throw | shadow mode → always execute
 ```
