@@ -71,14 +71,26 @@ const all = await ledger.getBalances();         // { "agent-1": 105, ... }
 
 ## Storage Backends
 
-Storage classes live in [`@consensus-tools/storage`](../storage):
+Storage classes live in [`@consensus-tools/storage`](../storage). Two ways to create them:
 
 ```typescript
-import { JsonStorage, SqliteStorage, MemoryStorage } from "@consensus-tools/storage";
+import { createStorage, JsonStorage, SqliteStorage, MemoryStorage } from "@consensus-tools/storage";
 
+// Option 1: Direct instantiation
 const jsonStore = new JsonStorage("./state.json");
 const sqliteStore = new SqliteStorage("./state.db");
 const memStore = new MemoryStorage();
+await memStore.init();
+
+// Option 2: Config-driven factory (reads config.local.storage.kind)
+const storage = await createStorage({
+  mode: "local",
+  local: {
+    storage: { kind: "memory" },          // or { kind: "json", path: "./state.json" }
+    // ... rest of ConsensusToolsConfig
+  },
+  // ...
+});
 ```
 
 ## Advanced -- GuardEngine, AgentRegistry, HitlTracker
