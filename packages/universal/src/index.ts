@@ -5,7 +5,7 @@ import { createGuardTemplate, GUARD_CONFIGS } from "@consensus-tools/guards";
 import { getPersonasByPack } from "@consensus-tools/personas";
 import { MemoryStorage } from "@consensus-tools/storage";
 import type { IStorage } from "@consensus-tools/storage";
-import type { Wrappable, UniversalConfig, ToolExecutor, LlmDecisionResult } from "./types.js";
+import type { Wrappable, UniversalConfig, ToolExecutor, AugmentedExecutor, LlmDecisionResult } from "./types.js";
 import { resolveWrappable } from "./resolve.js";
 import {
   DEFAULTS,
@@ -93,7 +93,7 @@ function mergeHooks(...hookSets: LifecycleHooks[]): LifecycleHooks {
 function createLlmExecutor(
   fn: ToolExecutor,
   config: Required<Pick<UniversalConfig, "policy" | "failPolicy">> & Partial<UniversalConfig>,
-): ToolExecutor {
+): AugmentedExecutor {
   const pack = config.pack ?? DEFAULT_PACK;
   const personas = config.personas ?? getPersonasByPack(pack);
   const policyType = resolvePolicyType(config.policy);
@@ -151,7 +151,7 @@ function createLlmExecutor(
     timeoutMs,
   };
 
-  return async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
+  const executor = (async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
     // Wait for reputation load before first deliberation
     if (reputationReady) {
       await reputationReady;
@@ -208,7 +208,15 @@ function createLlmExecutor(
       // failPolicy: 'open' — execute despite error
       return fn(toolName, args);
     }
+  }) as AugmentedExecutor;
+
+  // Attach feedback method
+  executor.feedback = (signal) => {
+    reputationManager.processFeedback(signal);
+    config.onFeedback?.(signal);
   };
+
+  return executor;
 }
 
 // ── Main Facade ──────────────────────────────────────────────────────
@@ -385,7 +393,7 @@ export { ReputationManager } from "./reputation-manager.js";
 export { classifyTool } from "./risk-tiers.js";
 export { deliberate } from "./persona-reviewer-factory.js";
 export type {
-  Wrappable, ToolExecutor, UniversalConfig, FailPolicy, ExecutionMode,
+  Wrappable, ToolExecutor, AugmentedExecutor, UniversalConfig, FailPolicy, ExecutionMode,
   LogEvent, ModelAdapter, ModelMessage, LlmDecisionResult, FeedbackSignal,
   RiskTier, RiskTierMap,
 } from "./types.js";

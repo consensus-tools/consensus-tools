@@ -8,6 +8,12 @@ import type { PersonaConfig } from "@consensus-tools/personas";
 
 export type ToolExecutor = (toolName: string, args: Record<string, unknown>) => Promise<unknown>;
 
+/** Executor returned by LLM mode with an additional feedback method. */
+export type AugmentedExecutor = ToolExecutor & {
+  /** Send human feedback to update persona reputation. */
+  feedback(signal: FeedbackSignal): void;
+};
+
 export type Wrappable =
   | ToolExecutor
   | { execute: ToolExecutor }
@@ -116,7 +122,7 @@ export interface UniversalConfig {
   mode?: ExecutionMode;
   /** Tool risk tier overrides. Keys are tool names, values are 'low' or 'high'. */
   riskTiers?: RiskTierMap;
-  /** Human feedback callback for reputation ground truth. */
+  /** Notification hook fired after feedback is processed. Called by .feedback() after ReputationManager updates. */
   onFeedback?: (signal: FeedbackSignal) => void;
   /** Storage for persisting reputation across restarts. Default: in-memory (lost on restart). */
   reputationStore?: IStorage;
