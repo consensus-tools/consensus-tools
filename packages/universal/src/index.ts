@@ -101,6 +101,9 @@ function createLlmExecutor(
   const respawnThreshold = config.respawnThreshold ?? DEFAULT_RESPAWN_THRESHOLD;
   const mode = config.mode ?? "enforce";
 
+  // Resolve storage for audit writes
+  const store = resolveStorage(config.storage ?? DEFAULTS.storage);
+
   // Create reputation manager
   const reputationManager = new ReputationManager(
     personas,
@@ -169,6 +172,25 @@ function createLlmExecutor(
         } catch (callbackErr) {
           config.onError?.(callbackErr instanceof Error ? callbackErr : new Error(String(callbackErr)), { toolName, args, phase: "onDecision" });
         }
+      }
+
+      // Write audit entry to storage
+      try {
+        await store.update((state) => {
+          if (!Array.isArray((state as any).audit)) (state as any).audit = [];
+          (state as any).audit.push({
+            id: `audit-${crypto.randomUUID()}`,
+            at: new Date().toISOString(),
+            action: decision.action,
+            aggregateScore: decision.aggregateScore,
+            policy: decision.policy,
+            decisionId: decision.decisionId,
+            personaCount: decision.votes.length,
+            mode,
+          });
+        });
+      } catch {
+        // Audit write failure is non-fatal
       }
 
       // Shadow mode: always allow, just log. Never blocks, even if callback threw.
@@ -249,7 +271,7 @@ export const consensus = {
     if (isProduction && merged.failPolicy === "open") {
       console.warn("[consensus] WARNING: failPolicy 'open' in production — errors will pass through unchecked"); // eslint-disable-line no-console
     }
-    if (isProduction && merged.storage === "memory" && !config?.model) {
+    if (isProduction && merged.storage === "memory") {
       console.warn("[consensus] WARNING: storage 'memory' in production — decisions are not persisted"); // eslint-disable-line no-console
     }
 
