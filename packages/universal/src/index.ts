@@ -101,8 +101,9 @@ function createLlmExecutor(
   const respawnThreshold = config.respawnThreshold ?? DEFAULT_RESPAWN_THRESHOLD;
   const mode = config.mode ?? "enforce";
 
-  // Resolve storage for audit writes
+  // Resolve storage for audit writes and initialize eagerly
   const store = resolveStorage(config.storage ?? DEFAULTS.storage);
+  const storeReady = store.init().catch(() => { /* init failure handled at write time */ });
 
   // Create reputation manager
   const reputationManager = new ReputationManager(
@@ -155,11 +156,12 @@ function createLlmExecutor(
   };
 
   const executor = (async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
-    // Wait for reputation load before first deliberation
+    // Wait for reputation load and storage init before first deliberation
     if (reputationReady) {
       await reputationReady;
       reputationReady = undefined;
     }
+    await storeReady;
 
     try {
       const decision: LlmDecisionResult = await deliberate(deliberateConfig, toolName, args);
@@ -189,8 +191,9 @@ function createLlmExecutor(
             mode,
           });
         });
-      } catch {
-        // Audit write failure is non-fatal
+      } catch (auditErr) {
+        // Audit write failure is non-fatal but logged
+        config.onError?.(auditErr instanceof Error ? auditErr : new Error(String(auditErr)), { toolName, args, phase: "audit_write" });
       }
 
       // Shadow mode: always allow, just log. Never blocks, even if callback threw.
