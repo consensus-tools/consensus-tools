@@ -1,6 +1,6 @@
 # @consensus-tools/guards
 
-Deterministic guard evaluation engine. Evaluates agent actions against 7 built-in guard types using pattern-matching rules, then tallies votes to produce a decision (ALLOW/BLOCK/REWRITE/REQUIRE_HUMAN).
+Deterministic guard evaluation engine. Evaluates agent actions against 9 built-in guard types using pattern-matching rules, then tallies votes to produce a decision (ALLOW/BLOCK/REWRITE/REQUIRE_HUMAN).
 
 ## Key Exports
 
