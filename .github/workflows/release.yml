@@ -50,7 +50,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./packages/schemas/package.json').version")
           PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           # Create and push tag (skip if already exists)
