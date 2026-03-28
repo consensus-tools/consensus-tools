@@ -70,9 +70,42 @@ Dependencies flow **downward only** (Tier 0 → 1 → 2 → 3 → 4). CI enforce
 
 LLM provider SDKs (openai, @anthropic-ai/sdk, langchain, ai, etc.) are **forbidden in production dependencies**. They may only appear in `devDependencies` for testing. CI enforces this via `scripts/check-deps.mjs`.
 
-## Versioning
+## Versioning & Release
 
-All `@consensus-tools/*` packages are linked and versioned together via changesets. Use `pnpm changeset` to create a changeset, never edit package.json versions manually. Apps (dashboard, local-board) are excluded from publishing.
+All `@consensus-tools/*` packages are linked via changesets and versioned together. Apps (dashboard, local-board) are excluded from publishing.
+
+**Normal releases (patch/minor within same major.minor range):**
+```bash
+pnpm changeset              # create changeset (describe what changed)
+pnpm changeset version      # apply version bumps + generate CHANGELOG
+pnpm release                # build all packages + publish to npm
+```
+
+**Coordinated version jumps (e.g., 0.9.1 → 0.10.0 across all packages):**
+Changesets' `linked`/`fixed` configs can't cleanly handle mixed starting versions (adapters may lag behind core packages). For coordinated jumps, set versions directly in all package.json files, then publish:
+```bash
+# Set all packages to the target version
+find packages -name "package.json" -not -path "*/node_modules/*" -maxdepth 3 \
+  -exec sed -i '' 's/"version": "[^"]*"/"version": "X.Y.Z"/' {} \;
+# Update example deps
+find examples -name "package.json" -not -path "*/node_modules/*" -maxdepth 2 \
+  -exec sed -i '' 's/"@consensus-tools\/\([^"]*\)": "\^[^"]*"/"@consensus-tools\/\1": "^X.Y.Z"/g' {} \;
+pnpm release                # build + publish
+```
+
+## CI / Automated Checks
+
+There is **no CI pipeline** (no GitHub Actions, no GitLab CI). All checks run locally:
+
+```bash
+pnpm build                  # Turbo build (all packages)
+pnpm test                   # Turbo test (depends on build)
+pnpm typecheck              # TypeScript checking
+pnpm lint                   # Lint all packages
+pnpm dep-check              # Dependency-cruiser tier enforcement
+```
+
+Run `pnpm dep-check` before every release to catch tier violations. Run `pnpm test` from the package directory (e.g., `cd packages/universal && pnpm test`) for fast iteration on a single package.
 
 ## Guardrails
 

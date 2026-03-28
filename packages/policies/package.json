@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/policies",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Built-in consensus policy implementations for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",

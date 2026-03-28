@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/ai-sdk",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "Vercel AI SDK adapter — consensus guard middleware for generateText/streamText",
   "type": "module",
   "main": "./dist/index.js",

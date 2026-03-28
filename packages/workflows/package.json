@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/workflows",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Workflow execution engine and cron scheduler for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",

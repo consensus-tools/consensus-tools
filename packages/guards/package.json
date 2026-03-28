@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/guards",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Guard evaluation engine — deterministic evaluators, voting, and decision logic",
   "type": "module",
   "main": "./dist/index.js",
