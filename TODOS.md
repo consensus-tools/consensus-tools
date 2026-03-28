@@ -1,11 +1,13 @@
 # Tech Debt & Future Work
 
-## Priority Order (updated 2026-03-20)
+## Priority Order (updated 2026-03-28)
 
 ```
-P2: T7 (Guard Playground)
-P3: T1, T2 (tech debt)
-P4: T3, T4, T8, T12 (deferred / blocked)
+P1: T7  (Guard Playground — blocker resolved, high demo/DX value)
+P2: T4  (Tests for integrations + notifications — 0 coverage on shipped packages)
+P3: T1, T2 (decompose 1000+ line files — refactor when next touched)
+P4: T8  (Decision Diff — depends on T7)
+P5: T3, T12 (SqliteStorage + idempotency — needs IStorage v2, caps work for now)
 ```
 
 ---
@@ -84,9 +86,9 @@ P4: T3, T4, T8, T12 (deferred / blocked)
 
 **Cons:** Low priority — developers can invoke guards programmatically.
 
-**Context:** Depends on guard unification (unified GuardHandler). Should display vote breakdown, risk scores, and allow tweaking persona weights to see how decisions change.
+**Context:** GuardHandler is unified (shipped v0.8.0). Should display vote breakdown, risk scores, and allow tweaking persona weights to see how decisions change. With LLM personas (v0.9.0), this becomes a powerful way to demo the full deliberation pipeline.
 
-**Depends on:** Guard unification.
+**Depends on:** ~~Guard unification~~ (done).
 
 ---
 
