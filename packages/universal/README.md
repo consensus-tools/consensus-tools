@@ -464,7 +464,7 @@ consensus.wrap(executor, {
 
 ### `onError`
 
-Called when an unexpected error occurs during deliberation (not a block — a runtime failure).
+Called when an unexpected error occurs during deliberation, audit writes, or callbacks. The `context` object includes a `phase` field indicating where the error occurred: `"deliberation"`, `"onDecision"`, or `"audit_write"`.
 
 ```typescript
 consensus.wrap(executor, {
