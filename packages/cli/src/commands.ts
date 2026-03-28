@@ -275,5 +275,70 @@ export function buildProgram(): Command {
       }
     });
 
+  // playground
+  program.command("playground")
+    .description("Evaluate guard decisions interactively — see how reviewers vote on any input")
+    .option("--domain <domain>", "Guard domain (e.g., code-merge, send-email, deployment)")
+    .option("--scenario <name>", "Canned scenario name (e.g., safe, risky, edge)")
+    .option("--input <json>", "Custom input as JSON string or file path")
+    .option("--list", "List all available scenarios")
+    .option("--json", "Output raw JSON instead of colored table")
+    .action(async (opts) => {
+      const { loadScenario, listScenarios, evaluatePlayground, parseInput } = await import("./playground.js");
+      const { renderPlaygroundOutput } = await import("./util/playground-renderer.js");
+      const path = await import("node:path");
+      const { fileURLToPath } = await import("node:url");
+
+      const scenariosDir = path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "../scenarios",
+      );
+
+      // --list: show available scenarios
+      if (opts.list) {
+        const scenarios = listScenarios(scenariosDir);
+        if (opts.json) return output(scenarios, true);
+        for (const [domain, names] of Object.entries(scenarios)) {
+          console.log(`  ${domain}: ${names.join(", ")}`);
+        }
+        return;
+      }
+
+      let domain: string;
+      let payload: Record<string, unknown>;
+      let scenarioName: string | undefined;
+
+      if (opts.input) {
+        // Custom input mode
+        const parsed = parseInput(opts.input);
+        const rawDomain = String(opts.domain || parsed.domain || "code_merge");
+        domain = rawDomain.replace(/-/g, "_");
+        payload = (parsed.payload as Record<string, unknown>) ?? parsed;
+        scenarioName = undefined;
+      } else {
+        // Canned scenario mode
+        const scenarioDomain = opts.domain || "code-merge";
+        const scenario = loadScenario(scenariosDir, scenarioDomain, opts.scenario);
+        domain = scenario.domain;
+        payload = scenario.payload;
+        // Derive actual scenario name from the loaded file's description or the flag
+        if (opts.scenario) {
+          scenarioName = opts.scenario;
+        } else {
+          // Default scenario loaded — extract name from available scenarios list
+          const available = listScenarios(scenariosDir)[scenarioDomain];
+          scenarioName = available?.[0] ?? "default";
+        }
+      }
+
+      const result = evaluatePlayground(domain, payload);
+
+      if (opts.json) {
+        return output(result, true);
+      }
+
+      console.log(renderPlaygroundOutput({ ...result, scenarioName }));
+    });
+
   return program;
 }

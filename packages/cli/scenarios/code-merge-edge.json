@@ -1,0 +1,9 @@
+{
+  "domain": "code_merge",
+  "description": "Edge case — touches sensitive auth file but tests pass, contains email in diff",
+  "payload": {
+    "files": ["src/auth/session.ts", "src/utils/helpers.ts"],
+    "diff_summary": "Updated session handling, notify admin@company.com on expiry",
+    "tests_passed": true
+  }
+}

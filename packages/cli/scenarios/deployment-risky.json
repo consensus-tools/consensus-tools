@@ -1,0 +1,11 @@
+{
+  "domain": "deployment",
+  "description": "Risky deploy — production, CI failed, no rollback, mass notification",
+  "payload": {
+    "env": "prod",
+    "ci_passed": false,
+    "requires_rollback": true,
+    "has_rollback": false,
+    "description": "Deploy with mass_email broadcast to all users, permanent database migration"
+  }
+}

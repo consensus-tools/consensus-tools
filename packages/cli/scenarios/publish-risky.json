@@ -1,0 +1,8 @@
+{
+  "domain": "publish",
+  "description": "Risky publish — contains SSN pattern and profanity",
+  "payload": {
+    "text": "Customer data dump: SSN 123-45-6789",
+    "body": "This damn report contains personal data that should never be published."
+  }
+}

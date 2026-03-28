@@ -1,0 +1,8 @@
+{
+  "domain": "send_email",
+  "description": "Normal email — no secrets, no PII, no attachments",
+  "payload": {
+    "to": "team-updates@internal.co",
+    "body": "Weekly standup notes: shipped the new dashboard feature."
+  }
+}

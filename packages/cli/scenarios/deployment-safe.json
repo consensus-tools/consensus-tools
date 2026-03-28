@@ -1,0 +1,10 @@
+{
+  "domain": "deployment",
+  "description": "Safe deploy — staging environment, CI passed, rollback ready",
+  "payload": {
+    "env": "staging",
+    "ci_passed": true,
+    "requires_rollback": true,
+    "has_rollback": true
+  }
+}

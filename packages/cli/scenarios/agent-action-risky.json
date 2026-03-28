@@ -1,0 +1,10 @@
+{
+  "domain": "agent_action",
+  "description": "Dangerous agent action — irreversible delete with external side effect",
+  "payload": {
+    "irreversible": true,
+    "risk_level": "high",
+    "external_side_effect": true,
+    "description": "Permanently delete all user accounts and broadcast mass_email notification"
+  }
+}

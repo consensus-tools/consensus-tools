@@ -1,0 +1,8 @@
+{
+  "domain": "publish",
+  "description": "Clean blog post — no PII, no profanity",
+  "payload": {
+    "text": "How to build consensus systems for AI agents",
+    "body": "In this post we explore weighted voting algorithms for multi-agent governance."
+  }
+}

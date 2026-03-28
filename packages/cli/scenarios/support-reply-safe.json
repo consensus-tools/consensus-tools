@@ -1,0 +1,7 @@
+{
+  "domain": "support_reply",
+  "description": "Standard support reply — helpful, no escalation language",
+  "payload": {
+    "message": "Thanks for reaching out! I've updated your account settings as requested."
+  }
+}

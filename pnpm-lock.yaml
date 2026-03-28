@@ -489,6 +489,9 @@ importers:
       '@consensus-tools/core':
         specifier: workspace:*
         version: link:../core
+      '@consensus-tools/guards':
+        specifier: workspace:*
+        version: link:../guards
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../schemas
@@ -501,6 +504,9 @@ importers:
       '@consensus-tools/telemetry':
         specifier: workspace:*
         version: link:../telemetry
+      chalk:
+        specifier: ^5.4.0
+        version: 5.6.2
       commander:
         specifier: ^13.0.0
         version: 13.1.0
