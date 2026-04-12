@@ -202,7 +202,7 @@ pnpm add @consensus-tools/core @consensus-tools/policies
 
 ```bash
 git clone https://github.com/consensus-tools/toolkit.git
-cd consensus-tools
+cd toolkit
 pnpm install
 pnpm build
 
@@ -230,7 +230,7 @@ pnpm typecheck
 
 ## Migration from v0.2.0
 
-See [MIGRATION.md](MIGRATION.md) for upgrading from the monolithic `@consensus-tools/toolkit@0.2.0`.
+See [MIGRATION.md](MIGRATION.md) for upgrading from the monolithic `@consensus-tools/consensus-tools@0.2.0`.
 
 ## Contributing
 

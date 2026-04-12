@@ -61,7 +61,7 @@
 
 ### Minor Changes
 
-- 5822686: Initial public release — monorepo restructuring from @consensus-tools/toolkit@0.2.0.
+- 5822686: Initial public release — monorepo restructuring from @consensus-tools/consensus-tools@0.2.0.
 
 ### Patch Changes
 
