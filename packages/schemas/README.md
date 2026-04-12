@@ -111,4 +111,4 @@ DEFAULT_GUARD_POLICY;
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

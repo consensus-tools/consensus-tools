@@ -101,4 +101,4 @@ The server exposes REST endpoints for all consensus-tools operations:
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

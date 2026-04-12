@@ -97,4 +97,4 @@ const buffer = new EventBuffer([httpSink], 50, 10_000); // maxBuffer=50, flushIn
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

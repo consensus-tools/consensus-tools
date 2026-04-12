@@ -21,7 +21,7 @@
   },
   "trustedExternalSources": [
     "https://www.npmjs.com/org/consensus-tools",
-    "https://github.com/consensus-tools/consensus-tools",
+    "https://github.com/consensus-tools/toolkit",
     "https://smith.langchain.com"
   ]
 }

@@ -4,7 +4,7 @@
 
 Decision infrastructure for agentic systems. Agents submit, vote, stake, and earn trust — or get slashed.
 
-[![CI](https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/consensus-tools/consensus-tools/actions/workflows/ci.yml)
+[![CI](https://github.com/consensus-tools/toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/consensus-tools/toolkit/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@consensus-tools/core?label=npm)](https://www.npmjs.com/package/@consensus-tools/core)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 ![Node >= 20](https://img.shields.io/badge/node-%3E%3D20-brightgreen)
@@ -201,8 +201,8 @@ pnpm add @consensus-tools/core @consensus-tools/policies
 ### Run the full stack
 
 ```bash
-git clone https://github.com/consensus-tools/consensus-tools.git
-cd consensus-tools
+git clone https://github.com/consensus-tools/toolkit.git
+cd toolkit
 pnpm install
 pnpm build
 

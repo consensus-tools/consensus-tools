@@ -109,4 +109,4 @@ The server also exposes **resources** (board state, job details) and **prompts**
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

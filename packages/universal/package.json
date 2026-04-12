@@ -50,7 +50,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "url": "https://github.com/consensus-tools/toolkit.git",
     "directory": "packages/universal"
   },
   "keywords": [
@@ -66,9 +66,9 @@
     "node": ">=20.0.0"
   },
   "sideEffects": false,
-  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/universal",
+  "homepage": "https://github.com/consensus-tools/toolkit/tree/main/packages/universal",
   "bugs": {
-    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+    "url": "https://github.com/consensus-tools/toolkit/issues"
   },
   "publishConfig": {
     "access": "public"

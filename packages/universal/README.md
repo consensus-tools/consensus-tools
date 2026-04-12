@@ -760,4 +760,4 @@ safe("deploy_to_prod", { service: "api", version: "2.1.0" })
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

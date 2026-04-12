@@ -1,6 +1,6 @@
 # consensus-engineer
 
-AI solution architect for [consensus-tools](https://github.com/consensus-tools/consensus-tools) — the decision infrastructure for autonomous AI agents.
+AI solution architect for [consensus-tools](https://github.com/consensus-tools/toolkit) — the decision infrastructure for autonomous AI agents.
 
 ## What it does
 
