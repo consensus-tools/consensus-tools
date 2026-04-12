@@ -75,4 +75,4 @@ const result = approvalVote({ job, submissions, votes, reputation });
 
 ## Links
 
-[consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+[consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)

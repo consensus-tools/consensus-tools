@@ -98,7 +98,7 @@
 
 ## 0.3.0 — 2026-03-13
 
-Complete monorepo restructuring from the monolithic `@consensus-tools/consensus-tools@0.2.0` into 16 focused packages across 5 tiers.
+Complete monorepo restructuring from the monolithic `@consensus-tools/toolkit@0.2.0` into 16 focused packages across 5 tiers.
 
 See [MIGRATION.md](./MIGRATION.md) for upgrade details.
 

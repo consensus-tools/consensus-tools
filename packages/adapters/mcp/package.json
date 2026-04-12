@@ -47,7 +47,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/consensus-tools/consensus-tools.git",
+    "url": "https://github.com/consensus-tools/toolkit.git",
     "directory": "packages/adapters/mcp"
   },
   "keywords": [
@@ -62,9 +62,9 @@
     "node": ">=20.0.0"
   },
   "sideEffects": false,
-  "homepage": "https://github.com/consensus-tools/consensus-tools/tree/main/packages/adapters/mcp",
+  "homepage": "https://github.com/consensus-tools/toolkit/tree/main/packages/adapters/mcp",
   "bugs": {
-    "url": "https://github.com/consensus-tools/consensus-tools/issues"
+    "url": "https://github.com/consensus-tools/toolkit/issues"
   },
   "publishConfig": {
     "access": "public"

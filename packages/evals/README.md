@@ -164,5 +164,5 @@ validateJudgeScore({ clarity: 4, completeness: "bad", actionability: 6 });
 
 ## Links
 
-- [consensus-tools on GitHub](https://github.com/consensus-tools/consensus-tools)
+- [consensus-tools on GitHub](https://github.com/consensus-tools/toolkit)
 - [Skill guard demo](../../examples/skill-guard-demo) — end-to-end example using consensusEval

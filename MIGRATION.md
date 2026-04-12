@@ -1,6 +1,6 @@
 # Migration Guide: v0.2.0 → Monorepo
 
-This guide covers migrating from `@consensus-tools/consensus-tools@0.2.0` (the monolithic single-package release) to the new monorepo structure.
+This guide covers migrating from `@consensus-tools/toolkit@0.2.0` (the monolithic single-package release) to the new monorepo structure.
 
 ## What Changed
 
@@ -129,4 +129,4 @@ If your code references `rewardAmount` or `stakeAmount` on job post inputs, rena
 
 ## Deprecation
 
-The `@consensus-tools/consensus-tools@0.2.0` package is deprecated. It will not receive further updates. Use the new scoped packages instead.
+The `@consensus-tools/toolkit@0.2.0` package is deprecated. It will not receive further updates. Use the new scoped packages instead.

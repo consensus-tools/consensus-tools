@@ -65,7 +65,7 @@ Production `dependencies` must not include LLM provider SDKs (openai, anthropic,
 
 ## Reporting Issues
 
-Open an issue at [github.com/consensus-tools/consensus-tools/issues](https://github.com/consensus-tools/consensus-tools/issues).
+Open an issue at [github.com/consensus-tools/toolkit/issues](https://github.com/consensus-tools/toolkit/issues).
 
 ## License
 
