@@ -111,7 +111,7 @@ export default function WorkflowsDashboard() {
     setSaved(items);
     setTemplates(tmpls.map((tmpl: any) => ({ ...tmpl, nodeCount: tmpl.definition?.nodes?.length ?? 0 })));
     if (!workflowId && items.length) {
-      try { await loadWorkflow(items[0].id); } catch {}
+      try { await loadWorkflow(items[0].id); } catch (e: any) { setApiError(e?.message || 'Failed to auto-load workflow'); }
     }
   }
 
@@ -321,6 +321,7 @@ export default function WorkflowsDashboard() {
       await refreshList();
     } catch (error) {
       console.error('Failed to delete workflow:', error);
+      setApiError('Failed to delete workflow: ' + (error as Error).message);
     }
   }
 
@@ -331,6 +332,7 @@ export default function WorkflowsDashboard() {
       await loadWorkflow(workflowId);
     } catch (error) {
       console.error('Failed to run workflow:', error);
+      setApiError('Failed to run workflow: ' + (error as Error).message);
     }
   }
 
