@@ -50,7 +50,8 @@ export default function RunDetailPage() {
   }, [runId]);
 
   const final = useMemo(() => events.find((e: any) => e.type === 'FINAL_DECISION'), [events]);
-  const parsed = final ? safeParseJSON<any>(final.payload_json, null, 'RunDetailPage.parsed') : null;
+  // Match old behavior: empty payload -> {} so the decision card still renders (degraded), instead of vanishing.
+  const parsed = final ? safeParseJSON<any>(final.payload_json, {}, 'RunDetailPage.parsed') : null;
   const consensusMeta = parsed?.consensus_meta || parsed?.meta || null;
 
   const correlations = useMemo(() => {

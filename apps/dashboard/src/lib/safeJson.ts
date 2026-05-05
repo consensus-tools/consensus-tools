@@ -19,10 +19,14 @@ declare global {
 // In production code this is always `undefined` and the real import.meta.env.DEV is used.
 let _devOverride: boolean | undefined;
 
-/** @internal – only for unit tests */
-export function _setDevForTesting(value: boolean | undefined): void {
-  _devOverride = value;
-}
+/**
+ * @internal – only for unit tests. Becomes a no-op in production builds so the
+ * dev-mode override cannot be flipped at runtime by injected/3rd-party code.
+ */
+export const _setDevForTesting: (value: boolean | undefined) => void =
+  import.meta.env.DEV
+    ? (value) => { _devOverride = value; }
+    : (_value) => { /* no-op in production */ };
 
 function isDevMode(): boolean {
   if (_devOverride !== undefined) return _devOverride;
@@ -41,11 +45,12 @@ export function safeParseJSON<T>(
   try {
     return JSON.parse(input) as T;
   } catch (err) {
-    // Suppress the warning entirely in production; show a helpful snippet in dev.
+    // Log structural metadata only — never the raw content, which can contain
+    // tokens, keys, or PII that would leak into DevTools / RUM capture.
     if (isDevMode()) {
-      const snippet = input.slice(0, 80);
       const label = context ? `[${context}] ` : "";
-      console.warn(`safeParseJSON ${label}failed to parse: ${snippet}`);
+      const len = typeof input === "string" ? input.length : -1;
+      console.warn(`safeParseJSON ${label}failed to parse: input length=${len}`);
     }
     return fallback;
   }

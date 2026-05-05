@@ -56,10 +56,14 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
 
   function parseMetadata(p: any): Record<string, any> {
     if (typeof p.metadata === 'object' && p.metadata !== null) return p.metadata;
-    return safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
+    const parsed = safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
+    // Guard against valid JSON that parses to a primitive (`"null"`, `"false"`, `42`)
+    // — callers downstream do `meta.agentType` etc. without null guards.
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
   }
 
   async function refresh() {
+    setApiError(null);
     try {
       const p = await listParticipants(boardId);
       setParticipants(p.participants || []);

@@ -105,6 +105,7 @@ export default function WorkflowsDashboard() {
   }
 
   async function refreshList() {
+    setApiError(null);
     const [d, t] = await Promise.allSettled([getWorkflows(), getTemplates()]);
     const items = d.status === "fulfilled" ? (d.value.workflows || []) : [];
     const tmpls = t.status === "fulfilled" ? (t.value.templates || []) : [];
@@ -315,24 +316,26 @@ export default function WorkflowsDashboard() {
 
   async function handleDelete() {
     if (!workflowId) return;
+    setApiError(null);
     try {
       await apiDeleteWorkflow(workflowId);
       newWorkflow();
       await refreshList();
     } catch (error) {
       console.error('Failed to delete workflow:', error);
-      setApiError('Failed to delete workflow: ' + (error as Error).message);
+      setApiError('Failed to delete workflow: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
   async function executeWorkflow() {
     if (!workflowId) return;
+    setApiError(null);
     try {
       await runWorkflow(workflowId);
       await loadWorkflow(workflowId);
     } catch (error) {
       console.error('Failed to run workflow:', error);
-      setApiError('Failed to run workflow: ' + (error as Error).message);
+      setApiError('Failed to run workflow: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 

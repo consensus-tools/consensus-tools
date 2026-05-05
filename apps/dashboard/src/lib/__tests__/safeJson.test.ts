@@ -58,7 +58,6 @@ describe("safeParseJSON", () => {
     expect(warnSpy).toHaveBeenCalledOnce();
     const [msg] = warnSpy.mock.calls[0];
     expect(msg).toContain("myContext");
-    expect(msg).toContain("{bad}");
   });
 
   it("does NOT warn in production mode when JSON is malformed", () => {
@@ -76,15 +75,44 @@ describe("safeParseJSON", () => {
     expect(warnSpy.mock.calls[0][0]).toContain("[MyLabel]");
   });
 
-  it("truncates long snippets to 80 chars in the warning", () => {
+  it("warning never includes raw input content (no token/PII leak)", () => {
+    _setDevForTesting(true);
+    const warnSpy = vi.spyOn(console, "warn");
+    const sensitiveInput = '{"api_key":"sk-ant-api03-SECRET_TOKEN_XYZ"';
+    safeParseJSON(sensitiveInput, null);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    const msg: string = warnSpy.mock.calls[0][0];
+    expect(msg).not.toContain("api_key");
+    expect(msg).not.toContain("sk-ant");
+    expect(msg).not.toContain("SECRET");
+  });
+
+  it("warning reports input length only", () => {
     _setDevForTesting(true);
     const warnSpy = vi.spyOn(console, "warn");
     const longInput = "{" + "a".repeat(200);
     safeParseJSON(longInput, null);
     expect(warnSpy).toHaveBeenCalledOnce();
     const msg: string = warnSpy.mock.calls[0][0];
-    // The snippet in the message should be at most 80 chars from the input
-    expect(msg).toContain(longInput.slice(0, 80));
-    expect(msg).not.toContain(longInput.slice(81));
+    expect(msg).toContain(`length=${longInput.length}`);
+  });
+
+  // Valid-but-falsy JSON values must round-trip, NOT be replaced with the fallback.
+  // A future refactor that uses `if (!result) return fallback` would silently break
+  // these — pin the contract.
+  it("returns the parsed value 'false' (not the fallback)", () => {
+    expect(safeParseJSON<boolean | string>("false", "FALLBACK")).toBe(false);
+  });
+
+  it("returns the parsed value '0' (not the fallback)", () => {
+    expect(safeParseJSON<number>("0", 99)).toBe(0);
+  });
+
+  it("returns the parsed value 'null' (not the fallback)", () => {
+    expect(safeParseJSON<unknown>("null", "FALLBACK")).toBeNull();
+  });
+
+  it("returns the parsed value '\"\"' (the empty string, not the fallback)", () => {
+    expect(safeParseJSON<string>('""', "FALLBACK")).toBe("");
   });
 });

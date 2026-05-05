@@ -74,8 +74,8 @@ export default function BoardDetailPage() {
     const map: Record<string, any> = {};
     for (const e of events) {
       if (e.type === 'FINAL_DECISION' && e.run_id) {
-        const payload = safeParseJSON<any>(e.payload_json, null, 'BoardDetailPage.runDecisions');
-        if (payload !== null) map[e.run_id] = payload;
+        // Match old behavior: empty payload -> {} so the run row still appears (rendered with dashes via optional chaining downstream).
+        map[e.run_id] = safeParseJSON<any>(e.payload_json, {}, 'BoardDetailPage.runDecisions');
       }
     }
     return map;
