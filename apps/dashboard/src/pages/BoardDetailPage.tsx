@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { ArrowLeft, Clock, ChevronDown, ChevronUp, Users, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getBoard, getEvents, listParticipants } from '../lib/api';
 import { JsonBlock } from '../components/JsonPanel';
+import { safeParseJSON } from '../lib/safeJson';
 
 const DECISION_COLORS: Record<string, string> = {
   ALLOW: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
@@ -73,10 +74,8 @@ export default function BoardDetailPage() {
     const map: Record<string, any> = {};
     for (const e of events) {
       if (e.type === 'FINAL_DECISION' && e.run_id) {
-        try {
-          const payload = JSON.parse(e.payload_json || '{}');
-          map[e.run_id] = payload;
-        } catch {}
+        const payload = safeParseJSON<any>(e.payload_json, null, 'BoardDetailPage.runDecisions');
+        if (payload !== null) map[e.run_id] = payload;
       }
     }
     return map;
