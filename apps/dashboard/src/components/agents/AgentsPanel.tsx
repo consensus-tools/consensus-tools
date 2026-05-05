@@ -7,6 +7,7 @@ import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Bot, Save, Pencil, MessageSquare, User, Trash2, Cpu, Globe, Key, Thermometer, TrendingUp } from 'lucide-react';
 import { connectAgent, listAgents, listParticipants, createParticipant, updateParticipant, assignPolicy, deleteParticipant } from '../../lib/api';
+import { safeParseJSON } from '../../lib/safeJson';
 
 const CHAT_ADAPTERS = [
   { value: '', label: 'None' },
@@ -51,21 +52,18 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
 
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Record<string, any>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
 
   function parseMetadata(p: any): Record<string, any> {
     if (typeof p.metadata === 'object' && p.metadata !== null) return p.metadata;
-    try {
-      return JSON.parse(p.metadata_json || p.metadata || '{}');
-    } catch {
-      return {};
-    }
+    return safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
   }
 
   async function refresh() {
     try {
       const p = await listParticipants(boardId);
       setParticipants(p.participants || []);
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to load participants'); }
   }
 
   useEffect(() => { refresh(); }, [boardId]);
@@ -215,6 +213,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-y-auto">
+        {apiError && <div className="text-xs text-red-500 mb-2">{apiError}</div>}
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <User className="h-3 w-3" /> Humans
