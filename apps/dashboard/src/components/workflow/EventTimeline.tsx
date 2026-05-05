@@ -5,6 +5,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { getEvents, getRunIds, clearEvents } from '../../lib/api';
 import { cn } from '../../lib/utils';
+import { safeParseJSON } from '../../lib/safeJson';
 
 const EVENT_ICONS: Record<string, React.ElementType> = {
   GUARD_EVALUATED: Shield,
@@ -249,8 +250,7 @@ export function EventTimeline() {
             </thead>
             <tbody className="divide-y divide-border/20">
               {events.map((event: any) => {
-                let payload: any = {};
-                try { payload = event.payload_json ? JSON.parse(event.payload_json) : {}; } catch {}
+                const payload: any = safeParseJSON(event.payload_json, {} as any, 'EventTimeline.payload');
                 
                 const summary = payload.step_label || payload.decision || payload.action || 'Completed';
                 const guardType = payload.guard_type || payload.guardType || '';
@@ -385,8 +385,7 @@ export function EventTimeline() {
             {(() => {
               const event = events.find(e => e.id === hoveredEvent.id);
               if (!event) return null;
-              let payload = {};
-              try { payload = event.payload_json ? JSON.parse(event.payload_json) : {}; } catch {}
+              let payload: any = safeParseJSON(event.payload_json, {}, 'EventTimeline.payload');
               const fullInfo = JSON.stringify({ seq: event.seq, run_id: event.run_id, ts: event.ts, type: event.type, ...payload }, null, 2);
               
               return (
@@ -419,8 +418,7 @@ export function EventTimeline() {
           {(() => {
             const event = events.find(e => e.id === hoveredEvent.id);
             if (!event) return null;
-            let payload = {};
-            try { payload = event.payload_json ? JSON.parse(event.payload_json) : {}; } catch {}
+            let payload: any = safeParseJSON(event.payload_json, {}, 'EventTimeline.payload');
             return JSON.stringify({ seq: event.seq, ts: event.ts, run_id: event.run_id || null, type: event.type, ...payload }, null, 2);
           })()}
         </div>
