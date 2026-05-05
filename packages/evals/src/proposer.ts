@@ -106,8 +106,8 @@ export async function proposeImprovement(
   let text: string;
   try {
     text = await callLLM(systemPrompt, userPrompt, maxTokens);
-  } catch (err: any) {
-    console.error(`  [proposer] LLM error: ${err.message}`);
+  } catch (err) {
+    console.error(`  [proposer] LLM error:`, err);
     return null;
   }
 

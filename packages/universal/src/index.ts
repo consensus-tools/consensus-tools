@@ -1,49 +1,23 @@
 import crypto from "node:crypto";
-import { consensus as wrapWithConsensus } from "@consensus-tools/wrapper";
-import type { DecisionResult, ReviewerFn, LifecycleHooks } from "@consensus-tools/wrapper";
-import { createGuardTemplate, GUARD_CONFIGS } from "@consensus-tools/guards";
 import { getPersonasByPack } from "@consensus-tools/personas";
+import type { PersonaConfig } from "@consensus-tools/personas";
 import { MemoryStorage } from "@consensus-tools/storage";
 import type { IStorage } from "@consensus-tools/storage";
 import type { Wrappable, UniversalConfig, ToolExecutor, AugmentedExecutor, LlmDecisionResult } from "./types.js";
 import { resolveWrappable } from "./resolve.js";
 import {
   DEFAULTS,
-  DEFAULT_PERSONA_TRIO,
   DEFAULT_PACK,
   DEFAULT_PERSONA_TIMEOUT_MS,
   DEFAULT_RESPAWN_THRESHOLD,
-  policyToStrategy,
   resolvePolicyType,
 } from "./defaults.js";
 import { createLogger } from "./logger.js";
-import { ConsensusBlockedError, MissingDependencyError } from "./errors.js";
+import { ConsensusBlockedError, ConfigError, MissingDependencyError } from "./errors.js";
 import { ReputationManager } from "./reputation-manager.js";
 import { deliberate } from "./persona-reviewer-factory.js";
 
-// ── Persona-as-guard templates (regex-only mode) ─────────────────────
-
-function createDefaultReviewers(): ReviewerFn[] {
-  return DEFAULT_PERSONA_TRIO.map((domain) => {
-    const config = GUARD_CONFIGS[domain];
-    if (!config) {
-      throw new Error(`No guard config for default persona domain: ${domain}`);
-    }
-    return createGuardTemplate(domain, config).asReviewer();
-  });
-}
-
-function createReviewersForGuards(guards: string[]): ReviewerFn[] {
-  return guards.map((domain) => {
-    const config = GUARD_CONFIGS[domain] ?? {
-      description: `Custom guard: ${domain}`,
-      rules: () => [{ evaluator: domain, vote: "YES" as const, reason: "No rules configured", risk: 0.1 }],
-    };
-    return createGuardTemplate(domain, config).asReviewer();
-  });
-}
-
-// ── Storage helpers ──────────────────────────────────────────────────
+// ── Storage Helper ───────────────────────────────────────────────────
 
 function resolveStorage(storage: "memory" | IStorage): IStorage {
   if (storage === "memory") {
@@ -52,87 +26,63 @@ function resolveStorage(storage: "memory" | IStorage): IStorage {
   return storage;
 }
 
-function createStorageHooks(store: IStorage): LifecycleHooks {
-  return {
-    // afterResolve fires for ALL outcomes (allow, block, escalate).
-    // No separate onBlock hook needed (was duplicating audit entries).
-    async afterResolve(result: DecisionResult) {
-      await store.update((state) => {
-        state.audit.push({
-          id: `audit-${crypto.randomUUID()}`,
-          at: new Date().toISOString(),
-          action: result.action,
-          aggregateScore: result.aggregateScore,
-          attempt: result.attempt,
-          scoresCount: result.scores.length,
-        } as any);
-      });
-    },
-  };
+// ── Regex-Mode Persona Synthesis ─────────────────────────────────────
+// In regex-only mode (no model), we synthesize one persona per configured
+// guard domain. Each synthesized persona votes via regex evaluation of its
+// own domain. This unifies the voter-tracking story with LLM mode.
+
+function synthesizeRegexPersonas(guards: string[]): PersonaConfig[] {
+  return guards.map((domain) => ({
+    id: `regex-${domain}`,
+    name: `regex:${domain}`,
+    role: domain,
+  }));
 }
 
-function mergeHooks(...hookSets: LifecycleHooks[]): LifecycleHooks {
-  return {
-    async beforeSubmit(args: unknown[]) {
-      for (const h of hookSets) await h.beforeSubmit?.(args);
-    },
-    async afterResolve(result: DecisionResult) {
-      for (const h of hookSets) await h.afterResolve?.(result);
-    },
-    async onBlock(result: DecisionResult) {
-      for (const h of hookSets) await h.onBlock?.(result);
-    },
-    async onEscalate(result: DecisionResult) {
-      for (const h of hookSets) await h.onEscalate?.(result);
-    },
-  };
-}
+// ── Deliberating Executor ────────────────────────────────────────────
+// Single executor used for both regex and LLM modes. Branches inside
+// deliberate() based on whether config.model is provided.
 
-// ── LLM Persona Mode Setup ──────────────────────────────────────────
-
-function createLlmExecutor(
+function createDeliberatingExecutor(
   fn: ToolExecutor,
-  config: Required<Pick<UniversalConfig, "policy" | "failPolicy">> & Partial<UniversalConfig>,
+  config: Required<Pick<UniversalConfig, "policy" | "failPolicy" | "guards" | "storage" | "logger">> & Partial<UniversalConfig>,
 ): AugmentedExecutor {
-  const pack = config.pack ?? DEFAULT_PACK;
-  const personas = config.personas ?? getPersonasByPack(pack);
   const policyType = resolvePolicyType(config.policy);
   const timeoutMs = config.personaTimeout ?? DEFAULT_PERSONA_TIMEOUT_MS;
   const respawnThreshold = config.respawnThreshold ?? DEFAULT_RESPAWN_THRESHOLD;
   const mode = config.mode ?? "enforce";
 
-  // Resolve storage for audit writes and initialize eagerly
-  const store = resolveStorage(config.storage ?? DEFAULTS.storage);
+  // Personas: LLM mode uses configured personas / pack, regex mode synthesizes from guards
+  const personas: PersonaConfig[] = config.model
+    ? (config.personas ?? getPersonasByPack(config.pack ?? DEFAULT_PACK))
+    : synthesizeRegexPersonas(config.guards);
+
+  // Storage: eager init, audit writes happen here
+  const store = resolveStorage(config.storage);
   const storeReady = store.init().catch(() => { /* init failure handled at write time */ });
 
-  // Create reputation manager
+  // Reputation tracking — works in both modes
   const reputationManager = new ReputationManager(
     personas,
     respawnThreshold,
     config.reputationStore,
   );
 
-  // Wire respawn events to logger
-  reputationManager.setRespawnHandler((event) => {
-    if (config.logger !== false) {
-      const logFn = typeof config.logger === "function"
-        ? config.logger
-        : (e: any) => console.debug("[consensus]", e.event, e.data); // eslint-disable-line no-console
-      logFn({
-        event: "persona.respawned",
-        data: {
-          oldPersonaId: event.oldPersona.id,
-          newPersonaId: event.newPersona.id,
-          reputation: event.reputation,
-          reason: event.reason,
-        },
-        timestamp: Date.now(),
-      });
-    }
-  });
+  const logger = createLogger({ logger: config.logger });
 
-  // Load persisted reputation if store is configured.
-  // Track readiness so early calls don't race against the load.
+  // Respawn only makes sense for LLM personas (regex personas are deterministic).
+  if (config.model) {
+    reputationManager.setRespawnHandler((event) => {
+      logger.respawn({
+        oldPersonaId: event.oldPersona.id,
+        newPersonaId: event.newPersona.id,
+        reputation: event.reputation,
+        reason: event.reason,
+      });
+    });
+  }
+
+  // Load persisted reputation if a store is provided.
   let reputationReady: Promise<void> | undefined;
   if (config.reputationStore) {
     reputationReady = reputationManager.load().catch((err) => {
@@ -142,12 +92,11 @@ function createLlmExecutor(
     });
   }
 
-  // Build the deliberation config
   const deliberateConfig = {
-    model: config.model!,
-    pack,
+    model: config.model,
+    pack: config.pack,
     personas: config.personas,
-    guards: config.guards ?? DEFAULTS.guards,
+    guards: config.guards,
     policyType,
     originalPolicy: config.policy,
     riskTiers: config.riskTiers,
@@ -156,27 +105,32 @@ function createLlmExecutor(
   };
 
   const executor = (async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
-    // Wait for reputation load and storage init before first deliberation
     if (reputationReady) {
       await reputationReady;
       reputationReady = undefined;
     }
     await storeReady;
 
+    logger.start([toolName, args]);
+
     try {
       const decision: LlmDecisionResult = await deliberate(deliberateConfig, toolName, args);
 
-      // Fire onDecision callback (wrapped in try/catch so user callback errors
-      // don't affect governance decisions)
+      logger.result(decision);
+
+      // User callback — wrapped so user errors don't affect governance
       if (config.onDecision) {
         try {
           await config.onDecision(decision);
         } catch (callbackErr) {
-          config.onError?.(callbackErr instanceof Error ? callbackErr : new Error(String(callbackErr)), { toolName, args, phase: "onDecision" });
+          config.onError?.(
+            callbackErr instanceof Error ? callbackErr : new Error(String(callbackErr)),
+            { toolName, args, phase: "onDecision" },
+          );
         }
       }
 
-      // Write audit entry to storage
+      // Audit write (best-effort)
       try {
         await store.update((state) => {
           if (!Array.isArray((state as any).audit)) (state as any).audit = [];
@@ -192,11 +146,13 @@ function createLlmExecutor(
           });
         });
       } catch (auditErr) {
-        // Audit write failure is non-fatal but logged
-        config.onError?.(auditErr instanceof Error ? auditErr : new Error(String(auditErr)), { toolName, args, phase: "audit_write" });
+        config.onError?.(
+          auditErr instanceof Error ? auditErr : new Error(String(auditErr)),
+          { toolName, args, phase: "audit_write" },
+        );
       }
 
-      // Shadow mode: always allow, just log. Never blocks, even if callback threw.
+      // Shadow mode: never block, always execute
       if (mode === "shadow") {
         return fn(toolName, args);
       }
@@ -215,19 +171,24 @@ function createLlmExecutor(
         );
       }
 
-      // failPolicy: 'open' — execute anyway
+      // failPolicy: 'open' — execute despite block
       return fn(toolName, args);
     } catch (err) {
       if (err instanceof ConsensusBlockedError) {
         throw err;
       }
 
-      // Unexpected error during LLM deliberation — fall back to executing the tool
+      // Unexpected error during deliberation
       const error = err instanceof Error ? err : new Error(String(err));
       config.onError?.(error, { toolName, args });
 
+      // Shadow mode contract: never block, even on deliberation crash.
+      if (mode === "shadow") {
+        return fn(toolName, args);
+      }
+
       if (config.failPolicy === "closed") {
-        throw new ConsensusBlockedError("LLM deliberation failed", error);
+        throw new ConsensusBlockedError("Consensus deliberation failed", error);
       }
 
       // failPolicy: 'open' — execute despite error
@@ -235,7 +196,7 @@ function createLlmExecutor(
     }
   }) as AugmentedExecutor;
 
-  // Attach feedback method
+  // Feedback is always wired — reputation tracking works in both modes.
   executor.feedback = (signal) => {
     reputationManager.processFeedback(signal);
     config.onFeedback?.(signal);
@@ -250,26 +211,45 @@ export const consensus = {
   /**
    * Wrap any tool executor with consensus governance.
    *
-   * Two modes:
-   * - **Regex mode** (default): Fast, deterministic pattern-matching guards.
+   * Both regex and LLM modes route through the same pre-execution
+   * deliberation pipeline. The wrapped function only runs when consensus
+   * allows it (or in shadow mode, or when failPolicy='open' on block).
+   *
+   * - **Regex mode** (default): synthetic personas vote via guard regex evaluation.
    *   `consensus.wrap(executor)` or `consensus.wrap(executor, { policy: "majority" })`
    *
-   * - **LLM persona mode**: Multi-model deliberation with reputation tracking.
+   * - **LLM persona mode**: personas vote via parallel LLM calls.
    *   `consensus.wrap(executor, { model: myLlm, policy: "weighted_reputation" })`
-   *   Activated when `model` is provided in config.
    *
    * @param wrappable - A function, or object with .execute/.invoke/.call
    * @param config - Optional configuration overrides
-   * @returns A wrapped function that runs consensus deliberation before allowing execution
+   * @returns A wrapped function with a `.feedback()` method for reputation updates
    */
   wrap(
     wrappable: Wrappable,
     config?: Partial<UniversalConfig>,
-  ): ToolExecutor {
+  ): AugmentedExecutor {
     const fn = resolveWrappable(wrappable);
     const merged = { ...DEFAULTS, ...config };
 
-    // Production warnings
+    // Validate: regex mode requires non-empty guards (LLM mode falls back to personas)
+    if (!merged.model && (!Array.isArray(merged.guards) || merged.guards.length === 0)) {
+      throw new ConfigError(
+        "`guards` must be a non-empty array in regex mode (no `model` configured). " +
+        "Either provide guards or pass a model to enable LLM persona mode.",
+      );
+    }
+
+    // Warn: personas without a model are silently ignored (regex mode synthesizes from guards).
+    if (!merged.model && config?.personas) {
+      console.warn( // eslint-disable-line no-console
+        "[consensus] `personas` is only used when a `model` is configured. " +
+        "In regex mode, personas are synthesized from `guards`. The provided `personas` will be ignored.",
+      );
+    }
+
+    // Production warnings (raw console.warn — these fire at construction, before
+    // the logger emitter is built, so they cannot route through `config.logger`).
     const isProduction = typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production";
     if (isProduction && merged.failPolicy === "open") {
       console.warn("[consensus] WARNING: failPolicy 'open' in production — errors will pass through unchecked"); // eslint-disable-line no-console
@@ -278,74 +258,7 @@ export const consensus = {
       console.warn("[consensus] WARNING: storage 'memory' in production — decisions are not persisted"); // eslint-disable-line no-console
     }
 
-    // ── LLM Persona Mode ──────────────────────────────────────────────
-    if (config?.model) {
-      return createLlmExecutor(fn, merged);
-    }
-
-    // ── Regex-Only Mode (unchanged from v0.8.0) ───────────────────────
-    const strategy = policyToStrategy(merged.policy);
-
-    const isDefaultGuards =
-      Array.isArray(merged.guards) &&
-      merged.guards.length === DEFAULTS.guards.length &&
-      merged.guards.every((g, i) => g === DEFAULTS.guards[i]);
-
-    const reviewers: ReviewerFn[] = isDefaultGuards
-      ? createDefaultReviewers()
-      : createReviewersForGuards(merged.guards);
-
-    const loggerHooks = createLogger({ logger: merged.logger });
-    const store = resolveStorage(merged.storage);
-    const storageHooks = createStorageHooks(store);
-    const hooks = mergeHooks(loggerHooks, storageHooks);
-
-    const wrapped = wrapWithConsensus<unknown>({
-      name: "universal",
-      fn: async (...args: unknown[]) => {
-        const [toolName, toolArgs] = args as [string, Record<string, unknown>];
-        return fn(toolName, toolArgs);
-      },
-      reviewers,
-      strategy,
-      hooks,
-    });
-
-    return async (toolName: string, args: Record<string, unknown>): Promise<unknown> => {
-      try {
-        const result: DecisionResult<unknown> = await wrapped(toolName, args);
-
-        if (merged.onDecision) {
-          await merged.onDecision(result);
-        }
-
-        if (result.action === "allow") {
-          return result.output;
-        }
-
-        if (merged.failPolicy === "closed") {
-          throw new ConsensusBlockedError(
-            `Consensus ${result.action}: aggregate score ${result.aggregateScore.toFixed(2)} ` +
-            `(${result.scores.map((s) => s.rationale ?? "no rationale").join("; ")})`,
-          );
-        }
-
-        return fn(toolName, args);
-      } catch (err) {
-        if (err instanceof ConsensusBlockedError) {
-          throw err;
-        }
-
-        const error = err instanceof Error ? err : new Error(String(err));
-        merged.onError?.(error, { toolName, args });
-
-        if (merged.failPolicy === "closed") {
-          throw new ConsensusBlockedError("Consensus deliberation failed", error);
-        }
-
-        return fn(toolName, args);
-      }
-    };
+    return createDeliberatingExecutor(fn, merged);
   },
 
   /**
@@ -355,8 +268,8 @@ export const consensus = {
     let mod: Record<string, unknown>;
     try {
       mod = await import("@consensus-tools/langchain") as Record<string, unknown>;
-    } catch {
-      throw new MissingDependencyError("@consensus-tools/langchain");
+    } catch (error) {
+      throw new MissingDependencyError("@consensus-tools/langchain", { cause: error });
     }
 
     const HandlerClass = mod["ConsensusGuardCallbackHandler"] as
@@ -383,8 +296,8 @@ export const consensus = {
     let mod: Record<string, unknown>;
     try {
       mod = await import("@consensus-tools/ai-sdk") as Record<string, unknown>;
-    } catch {
-      throw new MissingDependencyError("@consensus-tools/ai-sdk");
+    } catch (error) {
+      throw new MissingDependencyError("@consensus-tools/ai-sdk", { cause: error });
     }
     if (typeof mod["createGuardedGenerate"] === "function") {
       return (mod["createGuardedGenerate"] as (fn: unknown, config?: unknown) => unknown)(fn, config);
@@ -399,8 +312,8 @@ export const consensus = {
     let mod: Record<string, unknown>;
     try {
       mod = await import("@consensus-tools/mcp") as Record<string, unknown>;
-    } catch {
-      throw new MissingDependencyError("@consensus-tools/mcp");
+    } catch (error) {
+      throw new MissingDependencyError("@consensus-tools/mcp", { cause: error });
     }
     if (typeof mod["createMcpServer"] === "function") {
       return (mod["createMcpServer"] as (config?: unknown) => unknown)(config);
@@ -411,7 +324,7 @@ export const consensus = {
 
 // ── Re-exports ───────────────────────────────────────────────────────
 export { resolveWrappable } from "./resolve.js";
-export { policyToStrategy, resolvePolicyType, DEFAULTS, DEFAULT_GUARD, DEFAULT_POLICY, DEFAULT_PERSONA_TRIO, DEFAULT_PERSONA_COUNT, DEFAULT_PACK } from "./defaults.js";
+export { resolvePolicyType, DEFAULTS, DEFAULT_GUARD, DEFAULT_POLICY, DEFAULT_PERSONA_TRIO, DEFAULT_PERSONA_COUNT, DEFAULT_PACK } from "./defaults.js";
 export { createLogger } from "./logger.js";
 export { ConsensusBlockedError, MissingDependencyError, ConfigError } from "./errors.js";
 export { ReputationManager } from "./reputation-manager.js";

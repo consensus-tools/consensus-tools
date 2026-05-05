@@ -72,8 +72,8 @@ export async function consensusEval(
     // @ts-expect-error — ai is an optional peer dependency
     const aiModule = await import("ai");
     generateText = aiModule.generateText;
-  } catch {
-    throw new Error("consensusEval requires the 'ai' package. Install: npm install ai @ai-sdk/anthropic");
+  } catch (err) {
+    throw new Error("consensusEval requires the 'ai' package. Install: npm install ai @ai-sdk/anthropic", { cause: err });
   }
 
   const results: AgentEvalScore[] = [];

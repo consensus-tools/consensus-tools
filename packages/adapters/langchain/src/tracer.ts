@@ -88,8 +88,9 @@ export class LangSmithTracer {
           },
         },
       });
-    } catch {
-      // Silently fail — tracing should never break the application
+    } catch (err) {
+      // Tracing must never break the app, but failures should be observable.
+      console.warn("consensus-tools: LangSmith traceGuardDecision failed", err);
     }
 
     return runId;
@@ -127,8 +128,9 @@ export class LangSmithTracer {
           },
         },
       });
-    } catch {
-      // Silently fail
+    } catch (err) {
+      // Tracing must never break the app, but failures should be observable.
+      console.warn("consensus-tools: LangSmith traceWrapperDecision failed", err);
     }
 
     return runId;

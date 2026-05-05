@@ -769,9 +769,6 @@ importers:
       '@consensus-tools/storage':
         specifier: workspace:*
         version: link:../storage
-      '@consensus-tools/wrapper':
-        specifier: workspace:*
-        version: link:../wrapper
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

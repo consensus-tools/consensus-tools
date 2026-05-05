@@ -8,19 +8,20 @@ import type { ReputationManager } from "./reputation-manager.js";
 import { classifyTool } from "./risk-tiers.js";
 import type { RiskTierMap } from "./types.js";
 
-// ── Persona Reviewer Factory ─────────────────────────────────────────
-// Creates LLM-backed persona reviewers that use resolveConsensus()
-// for multi-model deliberation with reputation-weighted voting.
+// ── Unified Deliberation Pipeline ────────────────────────────────────
+// Single pre-execution gating pipeline shared by both regex-only mode
+// (no model) and LLM persona mode (model provided).
 //
 // Architecture:
 //   1. Regex pre-screen (sub-ms, deterministic)
-//   2. Risk tier check (low = fast-path regex only)
-//   3. Parallel LLM calls per persona (with timeout + fallback)
-//   4. Parse votes from LLM responses
-//   5. Synthesize ConsensusInput: ONE "allow" submission, all personas
+//   2. Risk tier check (low = fast-path)
+//   3. Vote collection — branches on config.model:
+//        - LLM mode:   parallel LLM calls per persona (timeout + fallback)
+//        - Regex mode: per-persona guard evaluation using persona.role
+//   4. Synthesize ConsensusInput: ONE "allow" submission, all personas
 //      vote on it (YES = +1, NO = -1). resolveConsensus aggregates.
-//   6. Determine action from consensus result
-//   7. Return LlmDecisionResult
+//   5. Determine action from consensus result
+//   6. Return LlmDecisionResult
 
 // ── Safe JSON Serialization ──────────────────────────────────────────
 
@@ -41,7 +42,12 @@ interface ParsedVote {
   vote: "YES" | "NO" | "REWRITE";
   confidence: number;
   rationale: string;
+  /** Hard-block flag — see LlmDecisionResult.votes[].block in types.ts. */
+  block?: boolean;
 }
+
+/** Risk threshold above which a regex-mode NO vote becomes a hard-block veto. */
+const HARD_BLOCK_RISK_THRESHOLD = 0.8;
 
 // Match VOTE: YES/NO/REWRITE on its own line (anchored to reduce injection risk)
 const VOTE_LINE_PATTERN = /^(?:VOTE:\s*)?(YES|NO|REWRITE)\s*$/im;
@@ -198,10 +204,96 @@ function regexFallbackVote(
   };
 }
 
+// ── Regex-Mode Vote (no LLM configured) ──────────────────────────────
+// Each persona in regex mode is keyed by a guard domain (persona.role).
+// Evaluate that domain's guard against the call and produce a vote.
+// Differs from regexFallbackVote: this is the *primary* vote source when
+// no model is configured, not a fallback after LLM failure.
+
+function regexModeVote(
+  persona: PersonaConfig,
+  toolName: string,
+  args: Record<string, unknown>,
+): ParsedVote {
+  const domain = persona.role;
+  const config = GUARD_CONFIGS[domain];
+  if (!config) {
+    // Defense in depth: if the persona's domain isn't a known guard, run the
+    // fallback guards (security/compliance/user-impact) instead of fail-safe YES.
+    // Rationale: silently allowing unknown guards turned the default config
+    // into a rubber stamp before this fix shipped — never again.
+    const signals = runRegexPreScreen(toolName, args, FALLBACK_GUARDS);
+    if (signals.length > 0) {
+      // Treat any fallback-flagged signal as a hard-block. We can't read the
+      // raw risk values from the signal strings here, so be conservative —
+      // unknown-guard configurations should not be a way to soften governance.
+      return {
+        vote: "NO",
+        confidence: 0.7,
+        rationale: `Unknown guard "${domain}"; fallback guards flagged: ${signals.join("; ")}`,
+        block: true,
+      };
+    }
+    return {
+      vote: "YES",
+      confidence: 0.4,
+      rationale: `Unknown guard "${domain}"; fallback guards found no risk signals`,
+    };
+  }
+
+  try {
+    const template = createGuardTemplate(domain, config);
+    const votes = template.evaluate({
+      boardId: "facade",
+      action: { type: toolName, payload: args },
+    });
+
+    const blocking = votes.filter((v) => v.vote === "NO" || (v.risk && v.risk > 0.5));
+    const rewrites = votes.filter((v) => v.vote === "REWRITE");
+
+    if (blocking.length > 0) {
+      // Hard-block veto: any NO with high risk (or hardBlock pattern match) overrides
+      // policy. This preserves the old wrapper semantic where any reviewer with
+      // block:true forced an immediate block. Without this, security saying NO at
+      // risk 0.9 gets outvoted by two unrelated guards saying YES under majority.
+      const isHardBlock = blocking.some(
+        (v) =>
+          v.evaluator?.endsWith("-hardblock") ||
+          (v.vote === "NO" && (v.risk ?? 0) >= HARD_BLOCK_RISK_THRESHOLD),
+      );
+      return {
+        vote: "NO",
+        confidence: 0.7,
+        rationale: blocking.map((v) => v.reason).filter(Boolean).join("; ") || `[${domain}] flagged risk`,
+        ...(isHardBlock && { block: true }),
+      };
+    }
+    if (rewrites.length > 0) {
+      return {
+        vote: "REWRITE",
+        confidence: 0.6,
+        rationale: rewrites.map((v) => v.reason).filter(Boolean).join("; ") || `[${domain}] suggested rewrite`,
+      };
+    }
+    return { vote: "YES", confidence: 0.5, rationale: `[${domain}] no signals` };
+  } catch (err) {
+    return {
+      vote: "YES",
+      confidence: 0.3,
+      rationale: `Guard "${domain}" crashed: ${err instanceof Error ? err.message : String(err)} — fail-safe YES`,
+    };
+  }
+}
+
 // ── Factory ──────────────────────────────────────────────────────────
 
 export interface PersonaReviewerConfig {
-  model: ModelAdapter;
+  /**
+   * Optional LLM adapter. When provided, personas vote via LLM calls.
+   * When omitted, personas vote via regex evaluation of `persona.role`
+   * (which must match a guard domain in GUARD_CONFIGS).
+   */
+  model?: ModelAdapter;
   pack?: string;
   personas?: PersonaConfig[];
   guards?: string[];
@@ -302,42 +394,78 @@ export async function deliberate(
     };
   }
 
-  // 3. Parallel LLM calls per persona (with timeout + fallback)
-  const voteResults = await Promise.all(
-    personas.map(async (persona) => {
-      const messages = buildPersonaPrompt(persona, toolName, args, regexSignals);
+  // 3. Vote collection — branches on whether an LLM model is configured
+  const voteResults = config.model
+    ? await Promise.all(
+        // LLM mode: parallel persona LLM calls with timeout + regex fallback
+        personas.map(async (persona) => {
+          const messages = buildPersonaPrompt(persona, toolName, args, regexSignals);
 
-      try {
-        const response = await callLlmWithTimeout(config.model, messages, config.timeoutMs);
-        const parsed = parseVoteFromLlm(response);
+          try {
+            const response = await callLlmWithTimeout(config.model!, messages, config.timeoutMs);
+            const parsed = parseVoteFromLlm(response);
 
-        if (parsed) {
-          return {
-            personaId: persona.id,
-            personaName: persona.name,
-            ...parsed,
-            source: "llm" as const,
-          };
-        }
+            if (parsed) {
+              return {
+                personaId: persona.id,
+                personaName: persona.name,
+                ...parsed,
+                source: "llm" as const,
+              };
+            }
 
-        const fallback = regexFallbackVote(persona, toolName, args, guards);
+            const fallback = regexFallbackVote(persona, toolName, args, guards);
+            return {
+              personaId: persona.id,
+              personaName: persona.name,
+              ...fallback,
+              source: "regex_fallback" as const,
+            };
+          } catch {
+            const fallback = regexFallbackVote(persona, toolName, args, guards);
+            return {
+              personaId: persona.id,
+              personaName: persona.name,
+              ...fallback,
+              source: "regex_fallback" as const,
+            };
+          }
+        }),
+      )
+    : personas.map((persona) => {
+        // Regex mode: evaluate persona.role's guard against the call.
+        // Synchronous and deterministic, but mapped through Promise.all-shape.
+        const vote = regexModeVote(persona, toolName, args);
         return {
           personaId: persona.id,
           personaName: persona.name,
-          ...fallback,
-          source: "regex_fallback" as const,
+          ...vote,
+          source: "regex" as const,
         };
-      } catch {
-        const fallback = regexFallbackVote(persona, toolName, args, guards);
-        return {
-          personaId: persona.id,
-          personaName: persona.name,
-          ...fallback,
-          source: "regex_fallback" as const,
-        };
-      }
-    }),
-  );
+      });
+
+  // Hard-block check: any vote with block:true vetoes the decision regardless
+  // of policy. Preserves the old wrapper semantic where a single high-confidence
+  // block forces an immediate block.
+  const vetoVote = voteResults.find((v) => v.block);
+  if (vetoVote) {
+    config.reputationManager.recordDecision({
+      decisionId,
+      action: "block",
+      votes: voteResults,
+      policy: "hard_block",
+      consensusTrace: { reason: "veto", vetoBy: vetoVote.personaName, regexSignals },
+      aggregateScore: 0,
+    });
+    return {
+      decisionId,
+      action: "block",
+      votes: voteResults,
+      policy: "hard_block",
+      consensusTrace: { reason: "veto", vetoBy: vetoVote.personaName, vetoRationale: vetoVote.rationale, regexSignals },
+      aggregateScore: 0,
+    };
+  }
 
   // 4. Synthesize ConsensusInput for resolveConsensus()
   //

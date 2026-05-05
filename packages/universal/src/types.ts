@@ -1,5 +1,4 @@
 import type { IStorage } from "@consensus-tools/storage";
-import type { DecisionResult } from "@consensus-tools/wrapper";
 import type { PersonaConfig } from "@consensus-tools/personas";
 
 // ── Wrappable ────────────────────────────────────────────────────────
@@ -81,7 +80,20 @@ export interface LlmDecisionResult {
     vote: "YES" | "NO" | "REWRITE";
     confidence: number;
     rationale: string;
-    source: "llm" | "regex_fallback";
+    /**
+     * Where this vote came from:
+     * - "llm" — persona made an LLM call and parsed a vote
+     * - "regex_fallback" — LLM was attempted but failed; regex pre-screen produced the vote
+     * - "regex" — no LLM model configured; vote synthesized from a guard's regex evaluation
+     */
+    source: "llm" | "regex_fallback" | "regex";
+    /**
+     * Hard-block flag. When true, this single vote forces action="block" regardless
+     * of policy. Set when a guard's regex evaluation produces a high-risk NO
+     * (e.g., destructive shell, SSN, hardBlock pattern match). LLM votes never
+     * carry this flag — their veto power comes through aggregation, not override.
+     */
+    block?: boolean;
   }>;
   /** Policy used for resolution. */
   policy: string;
@@ -105,8 +117,8 @@ export interface UniversalConfig {
   storage?: "memory" | IStorage;
   /** Logging: true for console.debug, false to disable, or a custom function. Default: true. */
   logger?: boolean | ((event: LogEvent) => void);
-  /** Called after every consensus decision (both regex and LLM modes). */
-  onDecision?: (decision: DecisionResult<unknown> | LlmDecisionResult) => void | Promise<void>;
+  /** Called after every consensus decision. */
+  onDecision?: (decision: LlmDecisionResult) => void | Promise<void>;
   /** Called when an error occurs during deliberation. */
   onError?: (err: Error, action: unknown) => void;
 

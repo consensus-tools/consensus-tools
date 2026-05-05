@@ -1,33 +1,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { DecisionResult } from "@consensus-tools/wrapper";
+import { consensus } from "../index.js";
 import { ConsensusBlockedError } from "../errors.js";
+import type { ModelAdapter, ModelMessage } from "../types.js";
 
-// Mock the wrapper's consensus function and guards' createGuardTemplate
-const mockWrapped = vi.fn<(...args: unknown[]) => Promise<DecisionResult<unknown>>>();
-
-vi.mock("@consensus-tools/wrapper", () => ({
-  consensus: vi.fn(() => mockWrapped),
-}));
-
-vi.mock("@consensus-tools/guards", () => ({
-  createGuardTemplate: vi.fn((_name: string, _config: unknown) => ({
-    asReviewer: () => vi.fn(),
-  })),
-  GUARD_CONFIGS: {
-    security: { description: "Security reviewer", rules: () => [] },
-    compliance: { description: "Compliance reviewer", rules: () => [] },
-    "user-impact": { description: "User-impact reviewer", rules: () => [] },
-  },
-  DEFAULT_PERSONA_TRIO: ["security", "compliance", "user-impact"],
-}));
-
-const { consensus } = await import("../index.js");
+// Model that throws to simulate deliberation failure
+function createCrashingModel(): ModelAdapter {
+  return async (_messages: ModelMessage[]) => {
+    throw new Error("LLM unavailable");
+  };
+}
 
 describe("failPolicy behavior", () => {
   let originalNodeEnv: string | undefined;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     originalNodeEnv = process.env["NODE_ENV"];
   });
 
@@ -39,35 +25,37 @@ describe("failPolicy behavior", () => {
     }
   });
 
-  it("failPolicy: 'closed' + error -> ConsensusBlockedError thrown", async () => {
+  it("failPolicy:'closed' + LLM crashes mid-deliberation → executor NOT called, deliberation completes via regex fallback", async () => {
+    // The deliberation pipeline tolerates per-persona LLM crashes by falling back
+    // to regex evaluation, so the call still produces a decision rather than throwing.
+    // The fail-safe in fallback is NO with low confidence, which blocks under closed.
     const fn = vi.fn(async () => "result");
 
-    mockWrapped.mockRejectedValueOnce(new Error("deliberation crashed"));
+    const wrapped = consensus.wrap(fn, {
+      model: createCrashingModel(),
+      failPolicy: "closed",
+      logger: false,
+    });
 
-    const wrapped = consensus.wrap(fn, { failPolicy: "closed" });
     await expect(wrapped("myTool", {})).rejects.toThrow(ConsensusBlockedError);
-
-    // Second call: verify message
-    mockWrapped.mockRejectedValueOnce(new Error("deliberation crashed again"));
-    const wrapped2 = consensus.wrap(fn, { failPolicy: "closed" });
-    await expect(wrapped2("myTool", {})).rejects.toThrow("Consensus deliberation failed");
+    expect(fn).not.toHaveBeenCalled();
   });
 
-  it("failPolicy: 'open' + error -> fn result returned", async () => {
-    const fn = vi.fn(async (_name: string, _args: Record<string, unknown>) => "fallback-result");
+  it("failPolicy:'open' + LLM crashes → fn executes once and result returns", async () => {
+    const fn = vi.fn(async () => "fallback-result");
 
-    // First call: mockWrapped rejects (deliberation error)
-    mockWrapped.mockRejectedValueOnce(new Error("deliberation crashed"));
+    const wrapped = consensus.wrap(fn, {
+      model: createCrashingModel(),
+      failPolicy: "open",
+      logger: false,
+    });
 
-    const wrapped = consensus.wrap(fn, { failPolicy: "open" });
     const result = await wrapped("myTool", { key: "val" });
-
-    // failPolicy 'open' should call fn directly and return its result
     expect(result).toBe("fallback-result");
-    expect(fn).toHaveBeenCalledWith("myTool", { key: "val" });
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("NODE_ENV=production + failPolicy:'open' -> console.warn emitted", () => {
+  it("NODE_ENV=production + failPolicy:'open' → console.warn emitted at wrap time", () => {
     process.env["NODE_ENV"] = "production";
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -80,12 +68,11 @@ describe("failPolicy behavior", () => {
     warnSpy.mockRestore();
   });
 
-  it("NODE_ENV=production + storage:'memory' -> console.warn emitted", () => {
+  it("NODE_ENV=production + storage:'memory' → console.warn emitted", () => {
     process.env["NODE_ENV"] = "production";
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const fn = vi.fn(async () => "result");
-    // storage defaults to 'memory', so no explicit override needed
     consensus.wrap(fn, { storage: "memory" });
 
     expect(warnSpy).toHaveBeenCalledWith(
@@ -94,7 +81,7 @@ describe("failPolicy behavior", () => {
     warnSpy.mockRestore();
   });
 
-  it("NODE_ENV=development -> no warnings emitted", () => {
+  it("NODE_ENV=development → no warnings emitted", () => {
     process.env["NODE_ENV"] = "development";
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 

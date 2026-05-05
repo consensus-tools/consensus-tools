@@ -1,110 +1,129 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { DecisionResult } from "@consensus-tools/wrapper";
-import { ConsensusBlockedError } from "../errors.js";
+import { describe, it, expect, vi } from "vitest";
+import { consensus } from "../index.js";
+import { ConsensusBlockedError, ConfigError } from "../errors.js";
+import type { ModelAdapter, ModelMessage } from "../types.js";
 
-// Mock the wrapper's consensus function and guards' createGuardTemplate
-const mockWrapped = vi.fn<(...args: unknown[]) => Promise<DecisionResult<unknown>>>();
+// ── Mock model adapters for deterministic vote control ──────────────
 
-vi.mock("@consensus-tools/wrapper", () => ({
-  consensus: vi.fn(() => mockWrapped),
-}));
+function createAllowModel(): ModelAdapter {
+  return async (_messages: ModelMessage[]) =>
+    "VOTE: YES\nCONFIDENCE: 0.9\nRATIONALE: Looks safe.";
+}
 
-vi.mock("@consensus-tools/guards", () => ({
-  createGuardTemplate: vi.fn((_name: string, _config: unknown) => ({
-    asReviewer: () => vi.fn(),
-  })),
-  GUARD_CONFIGS: {
-    security: { description: "Security reviewer", rules: () => [] },
-    compliance: { description: "Compliance reviewer", rules: () => [] },
-    "user-impact": { description: "User-impact reviewer", rules: () => [] },
-  },
-  DEFAULT_PERSONA_TRIO: ["security", "compliance", "user-impact"],
-}));
-
-// Import after mocks are set up
-const { consensus } = await import("../index.js");
+function createBlockModel(): ModelAdapter {
+  return async (_messages: ModelMessage[]) =>
+    "VOTE: NO\nCONFIDENCE: 0.95\nRATIONALE: Dangerous.";
+}
 
 describe("consensus.wrap()", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("happy path: wrap function, reviewers run, decision returned", async () => {
+  it("happy path: executor runs after allow decision, returns its output", async () => {
     const fn = vi.fn(async (_name: string, _args: Record<string, unknown>) => "tool-result");
 
-    mockWrapped.mockResolvedValueOnce({
-      action: "allow",
-      output: "tool-result",
-      scores: [{ score: 0.9, rationale: "approved" }],
-      aggregateScore: 0.9,
-      attempt: 1,
+    const wrapped = consensus.wrap(fn, {
+      model: createAllowModel(),
+      logger: false,
     });
-
-    const wrapped = consensus.wrap(fn);
     const result = await wrapped("myTool", { input: "data" });
 
     expect(result).toBe("tool-result");
-    expect(mockWrapped).toHaveBeenCalledWith("myTool", { input: "data" });
+    expect(fn).toHaveBeenCalledWith("myTool", { input: "data" });
   });
 
-  it("wrapped fn returns undefined -> reviewers evaluate undefined", async () => {
-    const fn = vi.fn(async () => undefined);
+  it("block + failPolicy:'closed' → throws ConsensusBlockedError, executor NOT called", async () => {
+    const fn = vi.fn(async () => "should-not-run");
 
-    mockWrapped.mockResolvedValueOnce({
-      action: "allow",
-      output: undefined,
-      scores: [{ score: 0.8 }],
-      aggregateScore: 0.8,
-      attempt: 1,
+    const wrapped = consensus.wrap(fn, {
+      model: createBlockModel(),
+      failPolicy: "closed",
+      logger: false,
     });
 
-    const wrapped = consensus.wrap(fn);
-    const result = await wrapped("myTool", {});
-
-    expect(result).toBeUndefined();
-  });
-
-  it("wrapped fn throws synchronously -> failPolicy 'closed' throws ConsensusBlockedError", async () => {
-    const fn = vi.fn(() => {
-      throw new Error("sync explosion");
-    });
-
-    mockWrapped.mockRejectedValueOnce(new Error("sync explosion"));
-
-    const wrapped = consensus.wrap(fn, { failPolicy: "closed" });
-    await expect(wrapped("myTool", {})).rejects.toThrow(ConsensusBlockedError);
-  });
-
-  it("all reviewers return score=0 -> unanimous block with failPolicy closed", async () => {
-    const fn = vi.fn(async () => "result");
-
-    mockWrapped.mockResolvedValueOnce({
-      action: "block",
-      output: null,
-      scores: [
-        { score: 0, rationale: "blocked-1" },
-        { score: 0, rationale: "blocked-2" },
-        { score: 0, rationale: "blocked-3" },
-      ],
-      aggregateScore: 0,
-      attempt: 1,
-    });
-
-    const wrapped = consensus.wrap(fn, { failPolicy: "closed" });
     await expect(wrapped("dangerousTool", {})).rejects.toThrow(ConsensusBlockedError);
+    // The key behavioral guarantee of the unified pre-execution pipeline:
+    // a blocked call MUST NOT execute the wrapped function.
+    expect(fn).not.toHaveBeenCalled();
+  });
 
-    // Second call to verify message content
-    mockWrapped.mockResolvedValueOnce({
-      action: "block",
-      output: null,
-      scores: [
-        { score: 0, rationale: "blocked-1" },
-        { score: 0, rationale: "blocked-2" },
-        { score: 0, rationale: "blocked-3" },
-      ],
-      aggregateScore: 0,
-      attempt: 1,
+  it("block + failPolicy:'open' → executes fn EXACTLY once (no double-exec)", async () => {
+    const fn = vi.fn(async () => "fallback-result");
+
+    const wrapped = consensus.wrap(fn, {
+      model: createBlockModel(),
+      failPolicy: "open",
+      logger: false,
     });
-    await expect(wrapped("dangerousTool", {})).rejects.toThrow(/Consensus block/);
+
+    const result = await wrapped("riskyTool", {});
+    expect(result).toBe("fallback-result");
+    // Regression guard: pre-unification this would have executed twice in regex mode.
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("regex mode (no model) wraps and allows benign calls under default guards", async () => {
+    const fn = vi.fn(async () => ({ ok: true }));
+    const wrapped = consensus.wrap(fn, { logger: false });
+
+    const result = await wrapped("get_weather", { city: "SF" });
+
+    // Default guards are deterministic; benign args should allow.
+    expect(result).toEqual({ ok: true });
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it("regex mode default config BLOCKS dangerous calls (regression: must not rubber-stamp)", async () => {
+    // Critical regression guard: a no-config consensus.wrap() must NOT execute
+    // calls that contain destructive shell, secrets, or PII patterns.
+    // The default guard set must do real work — not silently fail-safe-YES.
+    const fn = vi.fn(async () => ({ ran: true }));
+    const wrapped = consensus.wrap(fn, { logger: false, failPolicy: "closed" });
+
+    await expect(
+      wrapped("exec_shell", { cmd: "rm -rf /", secret: "hunter2" }),
+    ).rejects.toThrow(ConsensusBlockedError);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("returns an executor that exposes .feedback() in both modes", () => {
+    const fn = vi.fn(async () => "x");
+    const regexWrapped = consensus.wrap(fn);
+    const llmWrapped = consensus.wrap(fn, { model: createAllowModel(), logger: false });
+
+    expect(typeof regexWrapped.feedback).toBe("function");
+    expect(typeof llmWrapped.feedback).toBe("function");
+  });
+
+  it("throws ConfigError when guards is empty in regex mode", () => {
+    const fn = vi.fn(async () => "x");
+    expect(() => consensus.wrap(fn, { guards: [] })).toThrow(ConfigError);
+  });
+
+  it("warns when personas is provided without a model (regex mode ignores them)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fn = vi.fn(async () => "x");
+    consensus.wrap(fn, {
+      personas: [{ id: "p1", name: "Persona", role: "security" }],
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("personas` is only used when a `model`"),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("shadow mode runs fn even when deliberation crashes", async () => {
+    // Shadow contract: never block, never throw, regardless of failPolicy or errors.
+    const fn = vi.fn(async () => "result");
+    const crashingModel: ModelAdapter = async () => {
+      throw new Error("LLM unavailable");
+    };
+    const wrapped = consensus.wrap(fn, {
+      model: crashingModel,
+      mode: "shadow",
+      failPolicy: "closed",
+      logger: false,
+    });
+
+    const result = await wrapped("anyTool", {});
+    expect(result).toBe("result");
+    expect(fn).toHaveBeenCalledOnce();
   });
 });
