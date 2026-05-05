@@ -1,10 +1,14 @@
-import type { StrategyConfig } from "@consensus-tools/wrapper";
 import type { UniversalConfig } from "./types.js";
-import { ConfigError } from "./errors.js";
+import { DEFAULT_PERSONA_TRIO } from "@consensus-tools/guards";
 export { DEFAULT_PERSONA_TRIO } from "@consensus-tools/guards";
 
 // ── Default Configuration ────────────────────────────────────────────
 
+/**
+ * Hint identifier used by external tooling to refer to the agent-action guard.
+ * NOT used as a default in DEFAULTS.guards — that uses the full persona trio
+ * (security, compliance, user-impact) so default-config callers get real evaluation.
+ */
 export const DEFAULT_GUARD = "agent_action";
 export const DEFAULT_POLICY = "majority";
 export const DEFAULT_PERSONA_COUNT = 3;
@@ -16,7 +20,10 @@ export const DEFAULTS: Required<
   Pick<UniversalConfig, "policy" | "guards" | "failPolicy" | "storage" | "logger">
 > = {
   policy: DEFAULT_POLICY,
-  guards: [DEFAULT_GUARD],
+  // Use the full trio so default-config callers get 3 real voters with active
+  // regex evaluation (security, compliance, user-impact). Using a single
+  // unknown domain here would make the default a rubber stamp.
+  guards: [...DEFAULT_PERSONA_TRIO],
   failPolicy: "closed",
   storage: "memory",
   logger: true,
@@ -24,8 +31,8 @@ export const DEFAULTS: Required<
 
 // ── Core Policy Type Names ───────────────────────────────────────────
 // All 9 policies supported by resolveConsensus() in @consensus-tools/core.
-// These are used in LLM mode where we bypass the wrapper and call
-// resolveConsensus() directly.
+// All deliberations route through resolveConsensus() — there is no
+// separate strategy aggregator.
 
 export const CORE_POLICY_TYPES = new Set([
   "FIRST_SUBMISSION_WINS",
@@ -77,54 +84,3 @@ export function resolvePolicyType(policy: string): string {
   return "MAJORITY_VOTE";
 }
 
-// ── Policy-to-Strategy Mapping (regex mode) ──────────────────────────
-
-/**
- * Maps a user-facing policy name to a wrapper StrategyConfig.
- * Used in regex-only mode (no model provided).
- *
- * Supported names:
- *   'majority'        -> { strategy: 'majority' }
- *   'supermajority'   -> { strategy: 'threshold', threshold: 0.67 }
- *   'unanimous'       -> { strategy: 'unanimous' }
- *   'threshold:X'     -> { strategy: 'threshold', threshold: X }
- *
- * @throws ConfigError for unrecognized policy names.
- */
-export function policyToStrategy(policy: string): StrategyConfig {
-  switch (policy) {
-    case "majority":
-      return { strategy: "majority" };
-    case "supermajority":
-      return { strategy: "threshold", threshold: 0.67 };
-    case "unanimous":
-      return { strategy: "unanimous" };
-    default: {
-      // Handle 'threshold:X' pattern
-      if (policy.startsWith("threshold:")) {
-        const value = Number(policy.slice("threshold:".length));
-        if (Number.isNaN(value) || value < 0 || value > 1) {
-          throw new ConfigError(
-            `Invalid threshold value in policy "${policy}". Expected a number between 0 and 1.`,
-          );
-        }
-        return { strategy: "threshold", threshold: value };
-      }
-
-      // LLM-mode policy used without a model — warn loudly, this is a config mistake
-      if (CORE_POLICY_TYPES.has(policy) || FRIENDLY_TO_CORE[policy]) {
-        console.warn( // eslint-disable-line no-console
-          `[consensus] Policy "${policy}" requires LLM mode (provide a model). ` +
-          `Falling back to majority in regex mode. This may not match your intended security posture.`,
-        );
-        return { strategy: "majority" };
-      }
-
-      throw new ConfigError(
-        `Unknown policy "${policy}". ` +
-        `Supported: 'majority', 'supermajority', 'unanimous', 'threshold:X' (where X is 0-1).` +
-        ` For LLM mode, also: ${[...CORE_POLICY_TYPES].join(", ")}.`,
-      );
-    }
-  }
-}

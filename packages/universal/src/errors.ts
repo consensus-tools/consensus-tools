@@ -15,10 +15,11 @@ export class ConsensusBlockedError extends Error {
 export class MissingDependencyError extends Error {
   override name = "MissingDependencyError";
 
-  constructor(packageName: string) {
+  constructor(packageName: string, options?: { cause?: unknown }) {
     super(
       `Package "${packageName}" is required but not installed. ` +
       `Install it with: pnpm add ${packageName}`,
+      options,
     );
   }
 }

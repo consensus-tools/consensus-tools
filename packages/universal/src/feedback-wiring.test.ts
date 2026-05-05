@@ -25,13 +25,14 @@ describe("LLM mode .feedback() wiring", () => {
       model: createAllowModel(),
       logger: false,
     });
-    expect(typeof (safe as any).feedback).toBe("function");
+    expect(typeof safe.feedback).toBe("function");
   });
 
-  it("does NOT have .feedback in regex mode", () => {
+  it("returns an executor with a .feedback method in regex mode too (unified pipeline)", () => {
     const executor = createMockExecutor();
     const safe = consensus.wrap(executor);
-    expect((safe as any).feedback).toBeUndefined();
+    // Reputation tracking works in both modes; feedback is always wired.
+    expect(typeof safe.feedback).toBe("function");
   });
 
   it(".feedback() processes signal without throwing", async () => {

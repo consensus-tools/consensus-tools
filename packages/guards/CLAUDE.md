@@ -24,3 +24,12 @@ Deterministic guard evaluation engine. Evaluates agent actions against 9 built-i
 - Adding a new guard type to schemas requires updating the evaluatorVotes() switch.
 - `detectHardBlockFlags()` is regex-based — ensure the flag list is comprehensive.
 - Reputation is optional on `WeightedGuardVote`; defaults to 100 in voting.
+
+## Code Style
+
+- Evaluators are **pure functions**: `(input) => GuardVote[]`. No I/O, no async, no shared module state. Determinism is the contract.
+- Unknown guard types fall through to `evaluatorVotes()` default which returns `YES` at low risk (0.2). Never throw on unknown types — fail-open with low confidence is the design.
+- `detectHardBlockFlags()` is regex-based. When adding a flag, add the regex, the test fixture covering both the trigger and a near-miss, and the entry in the docs together — drift breaks the safety net.
+- Reputation defaults to 100 when undefined — don't special-case `undefined`, let the default apply.
+- Risk scores live in `[0, 1]`. Never let an evaluator return `NaN` or out-of-range — clamp at the source, not the consumer.
+- Adding a new guard type: update the schema in `@consensus-tools/schemas`, the dispatcher in `evaluatorVotes()`, and a test fixture together. Three-file change or it's broken.

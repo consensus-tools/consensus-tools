@@ -60,9 +60,10 @@ export class SqliteStorage implements IStorage {
     try {
       const require = createRequire(import.meta.url);
       BetterSqlite3 = require("better-sqlite3");
-    } catch {
+    } catch (err) {
       throw new Error(
         "consensus-tools: sqlite storage selected but better-sqlite3 is not installed. Install it or switch to storage.kind=\"json\".",
+        { cause: err },
       );
     }
     this.db = new BetterSqlite3(this.filePath);

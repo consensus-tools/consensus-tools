@@ -575,7 +575,7 @@ The broader consensus-tools monorepo defines seven guard categories (`agent_acti
 |---|---|
 | `ConsensusBlockedError` | Deliberation blocked the action and `failPolicy` is `"closed"` |
 | `MissingDependencyError` | Optional peer dependency not installed (langchain / ai-sdk / mcp) |
-| `ConfigError` | Invalid `policy` string passed to `policyToStrategy` |
+| `ConfigError` | Invalid configuration (e.g. empty `guards` in regex mode) |
 
 ```typescript
 import { ConsensusBlockedError, MissingDependencyError } from "@consensus-tools/universal";
@@ -727,9 +727,8 @@ safe("deploy_to_prod", { service: "api", version: "2.1.0" })
 |---|---|---|
 | `consensus` | Object | Main facade with `.wrap()`, `.langchain()`, `.aiSdk()`, `.mcp()` |
 | `resolveWrappable` | Function | Resolves a `Wrappable` to a plain `ToolExecutor` |
-| `policyToStrategy` | Function | Maps a policy name string to a `StrategyConfig` (regex mode) |
-| `resolvePolicyType` | Function | Maps a policy string to a core policy type name (LLM mode) |
-| `createLogger` | Function | Creates structured lifecycle log hooks |
+| `resolvePolicyType` | Function | Maps a policy string (friendly or core) to a core policy type name |
+| `createLogger` | Function | Creates a `LoggerEmitter` with `.start()`, `.result()`, `.respawn()` |
 | `ReputationManager` | Class | Per-persona reputation tracking with respawn (LLM mode) |
 | `classifyTool` | Function | Classifies a tool name into a risk tier (LLM mode) |
 | `deliberate` | Function | LLM persona deliberation engine (LLM mode) |

@@ -82,7 +82,12 @@ export class CredentialManager {
     if (!entry) return null;
     try {
       return decrypt(entry.encrypted, this.secretKey);
-    } catch {
+    } catch (err) {
+      console.warn(
+        `consensus-tools: failed to decrypt credential ${provider}:${keyName} — ` +
+        `master secret may have changed or ciphertext is corrupted`,
+        err,
+      );
       return null;
     }
   }
