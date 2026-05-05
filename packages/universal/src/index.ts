@@ -13,7 +13,7 @@ import {
   resolvePolicyType,
 } from "./defaults.js";
 import { createLogger } from "./logger.js";
-import { ConsensusBlockedError, ConfigError, MissingDependencyError } from "./errors.js";
+import { ConsensusBlockedError, ConfigError, MissingDependencyError, AdapterLoadError, AdapterExportError } from "./errors.js";
 import { ReputationManager } from "./reputation-manager.js";
 import { deliberate } from "./persona-reviewer-factory.js";
 
@@ -24,6 +24,50 @@ function resolveStorage(storage: "memory" | IStorage): IStorage {
     return new MemoryStorage();
   }
   return storage;
+}
+
+// ── Adapter Loading ──────────────────────────────────────────────────
+// Optional adapter packages load via dynamic import. Discriminate the
+// failure mode so users with corrupt builds don't get pointed at
+// reinstalling a package they already have.
+
+function isModuleNotFound(error: unknown): boolean {
+  const e = error as NodeJS.ErrnoException | undefined;
+  if (e?.code === "ERR_MODULE_NOT_FOUND" || e?.code === "MODULE_NOT_FOUND") return true;
+  // Some test/bundler layers wrap the thrown error and drop `code`.
+  // Walk one level into `cause` and also fall back to the stable Node messages.
+  const cause = (e as { cause?: NodeJS.ErrnoException } | undefined)?.cause;
+  if (cause?.code === "ERR_MODULE_NOT_FOUND" || cause?.code === "MODULE_NOT_FOUND") return true;
+  const msg = e?.message ?? "";
+  return /Cannot find (module|package)/.test(msg);
+}
+
+async function loadAdapter(name: string): Promise<Record<string, unknown>> {
+  try {
+    return (await import(name)) as Record<string, unknown>;
+  } catch (error) {
+    if (isModuleNotFound(error)) {
+      throw new MissingDependencyError(name, { cause: error });
+    }
+    throw new AdapterLoadError(name, { cause: error });
+  }
+}
+
+// Pick a named export, falling back to the CJS-default-wrapped shape some
+// bundlers / package managers produce. Uses `in` for existence checks so
+// we don't trip strict ESM namespace surfaces that throw on missing-export
+// property access instead of returning undefined.
+function pickExport<T>(mod: Record<string, unknown>, name: string): T | undefined {
+  if (name in mod) {
+    const direct = mod[name];
+    if (direct !== undefined) return direct as T;
+  }
+  if (!("default" in mod)) return undefined;
+  const def = mod["default"] as Record<string, unknown> | undefined;
+  if (def && name in def) {
+    return def[name] as T;
+  }
+  return undefined;
 }
 
 // ── Regex-Mode Persona Synthesis ─────────────────────────────────────
@@ -265,60 +309,43 @@ export const consensus = {
    * LangChain adapter — dynamically loads @consensus-tools/langchain.
    */
   async langchain(_chain: unknown, config?: Partial<UniversalConfig>): Promise<unknown> {
-    let mod: Record<string, unknown>;
-    try {
-      mod = await import("@consensus-tools/langchain") as Record<string, unknown>;
-    } catch (error) {
-      throw new MissingDependencyError("@consensus-tools/langchain", { cause: error });
-    }
-
-    const HandlerClass = mod["ConsensusGuardCallbackHandler"] as
-      | (new (config: Record<string, unknown>) => unknown)
-      | undefined;
-
+    const mod = await loadAdapter("@consensus-tools/langchain");
+    const HandlerClass = pickExport<new (config: Record<string, unknown>) => unknown>(
+      mod,
+      "ConsensusGuardCallbackHandler",
+    );
     if (!HandlerClass) {
-      throw new Error("@consensus-tools/langchain does not export ConsensusGuardCallbackHandler");
+      throw new AdapterExportError("@consensus-tools/langchain", "ConsensusGuardCallbackHandler");
     }
-
-    const handler = new HandlerClass({
+    return new HandlerClass({
       policy: config?.policy ?? "majority",
       guards: config?.guards,
       onDecision: config?.onDecision ? (d: unknown) => config.onDecision?.(d as any) : undefined,
     });
-
-    return handler;
   },
 
   /**
    * AI SDK (Vercel) adapter — dynamically loads @consensus-tools/ai-sdk.
    */
   async aiSdk(fn: unknown, config?: Partial<UniversalConfig>): Promise<unknown> {
-    let mod: Record<string, unknown>;
-    try {
-      mod = await import("@consensus-tools/ai-sdk") as Record<string, unknown>;
-    } catch (error) {
-      throw new MissingDependencyError("@consensus-tools/ai-sdk", { cause: error });
+    const mod = await loadAdapter("@consensus-tools/ai-sdk");
+    const create = pickExport<(fn: unknown, config?: unknown) => unknown>(mod, "createGuardedGenerate");
+    if (typeof create !== "function") {
+      throw new AdapterExportError("@consensus-tools/ai-sdk", "createGuardedGenerate");
     }
-    if (typeof mod["createGuardedGenerate"] === "function") {
-      return (mod["createGuardedGenerate"] as (fn: unknown, config?: unknown) => unknown)(fn, config);
-    }
-    throw new Error("@consensus-tools/ai-sdk does not export createGuardedGenerate");
+    return create(fn, config);
   },
 
   /**
    * MCP adapter — dynamically loads @consensus-tools/mcp.
    */
   async mcp(config?: Partial<UniversalConfig>): Promise<unknown> {
-    let mod: Record<string, unknown>;
-    try {
-      mod = await import("@consensus-tools/mcp") as Record<string, unknown>;
-    } catch (error) {
-      throw new MissingDependencyError("@consensus-tools/mcp", { cause: error });
+    const mod = await loadAdapter("@consensus-tools/mcp");
+    const create = pickExport<(config?: unknown) => unknown>(mod, "createMcpServer");
+    if (typeof create !== "function") {
+      throw new AdapterExportError("@consensus-tools/mcp", "createMcpServer");
     }
-    if (typeof mod["createMcpServer"] === "function") {
-      return (mod["createMcpServer"] as (config?: unknown) => unknown)(config);
-    }
-    throw new Error("@consensus-tools/mcp does not export createMcpServer");
+    return create(config);
   },
 };
 
@@ -326,7 +353,7 @@ export const consensus = {
 export { resolveWrappable } from "./resolve.js";
 export { resolvePolicyType, DEFAULTS, DEFAULT_GUARD, DEFAULT_POLICY, DEFAULT_PERSONA_TRIO, DEFAULT_PERSONA_COUNT, DEFAULT_PACK } from "./defaults.js";
 export { createLogger } from "./logger.js";
-export { ConsensusBlockedError, MissingDependencyError, ConfigError } from "./errors.js";
+export { ConsensusBlockedError, MissingDependencyError, AdapterLoadError, AdapterExportError, ConfigError } from "./errors.js";
 export { ReputationManager } from "./reputation-manager.js";
 export { classifyTool } from "./risk-tiers.js";
 export { deliberate } from "./persona-reviewer-factory.js";
