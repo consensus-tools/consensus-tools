@@ -7,7 +7,7 @@ import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Bot, Save, Pencil, MessageSquare, User, Trash2, Cpu, Globe, Key, Thermometer, TrendingUp } from 'lucide-react';
 import { connectAgent, listAgents, listParticipants, createParticipant, updateParticipant, assignPolicy, deleteParticipant } from '../../lib/api';
-import { safeParseJSON } from '../../lib/safeJson';
+import { parseAgentMetadata } from './parseAgentMetadata';
 
 const CHAT_ADAPTERS = [
   { value: '', label: 'None' },
@@ -55,12 +55,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   const [apiError, setApiError] = useState<string | null>(null);
 
   function parseMetadata(p: any): Record<string, any> {
-    // Single guard covers both branches: only return the value if it's a plain object.
-    // Arrays, primitives, and parsed-to-null all fall through to {}.
-    const candidate = (typeof p.metadata === 'object' && p.metadata !== null)
-      ? p.metadata
-      : safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
-    return (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) ? candidate : {};
+    return parseAgentMetadata(p);
   }
 
   async function refresh() {
