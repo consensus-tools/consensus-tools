@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Clock, Shield, Users, Zap, Info, Copy, Check, ChevronUp, ChevronDown, Gavel, Gauge, CircleCheckBig, Trash2, Filter, X } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { getEvents, getRunIds, clearEvents } from '../../lib/api';
 import { cn } from '../../lib/utils';
 import { safeParseJSON } from '../../lib/safeJson';
+import { parseEventList, countDrift, type RawEvent } from './parseEventList';
 
 const EVENT_ICONS: Record<string, React.ElementType> = {
   GUARD_EVALUATED: Shield,
@@ -30,7 +31,7 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 export function EventTimeline() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<RawEvent[]>([]);
   const [widths, setWidths] = useState({ step: 40, time: 130, run: 80, type: 110, duration: 70, status: 100 });
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [hoveredEvent, setHoveredEvent] = useState<{ id: string; x: number; y: number; position: 'top' | 'bottom' } | null>(null);
@@ -41,6 +42,12 @@ export function EventTimeline() {
   const [runIdFilter, setRunIdFilter] = useState<string>('');
   const [availableRunIds, setAvailableRunIds] = useState<string[]>([]);
   const [showRunFilter, setShowRunFilter] = useState(false);
+
+  // Memoize parsed events — re-runs only when the events array reference changes.
+  const parsedEvents = useMemo(() => parseEventList(events), [events]);
+  // Count of events whose payload failed validation (schema drift indicator).
+  // Not rendered yet; reserved for future DriftBanner integration.
+  const driftCount = useMemo(() => countDrift(parsedEvents), [parsedEvents]);
 
   const handleInfoMouseEnter = (e: React.MouseEvent, eventId: string) => {
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
@@ -249,20 +256,25 @@ export function EventTimeline() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/20">
-              {events.map((event: any) => {
-                const payload: any = safeParseJSON(event.payload_json, {} as any, 'EventTimeline.payload');
-                
-                const summary = payload.step_label || payload.decision || payload.action || 'Completed';
-                const guardType = payload.guard_type || payload.guardType || '';
-                const guardConfigKeys = payload.guard_config ? Object.keys(payload.guard_config).length : (payload.guardConfig ? Object.keys(payload.guardConfig).length : 0);
-                const fullInfo = JSON.stringify(payload, null, 2);
+              {parsedEvents.map((event) => {
+                // Canonical fields from parsed payload (schema-normalized to camelCase).
+                const payloadValue = event.parsed.status === 'ok' ? event.parsed.value as Record<string, unknown> : null;
+                const isDegraded = event.parsed.status === 'invalid';
+
+                const summary = (payloadValue?.step_label as string | undefined)
+                  || (payloadValue?.decision as string | undefined)
+                  || (payloadValue?.action as string | undefined)
+                  || (isDegraded ? 'Malformed payload' : 'Completed');
+                // Canonical camelCase only — schema transform has already normalized from snake_case.
+                const guardType = (payloadValue?.guardType as string | undefined) || '';
+                const guardConfigKeys = payloadValue?.guardConfig ? Object.keys(payloadValue.guardConfig as object).length : 0;
                 const Icon = EVENT_ICONS[event.type] || Clock;
                 const color = EVENT_COLORS[event.type] || 'text-muted-foreground';
-                
-                const duration = payload.duration_ms ? `${(payload.duration_ms / 1000).toFixed(2)}s` : '-';
+
+                const duration = payloadValue?.duration_ms ? `${((payloadValue.duration_ms as number) / 1000).toFixed(2)}s` : '-';
 
                 return (
-                  <tr key={event.id} className="group hover:bg-accent/30 transition-colors border-b border-border/10 last:border-0">
+                  <tr key={event.id} className={cn("group hover:bg-accent/30 transition-colors border-b border-border/10 last:border-0", isDegraded && "opacity-60")}>
                     <td className="py-1.5 px-2 text-[10px] text-muted-foreground whitespace-nowrap align-top font-mono border-r border-border/5 text-center">
                       {event.seq ?? '-'}
                     </td>
@@ -293,7 +305,7 @@ export function EventTimeline() {
                     </td>
                     <td className="py-1.5 px-2 align-top border-r border-border/5">
                       <div className="flex items-center gap-1 overflow-hidden">
-                        <span className="text-[10px] text-foreground/90 truncate font-medium">{summary}</span>
+                        <span className={cn("text-[10px] truncate font-medium", isDegraded ? "text-red-400/80 italic" : "text-foreground/90")}>{summary}</span>
                         {guardType && (
                           <span className="text-[9px] bg-emerald-500/15 text-emerald-400 px-1 py-0.5 rounded font-mono whitespace-nowrap" title={guardConfigKeys > 0 ? `${guardConfigKeys} guard-specific setting(s) configured` : ''}>
                             {guardType.replace(/_/g, ' ')}
@@ -301,13 +313,13 @@ export function EventTimeline() {
                         )}
                       </div>
                     </td>
-                    <td 
+                    <td
                       className="py-1.5 px-2 align-top relative group/cell text-center"
                     >
                       <div className="inline-flex items-center justify-center">
                          <div className="relative">
-                           <Info 
-                             className="h-3.5 w-3.5 text-emerald-500/80 cursor-help hover:text-emerald-400 transition-colors" 
+                           <Info
+                             className="h-3.5 w-3.5 text-emerald-500/80 cursor-help hover:text-emerald-400 transition-colors"
                              onMouseEnter={(e) => handleInfoMouseEnter(e, event.id)}
                              onMouseLeave={() => {
                                hideTimeoutRef.current = setTimeout(() => {
@@ -317,7 +329,7 @@ export function EventTimeline() {
                                }, 500);
                              }}
                            />
-                           
+
                            {/* Tooltip removed from here and moved to fixed portal-like container at the bottom */}
                          </div>
                       </div>
@@ -383,11 +395,12 @@ export function EventTimeline() {
               <Info className="h-3 w-3" /> Raw Event Data
             </div>
             {(() => {
-              const event = events.find(e => e.id === hoveredEvent.id);
+              const event = parsedEvents.find(e => e.id === hoveredEvent.id);
               if (!event) return null;
-              let payload: any = safeParseJSON(event.payload_json, {}, 'EventTimeline.payload');
-              const fullInfo = JSON.stringify({ seq: event.seq, run_id: event.run_id, ts: event.ts, type: event.type, ...payload }, null, 2);
-              
+              // Use already-parsed payload value; fall back to empty object for display.
+              const payloadValue: Record<string, unknown> = event.parsed.status === 'ok' ? (event.parsed.value as Record<string, unknown>) : {};
+              const fullInfo = JSON.stringify({ seq: event.seq, run_id: event.run_id, ts: event.ts, type: event.type, ...payloadValue }, null, 2);
+
               return (
                 <Button
                   variant="ghost"
@@ -416,10 +429,10 @@ export function EventTimeline() {
             })()}
           </div>
           {(() => {
-            const event = events.find(e => e.id === hoveredEvent.id);
+            const event = parsedEvents.find(e => e.id === hoveredEvent.id);
             if (!event) return null;
-            let payload: any = safeParseJSON(event.payload_json, {}, 'EventTimeline.payload');
-            return JSON.stringify({ seq: event.seq, ts: event.ts, run_id: event.run_id || null, type: event.type, ...payload }, null, 2);
+            const payloadValue: Record<string, unknown> = event.parsed.status === 'ok' ? (event.parsed.value as Record<string, unknown>) : {};
+            return JSON.stringify({ seq: event.seq, ts: event.ts, run_id: event.run_id || null, type: event.type, ...payloadValue }, null, 2);
           })()}
         </div>
       )}
