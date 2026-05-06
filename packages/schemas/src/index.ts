@@ -146,6 +146,16 @@ export {
   type ExplainResult,
 } from "./explain.js";
 
+// ── Audit Events ─────────────────────────────────────────────────
+export {
+  consensusMetaSchema,
+  type ConsensusMeta,
+  finalDecisionPayloadSchema,
+  type FinalDecisionPayload,
+  participantMetadataSchema,
+  type ParticipantMetadata,
+} from "./audit-events.js";
+
 // ── Agent ───────────────────────────────────────────────────────────
 export {
   agentKindSchema,

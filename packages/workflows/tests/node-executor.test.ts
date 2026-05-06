@@ -3,6 +3,7 @@ import { NodeExecutor, validateWorkflowDefinition } from "../src/node-executor.j
 import type { WorkflowNode, NodeExecIds } from "../src/node-executor.js";
 import { createTempStorage } from "./helpers.js";
 import { newId, nowIso } from "@consensus-tools/core";
+import { finalDecisionPayloadSchema } from "@consensus-tools/schemas";
 
 const ids: NodeExecIds = { boardId: "board-1", runId: "run-1", workflowId: "wf-1" };
 
@@ -99,6 +100,9 @@ describe("NodeExecutor", () => {
     expect(details).not.toHaveProperty("risk_score");
     expect(details).not.toHaveProperty("guard_type");
     expect(details).not.toHaveProperty("consensus_meta");
+
+    // Validates against Tier-0 schema (catches drift if any field gets re-added under wrong name)
+    expect(finalDecisionPayloadSchema.safeParse(details).success).toBe(true);
   });
 });
 

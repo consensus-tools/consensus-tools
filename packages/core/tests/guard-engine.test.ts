@@ -3,6 +3,7 @@ import { GuardEngine } from "../src/engine/guard-engine.js";
 import { AgentRegistry } from "../src/engine/agent-registry.js";
 import { createTempStorage, makeConfig } from "./helpers.js";
 import type { GuardEvaluateInput } from "@consensus-tools/schemas";
+import { finalDecisionPayloadSchema } from "@consensus-tools/schemas";
 
 function makeGuardInput(overrides: Partial<GuardEvaluateInput> = {}): GuardEvaluateInput {
   return {
@@ -82,5 +83,16 @@ describe("GuardEngine", () => {
     expect(details).not.toHaveProperty("risk_score");
     expect(details).not.toHaveProperty("guard_type");
     expect(details).not.toHaveProperty("audit_id");
+  });
+
+  it("FINAL_DECISION emit validates against Tier-0 finalDecisionPayloadSchema", async () => {
+    const { storage } = await createTempStorage();
+    const engine = new GuardEngine({ storage });
+    await engine.evaluate(makeGuardInput());
+    const state = await storage.getState();
+
+    const finalDecisionEvent = state.audit.find((e) => e.type === "FINAL_DECISION");
+    const result = finalDecisionPayloadSchema.safeParse(finalDecisionEvent!.details);
+    expect(result.success).toBe(true);
   });
 });

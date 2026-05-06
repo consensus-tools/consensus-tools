@@ -29,6 +29,9 @@ importers:
 
   apps/dashboard:
     dependencies:
+      '@consensus-tools/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -95,6 +98,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.21.0)
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

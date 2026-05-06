@@ -7,6 +7,8 @@
  * @returns The parsed value cast to T, or `fallback`.
  */
 
+import type { ZodTypeAny, z } from "zod";
+
 // Minimal augmentation so TypeScript recognises import.meta.env.DEV without
 // pulling in the full vite/client types (which conflict with workspace Vite v7).
 declare global {
@@ -54,4 +56,63 @@ export function safeParseJSON<T>(
     }
     return fallback;
   }
+}
+
+// ── Tagged-result schema parser ─────────────────────────────────────
+// Used by callers that need to distinguish "empty input" (legitimate
+// pending state) from "malformed input" (data corruption / drift).
+// Wave 2 of the dashboard-zod-trust-boundary plan: schema validation at
+// the trust boundary instead of ad-hoc shape checks scattered across
+// components.
+
+export type TypedParseResult<T> =
+  | { status: "empty" }
+  | { status: "invalid"; reason: string }
+  | { status: "ok"; value: T };
+
+/**
+ * Parses a JSON string and validates the result against a Zod schema.
+ *
+ * Returns a discriminated union so callers must explicitly handle each
+ * outcome — TypeScript's exhaustive switch catches missed cases at
+ * compile time, closing the silent-fallback class of bugs.
+ *
+ * - `status: "empty"` — `null`, `undefined`, `""`, or all-whitespace input.
+ *   Legitimate "decision pending" / "no metadata yet" state.
+ * - `status: "invalid"` — `JSON.parse` threw, or the schema rejected the
+ *   parsed value. Data corruption or producer drift; UI should render an
+ *   explicit malformed-event placeholder rather than skip silently.
+ * - `status: "ok"` — Validated and normalized to canonical shape via
+ *   schema's `.transform()` (when defined).
+ */
+export function parseTypedPayload<S extends ZodTypeAny>(
+  input: string | null | undefined,
+  schema: S,
+  context?: string,
+): TypedParseResult<z.output<S>> {
+  if (input == null) return { status: "empty" };
+  if (typeof input === "string" && input.trim() === "") return { status: "empty" };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(input);
+  } catch {
+    if (isDevMode()) {
+      const label = context ? `[${context}] ` : "";
+      const len = input.length;
+      console.warn(`parseTypedPayload ${label}JSON parse failed: input length=${len}`);
+    }
+    return { status: "invalid", reason: "JSON parse failed" };
+  }
+
+  const result = schema.safeParse(raw);
+  if (!result.success) {
+    if (isDevMode()) {
+      const label = context ? `[${context}] ` : "";
+      const len = input.length;
+      console.warn(`parseTypedPayload ${label}schema rejected: input length=${len}`);
+    }
+    return { status: "invalid", reason: "schema validation failed" };
+  }
+  return { status: "ok", value: result.data };
 }
