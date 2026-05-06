@@ -54,10 +54,6 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   const [editDraft, setEditDraft] = useState<Record<string, any>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
-  function parseMetadata(p: any): Record<string, any> {
-    return parseAgentMetadata(p);
-  }
-
   async function refresh() {
     setApiError(null);
     try {
@@ -148,7 +144,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   }
 
   function startEdit(p: any) {
-    const meta = parseMetadata(p);
+    const meta = parseAgentMetadata(p);
     setEditingParticipant(p.id);
     setEditDraft({
       weight: p.weight,
@@ -234,7 +230,6 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
               saveEdit={saveEdit}
               startEdit={startEdit}
               setEditingParticipant={setEditingParticipant}
-              parseMetadata={parseMetadata}
               onDelete={handleDeleteParticipant}
             />
           ))}
@@ -255,7 +250,6 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
               saveEdit={saveEdit}
               startEdit={startEdit}
               setEditingParticipant={setEditingParticipant}
-              parseMetadata={parseMetadata}
               onDelete={handleDeleteParticipant}
             />
           ))}
@@ -406,8 +400,8 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   );
 }
 
-function ParticipantCard({ p, editingParticipant, editDraft, setEditDraft, saveEdit, startEdit, setEditingParticipant, parseMetadata, onDelete }: any) {
-  const meta = parseMetadata(p);
+function ParticipantCard({ p, editingParticipant, editDraft, setEditDraft, saveEdit, startEdit, setEditingParticipant, onDelete }: any) {
+  const meta = parseAgentMetadata(p);
   const isInternal = meta.agentType === 'internal';
   const isExternal = meta.agentType === 'external';
   const isAgent = p.subject_type === 'agent';
@@ -501,7 +495,7 @@ function ParticipantCard({ p, editingParticipant, editDraft, setEditDraft, saveE
                 <Globe className="h-2.5 w-2.5" /> API
               </Badge>
             )}
-            {meta.chatAdapter && (
+            {typeof meta.chatAdapter === 'string' && meta.chatAdapter && (
               <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 gap-0.5">
                 <MessageSquare className="h-2.5 w-2.5" /> {meta.chatAdapter}
               </Badge>
