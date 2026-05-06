@@ -6,7 +6,9 @@ import { Badge } from '../components/ui/badge';
 import { ArrowLeft, Clock, ChevronDown, ChevronUp, Users, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getBoard, getEvents, listParticipants } from '../lib/api';
 import { JsonBlock } from '../components/JsonPanel';
-import { safeParseJSON } from '../lib/safeJson';
+import { buildRunDecisions } from './buildRunDecisions';
+// TODO(T02-integration): mount <DriftBanner count={driftCount} /> after Wave 2 boundary
+// import DriftBanner from '../components/dashboard/DriftBanner';
 
 const DECISION_COLORS: Record<string, string> = {
   ALLOW: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
@@ -55,6 +57,7 @@ export default function BoardDetailPage() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [driftCount, setDriftCount] = useState(0);
 
   const load = async () => {
     setApiError(null);
@@ -69,24 +72,14 @@ export default function BoardDetailPage() {
     return () => clearInterval(t);
   }, [boardId]);
 
-  // Extract final decision info per run from FINAL_DECISION events
+  // Extract final decision info per run from FINAL_DECISION events.
+  // Uses parseTypedPayload + finalDecisionPayloadSchema so the result is
+  // always canonical camelCase (guardType / riskScore) regardless of DB vintage.
   const runDecisions = useMemo(() => {
-    const map: Record<string, any> = {};
-    for (const e of events) {
-      if (e.type === 'FINAL_DECISION' && e.run_id) {
-        // Distinguish empty input (legitimate, treat as `{}`) from parse failure
-        // (malformed payload, skip — never overwrite a previously-valid decision
-        // for the same run_id with an empty fallback).
-        const isEmpty = !e.payload_json || e.payload_json === '';
-        if (isEmpty) {
-          map[e.run_id] = {};
-        } else {
-          const parsed = safeParseJSON<any>(e.payload_json, null, 'BoardDetailPage.runDecisions');
-          if (parsed !== null) map[e.run_id] = parsed;
-        }
-      }
-    }
+    const { map, driftCount: newDriftCount } = buildRunDecisions(events);
+    setDriftCount(newDriftCount);
     return map;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events]);
 
   // Count AGENT_VERDICT events per run
@@ -185,15 +178,15 @@ export default function BoardDetailPage() {
                               )}
                             </td>
                             <td className="py-2 pr-2">
-                              {decision?.guard_type ? (
-                                <Badge variant="outline" className="text-[10px]">{decision.guard_type}</Badge>
+                              {decision?.guardType ? (
+                                <Badge variant="outline" className="text-[10px]">{decision.guardType}</Badge>
                               ) : (
                                 <span className="text-muted-foreground/50">—</span>
                               )}
                             </td>
                             <td className="py-2 pr-2 text-right">
-                              {decision?.risk_score != null ? (
-                                <span>{(decision.risk_score * 100).toFixed(0)}%</span>
+                              {decision?.riskScore !== undefined && decision.riskScore !== null ? (
+                                <span>{(decision.riskScore * 100).toFixed(0)}%</span>
                               ) : (
                                 <span className="text-muted-foreground/50">—</span>
                               )}
