@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { HitlTracker } from "@consensus-tools/core";
 import { MemoryStorage } from "@consensus-tools/storage";
+import { finalDecisionPayloadSchema } from "@consensus-tools/schemas";
 import { processHumanApproval } from "../src/handlers/chat-approval.js";
 import type { WebhookHandlerContext } from "../src/types.js";
 
@@ -44,6 +45,15 @@ describe("processHumanApproval — producer contract", () => {
     expect(details).not.toHaveProperty("votes_required");
     expect(details).not.toHaveProperty("risk_score");
     expect(details).not.toHaveProperty("guard_type");
+
+    // Validates against Tier-0 schema (chat-approval limited shape — no risk fields by design)
+    const parsed = finalDecisionPayloadSchema.safeParse(details);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.riskScore).toBeUndefined();
+      expect(parsed.data.guardType).toBeUndefined();
+      expect(parsed.data.votesReceived).toBe(1);
+    }
   });
 
   it("propagates idempotencyKey into FINAL_DECISION details (camelCase)", async () => {
