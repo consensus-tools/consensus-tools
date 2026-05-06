@@ -593,9 +593,9 @@ export class NodeExecutor {
             boardId: ids.boardId,
             decision: finalDecision,
             reason: guardReason,
-            risk_score: riskRounded,
-            guard_type: guardType,
-            consensus_meta: {
+            riskScore: riskRounded,
+            guardType: guardType,
+            consensusMeta: {
               quorumMet: result.quorumMet,
               weightedYesRatio: yesRatioRounded,
               voterCount: result.tally.voterCount,
