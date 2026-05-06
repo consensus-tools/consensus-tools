@@ -59,4 +59,28 @@ describe("GuardEngine", () => {
     const result = await engine.evaluate(makeGuardInput({ action: { type: "unknown_type", payload: {} } }));
     expect(result.guard_type).toBe("agent_action");
   });
+
+  it("emits FINAL_DECISION audit details with camelCase keys (producer contract)", async () => {
+    const { storage } = await createTempStorage();
+    const engine = new GuardEngine({ storage });
+    await engine.evaluate(makeGuardInput());
+    const state = await storage.getState();
+
+    const finalDecisionEvent = state.audit.find((e) => e.type === "FINAL_DECISION");
+    expect(finalDecisionEvent).toBeDefined();
+
+    const details = finalDecisionEvent!.details as Record<string, unknown>;
+    expect(details).toMatchObject({
+      auditId: expect.any(String),
+      decision: expect.any(String),
+      reason: expect.any(String),
+      riskScore: expect.any(Number),
+      guardType: expect.any(String),
+    });
+
+    // Regression guard: legacy snake_case keys must not appear at this trust boundary
+    expect(details).not.toHaveProperty("risk_score");
+    expect(details).not.toHaveProperty("guard_type");
+    expect(details).not.toHaveProperty("audit_id");
+  });
 });

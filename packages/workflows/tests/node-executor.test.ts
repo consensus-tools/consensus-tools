@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { NodeExecutor, validateWorkflowDefinition } from "../src/node-executor.js";
 import type { WorkflowNode, NodeExecIds } from "../src/node-executor.js";
 import { createTempStorage } from "./helpers.js";
+import { newId, nowIso } from "@consensus-tools/core";
 
 const ids: NodeExecIds = { boardId: "board-1", runId: "run-1", workflowId: "wf-1" };
 
@@ -28,6 +29,76 @@ describe("NodeExecutor", () => {
     const node: WorkflowNode = { id: "a1", type: "action", config: { action: "log", message: "test" } };
     const result = await executor.execute(node, {}, ids);
     expect(result).toBeDefined();
+  });
+
+  it("emits FINAL_DECISION audit details with camelCase keys (producer contract)", async () => {
+    const { storage } = await createTempStorage();
+    const executor = new NodeExecutor({ storage });
+
+    // Seed AGENT_VERDICT events so the guard node's resolution path runs
+    await storage.update((s) => {
+      const at = nowIso();
+      s.audit.push({
+        id: newId("audit"),
+        at,
+        type: "AGENT_VERDICT",
+        details: {
+          runId: ids.runId,
+          evaluator: "security",
+          verdict: "YES",
+          risk: 0.2,
+          reason: "ok",
+          weight: 1,
+          reputation: 100,
+        },
+      });
+      s.audit.push({
+        id: newId("audit"),
+        at,
+        type: "AGENT_VERDICT",
+        details: {
+          runId: ids.runId,
+          evaluator: "compliance",
+          verdict: "YES",
+          risk: 0.3,
+          reason: "ok",
+          weight: 1,
+          reputation: 100,
+        },
+      });
+    });
+
+    const guardNode: WorkflowNode = {
+      id: "g1",
+      type: "guard",
+      config: { guardType: "code_merge", quorum: 0.5, riskThreshold: 0.7 },
+    };
+    await executor.execute(guardNode, {}, ids);
+
+    const state = await storage.getState();
+    const finalDecisionEvent = state.audit.find((e) => e.type === "FINAL_DECISION");
+    expect(finalDecisionEvent).toBeDefined();
+
+    const details = finalDecisionEvent!.details as Record<string, unknown>;
+    // Canonical camelCase shape (matches GuardEngine emit at packages/core/src/engine/guard-engine.ts:111)
+    expect(details).toMatchObject({
+      runId: ids.runId,
+      boardId: ids.boardId,
+      decision: expect.any(String),
+      reason: expect.any(String),
+      riskScore: expect.any(Number),
+      guardType: expect.any(String),
+      consensusMeta: expect.objectContaining({
+        quorumMet: expect.any(Boolean),
+        weightedYesRatio: expect.any(Number),
+        voterCount: expect.any(Number),
+      }),
+    });
+
+    // Regression guard: legacy snake_case keys must be absent at this trust boundary
+    expect(details).not.toHaveProperty("risk_score");
+    expect(details).not.toHaveProperty("guard_type");
+    expect(details).not.toHaveProperty("consensus_meta");
   });
 });
 
