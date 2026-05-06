@@ -50,8 +50,13 @@ export default function RunDetailPage() {
   }, [runId]);
 
   const final = useMemo(() => events.find((e: any) => e.type === 'FINAL_DECISION'), [events]);
-  // Match old behavior: empty payload -> {} so the decision card still renders (degraded), instead of vanishing.
-  const parsed = final ? safeParseJSON<any>(final.payload_json, {}, 'RunDetailPage.parsed') : null;
+  // Distinguish empty input (legitimate empty payload — render degraded card) from
+  // parse failure (malformed data — render nothing instead of "NaN%" garbage).
+  const parsed = final
+    ? (!final.payload_json || final.payload_json === ''
+        ? {}
+        : safeParseJSON<any>(final.payload_json, null, 'RunDetailPage.parsed'))
+    : null;
   const consensusMeta = parsed?.consensus_meta || parsed?.meta || null;
 
   const correlations = useMemo(() => {

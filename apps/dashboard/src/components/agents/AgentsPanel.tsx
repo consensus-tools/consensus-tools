@@ -55,11 +55,12 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   const [apiError, setApiError] = useState<string | null>(null);
 
   function parseMetadata(p: any): Record<string, any> {
-    if (typeof p.metadata === 'object' && p.metadata !== null) return p.metadata;
-    const parsed = safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
-    // Guard against valid JSON that parses to a primitive (`"null"`, `"false"`, `42`)
-    // — callers downstream do `meta.agentType` etc. without null guards.
-    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    // Single guard covers both branches: only return the value if it's a plain object.
+    // Arrays, primitives, and parsed-to-null all fall through to {}.
+    const candidate = (typeof p.metadata === 'object' && p.metadata !== null)
+      ? p.metadata
+      : safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
+    return (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) ? candidate : {};
   }
 
   async function refresh() {
@@ -82,6 +83,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
 
   async function handleAddInternal() {
     if (!internalForm.name.trim()) return;
+    setApiError(null);
     try {
       await createParticipant({
         boardId,
@@ -100,11 +102,12 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       await assignPolicy({ boardId, policyId: 'default', participants: [internalForm.name.trim()], weightingMode: 'hybrid', quorum: 0.6 });
       setShowAddAgent(false);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add internal agent'); }
   }
 
   async function handleAddExternal() {
     if (!externalForm.name.trim()) return;
+    setApiError(null);
     try {
       const r = await connectAgent({
         name: externalForm.name.trim(),
@@ -128,11 +131,12 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       });
       await assignPolicy({ boardId, policyId: 'default', participants: [externalForm.name.trim()], weightingMode: 'hybrid', quorum: 0.6 });
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add external agent'); }
   }
 
   async function handleAddHuman() {
     if (!humanName.trim()) return;
+    setApiError(null);
     try {
       await createParticipant({
         boardId,
@@ -145,7 +149,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       setHumanName('');
       setShowAddHuman(false);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add human participant'); }
   }
 
   function startEdit(p: any) {
@@ -166,6 +170,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   }
 
   async function saveEdit(id: string) {
+    setApiError(null);
     try {
       const isInternal = editDraft.agentType === 'internal';
       const metadata: Record<string, any> = { agentType: editDraft.agentType || '' };
@@ -185,15 +190,16 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       });
       setEditingParticipant(null);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to save participant'); }
   }
 
   async function handleDeleteParticipant(id: string) {
+    setApiError(null);
     try {
       await deleteParticipant(id);
       setEditingParticipant(null);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to delete participant'); }
   }
 
   const humanParticipants = participants.filter(p => p.subject_type === 'human');

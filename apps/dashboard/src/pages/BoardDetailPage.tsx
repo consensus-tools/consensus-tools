@@ -74,8 +74,16 @@ export default function BoardDetailPage() {
     const map: Record<string, any> = {};
     for (const e of events) {
       if (e.type === 'FINAL_DECISION' && e.run_id) {
-        // Match old behavior: empty payload -> {} so the run row still appears (rendered with dashes via optional chaining downstream).
-        map[e.run_id] = safeParseJSON<any>(e.payload_json, {}, 'BoardDetailPage.runDecisions');
+        // Distinguish empty input (legitimate, treat as `{}`) from parse failure
+        // (malformed payload, skip — never overwrite a previously-valid decision
+        // for the same run_id with an empty fallback).
+        const isEmpty = !e.payload_json || e.payload_json === '';
+        if (isEmpty) {
+          map[e.run_id] = {};
+        } else {
+          const parsed = safeParseJSON<any>(e.payload_json, null, 'BoardDetailPage.runDecisions');
+          if (parsed !== null) map[e.run_id] = parsed;
+        }
       }
     }
     return map;

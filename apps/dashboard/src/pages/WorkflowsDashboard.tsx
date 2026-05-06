@@ -105,7 +105,10 @@ export default function WorkflowsDashboard() {
   }
 
   async function refreshList() {
-    setApiError(null);
+    // Don't pre-clear apiError here — refreshList is auto-fired from the mount
+    // useEffect alongside ensureDefaultBoard, so a null reset would race and
+    // clobber any error the sibling effect set. User-initiated handlers
+    // (handleDelete, executeWorkflow) still pre-clear.
     const [d, t] = await Promise.allSettled([getWorkflows(), getTemplates()]);
     const items = d.status === "fulfilled" ? (d.value.workflows || []) : [];
     const tmpls = t.status === "fulfilled" ? (t.value.templates || []) : [];

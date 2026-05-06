@@ -111,7 +111,7 @@ export function EventTimeline() {
           return sortOrder === 'asc' ? a.seq - b.seq : b.seq - a.seq;
         });
         setEvents(sortedEvents);
-      } catch {}
+      } catch (err) { console.warn('[EventTimeline] Failed to fetch events:', err); }
     }
     load();
     const t = setInterval(load, 3000);
