@@ -7,6 +7,7 @@ import { ArrowLeft, Copy, Clock, Shield, ChevronDown, ChevronUp, Vote, Users, Tr
 import { getRun, getVotes } from '../lib/api';
 import { safeParseJSON } from '../lib/safeJson';
 import { JsonBlock } from '../components/JsonPanel';
+import { parseRunDecision } from './parseRunDecision';
 
 const DECISION_COLORS: Record<string, string> = {
   ALLOW: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
@@ -29,6 +30,9 @@ export default function RunDetailPage() {
   const [showRaw, setShowRaw] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  // Track count of invalid (malformed) FINAL_DECISION events for drift monitoring.
+  // TODO(post-Wave-2): mount <DriftBanner count={driftCount} /> after T02's component lands
+  const [driftCount, setDriftCount] = useState(0);
 
   const load = async () => {
     setApiError(null);
@@ -50,14 +54,33 @@ export default function RunDetailPage() {
   }, [runId]);
 
   const final = useMemo(() => events.find((e: any) => e.type === 'FINAL_DECISION'), [events]);
-  // Distinguish empty input (legitimate empty payload — render degraded card) from
-  // parse failure (malformed data — render nothing instead of "NaN%" garbage).
-  const parsed = final
-    ? (!final.payload_json || final.payload_json === ''
-        ? {}
-        : safeParseJSON<any>(final.payload_json, null, 'RunDetailPage.parsed'))
-    : null;
-  const consensusMeta = parsed?.consensus_meta || parsed?.meta || null;
+
+  // Parse the FINAL_DECISION payload through the Zod schema at the trust boundary.
+  // Returns a tagged result so all three outcomes are handled explicitly — no silent
+  // NaN% / undefined garbage can reach the render path (closes finding D).
+  const finalDecisionResult = useMemo(() => {
+    if (!final) return null;
+    const result = parseRunDecision(final.payload_json);
+    return result;
+  }, [final]);
+
+  // Increment drift counter whenever a new malformed event is encountered.
+  // Uses a ref-based guard so the effect only fires when finalDecisionResult changes.
+  const prevResultRef = React.useRef<typeof finalDecisionResult>(null);
+  useEffect(() => {
+    if (
+      finalDecisionResult &&
+      finalDecisionResult !== prevResultRef.current &&
+      finalDecisionResult.status === 'invalid'
+    ) {
+      setDriftCount((c) => c + 1);
+    }
+    prevResultRef.current = finalDecisionResult;
+  }, [finalDecisionResult]);
+
+  // Convenience aliases for the 'ok' case only.
+  const parsedOk = finalDecisionResult?.status === 'ok' ? finalDecisionResult.value : null;
+  const consensusMeta = parsedOk?.consensusMeta ?? null;
 
   const correlations = useMemo(() => {
     const rows = events
@@ -98,48 +121,82 @@ export default function RunDetailPage() {
         </div>
       )}
 
-      {parsed && (
-        <Card className={`border ${DECISION_COLORS[parsed.decision] || ''}`}>
-          <CardContent className="pt-4 space-y-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <Badge className={DECISION_COLORS[parsed.decision]}>{parsed.decision}</Badge>
-              <span className="font-medium">{parsed.reason}</span>
-              <span className="text-xs text-muted-foreground">risk: {(parsed.risk_score * 100).toFixed(0)}%</span>
-              <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs ml-auto" onClick={() => final?.id && navigator.clipboard.writeText(final.id)}>
-                <Copy className="h-3 w-3" /> Copy audit_id
-              </Button>
-            </div>
+      {/* FINAL_DECISION card — three explicit states from the tagged-result schema parse */}
+      {finalDecisionResult && (() => {
+        switch (finalDecisionResult.status) {
+          case 'empty':
+            // Legitimate "decision pending" — degraded card, no garbage values
+            return (
+              <Card className="border border-border/50">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-muted-foreground">Decision pending — no final event yet.</p>
+                </CardContent>
+              </Card>
+            );
 
-            {(consensusMeta || parsed?.guard_type) && (
-              <div className="rounded-md border border-border/50 bg-background/40 p-3 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-medium">
-                  <LinkIcon className="h-3 w-3 text-primary" /> Consensus Metadata
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                  <div className="rounded border border-border/40 px-2 py-1.5">
-                    <div className="text-muted-foreground">Quorum</div>
-                    <div className={consensusMeta?.quorumMet ? 'text-emerald-400' : 'text-red-400'}>
-                      {consensusMeta?.quorumMet != null ? (consensusMeta.quorumMet ? 'Met' : 'Not Met') : '—'}
+          case 'invalid':
+            // Malformed payload — explicit placeholder instead of NaN% (closes finding D)
+            return (
+              <Card className="border border-amber-500/30 bg-amber-500/5" data-testid="malformed-event-placeholder">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-amber-400">Malformed event payload — data cannot be displayed.</p>
+                </CardContent>
+              </Card>
+            );
+
+          case 'ok': {
+            const p = finalDecisionResult.value;
+            return (
+              <Card className={`border ${DECISION_COLORS[p.decision] || ''}`}>
+                <CardContent className="pt-4 space-y-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <Badge className={DECISION_COLORS[p.decision]}>{p.decision}</Badge>
+                    <span className="font-medium">{p.reason}</span>
+                    {/* Only render the risk badge when riskScore is present
+                        (chat-approval-limited shapes have no risk fields) */}
+                    {p.riskScore !== undefined && (
+                      <span className="text-xs text-muted-foreground" data-testid="risk-badge">
+                        risk: {(p.riskScore * 100).toFixed(0)}%
+                      </span>
+                    )}
+                    <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-xs ml-auto" onClick={() => final?.id && navigator.clipboard.writeText(final.id)}>
+                      <Copy className="h-3 w-3" /> Copy audit_id
+                    </Button>
+                  </div>
+
+                  {(consensusMeta || p.guardType) && (
+                    <div className="rounded-md border border-border/50 bg-background/40 p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <LinkIcon className="h-3 w-3 text-primary" /> Consensus Metadata
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                        <div className="rounded border border-border/40 px-2 py-1.5">
+                          <div className="text-muted-foreground">Quorum</div>
+                          <div className={consensusMeta?.quorumMet ? 'text-emerald-400' : 'text-red-400'}>
+                            {consensusMeta?.quorumMet != null ? (consensusMeta.quorumMet ? 'Met' : 'Not Met') : '—'}
+                          </div>
+                        </div>
+                        <div className="rounded border border-border/40 px-2 py-1.5">
+                          <div className="text-muted-foreground">Weighted Yes</div>
+                          <div className="font-mono">{consensusMeta?.weightedYesRatio != null ? `${(consensusMeta.weightedYesRatio * 100).toFixed(1)}%` : '—'}</div>
+                        </div>
+                        <div className="rounded border border-border/40 px-2 py-1.5">
+                          <div className="text-muted-foreground">Guard Type</div>
+                          <div className="truncate">{p.guardType || '—'}</div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="rounded border border-border/40 px-2 py-1.5">
-                    <div className="text-muted-foreground">Weighted Yes</div>
-                    <div className="font-mono">{consensusMeta?.weightedYesRatio != null ? `${(consensusMeta.weightedYesRatio * 100).toFixed(1)}%` : '—'}</div>
-                  </div>
-                  <div className="rounded border border-border/40 px-2 py-1.5">
-                    <div className="text-muted-foreground">Guard Type</div>
-                    <div className="truncate">{parsed?.guard_type || '—'}</div>
-                  </div>
-                </div>
-              </div>
-            )}
+                  )}
 
-            {parsed.suggested_rewrite && (
-              <div className="mt-3"><JsonBlock value={parsed.suggested_rewrite} /></div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                  {(p as any).suggested_rewrite && (
+                    <div className="mt-3"><JsonBlock value={(p as any).suggested_rewrite} /></div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          }
+        }
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
