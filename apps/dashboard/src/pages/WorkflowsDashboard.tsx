@@ -343,6 +343,7 @@ export default function WorkflowsDashboard() {
   }
 
   async function handleLoadTemplate(templateId: string) {
+    setApiError(null);
     try {
       const result = await getTemplate(templateId);
       if (result?.template) {
@@ -351,9 +352,14 @@ export default function WorkflowsDashboard() {
         setNodes(result.template.definition?.nodes || []);
         setRuns([]);
         setSelectedId(null);
+      } else {
+        // 200 OK with empty/null template — surface so we don't silently swallow
+        // backend regressions or proxy-mangled responses (Codex adversarial finding).
+        setApiError('Failed to load template: server returned no template payload');
       }
     } catch (error) {
       console.error('Failed to load template:', error);
+      setApiError('Failed to load template: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
