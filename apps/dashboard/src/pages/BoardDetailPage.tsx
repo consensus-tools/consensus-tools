@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { ArrowLeft, Clock, ChevronDown, ChevronUp, Users, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getBoard, getEvents, listParticipants } from '../lib/api';
 import { JsonBlock } from '../components/JsonPanel';
+import { safeParseJSON } from '../lib/safeJson';
 
 const DECISION_COLORS: Record<string, string> = {
   ALLOW: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
@@ -73,10 +74,16 @@ export default function BoardDetailPage() {
     const map: Record<string, any> = {};
     for (const e of events) {
       if (e.type === 'FINAL_DECISION' && e.run_id) {
-        try {
-          const payload = JSON.parse(e.payload_json || '{}');
-          map[e.run_id] = payload;
-        } catch {}
+        // Distinguish empty input (legitimate, treat as `{}`) from parse failure
+        // (malformed payload, skip — never overwrite a previously-valid decision
+        // for the same run_id with an empty fallback).
+        const isEmpty = !e.payload_json || e.payload_json === '';
+        if (isEmpty) {
+          map[e.run_id] = {};
+        } else {
+          const parsed = safeParseJSON<any>(e.payload_json, null, 'BoardDetailPage.runDecisions');
+          if (parsed !== null) map[e.run_id] = parsed;
+        }
       }
     }
     return map;

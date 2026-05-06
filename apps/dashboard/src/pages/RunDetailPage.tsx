@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { ArrowLeft, Copy, Clock, Shield, ChevronDown, ChevronUp, Vote, Users, TrendingUp, TrendingDown, Link as LinkIcon } from 'lucide-react';
 import { getRun, getVotes } from '../lib/api';
+import { safeParseJSON } from '../lib/safeJson';
 import { JsonBlock } from '../components/JsonPanel';
 
 const DECISION_COLORS: Record<string, string> = {
@@ -49,14 +50,19 @@ export default function RunDetailPage() {
   }, [runId]);
 
   const final = useMemo(() => events.find((e: any) => e.type === 'FINAL_DECISION'), [events]);
-  const parsed = final ? (() => { try { return JSON.parse(final.payload_json || '{}'); } catch { return null; } })() : null;
+  // Distinguish empty input (legitimate empty payload — render degraded card) from
+  // parse failure (malformed data — render nothing instead of "NaN%" garbage).
+  const parsed = final
+    ? (!final.payload_json || final.payload_json === ''
+        ? {}
+        : safeParseJSON<any>(final.payload_json, null, 'RunDetailPage.parsed'))
+    : null;
   const consensusMeta = parsed?.consensus_meta || parsed?.meta || null;
 
   const correlations = useMemo(() => {
     const rows = events
       .map((e: any) => {
-        let p: any = null;
-        try { p = e.payload_json ? JSON.parse(e.payload_json) : null; } catch {}
+        const p: any = safeParseJSON<any>(e.payload_json, null, 'RunDetailPage.correlations');
         if (!p || (!p.external_run_id && !p.external_step_id && !p.engine)) return null;
         return { eventId: e.id, type: e.type, engine: p.engine || null, externalRunId: p.external_run_id || null, externalStepId: p.external_step_id || null };
       })

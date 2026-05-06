@@ -105,13 +105,17 @@ export default function WorkflowsDashboard() {
   }
 
   async function refreshList() {
+    // Don't pre-clear apiError here — refreshList is auto-fired from the mount
+    // useEffect alongside ensureDefaultBoard, so a null reset would race and
+    // clobber any error the sibling effect set. User-initiated handlers
+    // (handleDelete, executeWorkflow) still pre-clear.
     const [d, t] = await Promise.allSettled([getWorkflows(), getTemplates()]);
     const items = d.status === "fulfilled" ? (d.value.workflows || []) : [];
     const tmpls = t.status === "fulfilled" ? (t.value.templates || []) : [];
     setSaved(items);
     setTemplates(tmpls.map((tmpl: any) => ({ ...tmpl, nodeCount: tmpl.definition?.nodes?.length ?? 0 })));
     if (!workflowId && items.length) {
-      try { await loadWorkflow(items[0].id); } catch {}
+      try { await loadWorkflow(items[0].id); } catch (e: any) { setApiError(e?.message || 'Failed to auto-load workflow'); }
     }
   }
 
@@ -315,22 +319,26 @@ export default function WorkflowsDashboard() {
 
   async function handleDelete() {
     if (!workflowId) return;
+    setApiError(null);
     try {
       await apiDeleteWorkflow(workflowId);
       newWorkflow();
       await refreshList();
     } catch (error) {
       console.error('Failed to delete workflow:', error);
+      setApiError('Failed to delete workflow: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
   async function executeWorkflow() {
     if (!workflowId) return;
+    setApiError(null);
     try {
       await runWorkflow(workflowId);
       await loadWorkflow(workflowId);
     } catch (error) {
       console.error('Failed to run workflow:', error);
+      setApiError('Failed to run workflow: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 

@@ -7,6 +7,7 @@ import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Bot, Save, Pencil, MessageSquare, User, Trash2, Cpu, Globe, Key, Thermometer, TrendingUp } from 'lucide-react';
 import { connectAgent, listAgents, listParticipants, createParticipant, updateParticipant, assignPolicy, deleteParticipant } from '../../lib/api';
+import { safeParseJSON } from '../../lib/safeJson';
 
 const CHAT_ADAPTERS = [
   { value: '', label: 'None' },
@@ -51,21 +52,23 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
 
   const [editingParticipant, setEditingParticipant] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Record<string, any>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
 
   function parseMetadata(p: any): Record<string, any> {
-    if (typeof p.metadata === 'object' && p.metadata !== null) return p.metadata;
-    try {
-      return JSON.parse(p.metadata_json || p.metadata || '{}');
-    } catch {
-      return {};
-    }
+    // Single guard covers both branches: only return the value if it's a plain object.
+    // Arrays, primitives, and parsed-to-null all fall through to {}.
+    const candidate = (typeof p.metadata === 'object' && p.metadata !== null)
+      ? p.metadata
+      : safeParseJSON(p.metadata_json || p.metadata || '{}', {} as Record<string, any>, 'AgentsPanel.parseMetadata');
+    return (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) ? candidate : {};
   }
 
   async function refresh() {
+    setApiError(null);
     try {
       const p = await listParticipants(boardId);
       setParticipants(p.participants || []);
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to load participants'); }
   }
 
   useEffect(() => { refresh(); }, [boardId]);
@@ -80,6 +83,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
 
   async function handleAddInternal() {
     if (!internalForm.name.trim()) return;
+    setApiError(null);
     try {
       await createParticipant({
         boardId,
@@ -98,11 +102,12 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       await assignPolicy({ boardId, policyId: 'default', participants: [internalForm.name.trim()], weightingMode: 'hybrid', quorum: 0.6 });
       setShowAddAgent(false);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add internal agent'); }
   }
 
   async function handleAddExternal() {
     if (!externalForm.name.trim()) return;
+    setApiError(null);
     try {
       const r = await connectAgent({
         name: externalForm.name.trim(),
@@ -126,11 +131,12 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       });
       await assignPolicy({ boardId, policyId: 'default', participants: [externalForm.name.trim()], weightingMode: 'hybrid', quorum: 0.6 });
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add external agent'); }
   }
 
   async function handleAddHuman() {
     if (!humanName.trim()) return;
+    setApiError(null);
     try {
       await createParticipant({
         boardId,
@@ -143,7 +149,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       setHumanName('');
       setShowAddHuman(false);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to add human participant'); }
   }
 
   function startEdit(p: any) {
@@ -164,6 +170,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
   }
 
   async function saveEdit(id: string) {
+    setApiError(null);
     try {
       const isInternal = editDraft.agentType === 'internal';
       const metadata: Record<string, any> = { agentType: editDraft.agentType || '' };
@@ -183,15 +190,16 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
       });
       setEditingParticipant(null);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to save participant'); }
   }
 
   async function handleDeleteParticipant(id: string) {
+    setApiError(null);
     try {
       await deleteParticipant(id);
       setEditingParticipant(null);
       await refresh();
-    } catch {}
+    } catch (e: any) { setApiError(e?.message || 'Failed to delete participant'); }
   }
 
   const humanParticipants = participants.filter(p => p.subject_type === 'human');
@@ -215,6 +223,7 @@ export function AgentsPanel({ boardId, workflowNodes = [] }: AgentsPanelProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-y-auto">
+        {apiError && <div className="text-xs text-red-500 mb-2">{apiError}</div>}
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <User className="h-3 w-3" /> Humans
