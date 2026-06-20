@@ -64,7 +64,7 @@ VOTE: <YES|NO|REWRITE> | RISK: <0.0-1.0> | REASON: <brief explanation>`;
   }
 }
 
-function parseAiResponse(text: string, persona: AgentPersona): GuardVote {
+export function parseAiResponse(text: string, persona: AgentPersona): GuardVote {
   const voteMatch = /VOTE:\s*(YES|NO|REWRITE)/i.exec(text);
   const riskMatch = /RISK:\s*([\d.]+)/i.exec(text);
   const reasonMatch = /REASON:\s*(.+)/i.exec(text);
