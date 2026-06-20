@@ -269,6 +269,7 @@ export class NodeExecutor {
 
     // Run LLM-based multi-persona evaluation
     const votes = await evaluateWithAiSdk(evalInput, personas, {
+      provider: "openai",
       model,
       apiKey: this.deps.credentials?.get("openai", "api_key") ?? undefined,
       allowDeterministicFallback: true,
