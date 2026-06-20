@@ -26,7 +26,7 @@ export async function createLlmFn(opts?: {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- optional runtime dep
     const Anthropic = (await import("@anthropic-ai/sdk" as string)).default;
     const client = new Anthropic({ apiKey: anthropicKey });
-    const model = opts?.anthropicModel ?? "claude-sonnet-4-20250514";
+    const model = opts?.anthropicModel ?? "claude-sonnet-4-6";
     return async (prompt: string) => {
       const res = await client.messages.create({
         model,
