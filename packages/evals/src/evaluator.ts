@@ -68,13 +68,20 @@ export async function evaluateWithAiSdk(
   try {
     const { generateText } = await import("ai" as string);
 
+    // Build the provider with the *resolved* key via the create* factory. The
+    // bare `anthropic`/`openai` singletons only read ANTHROPIC_API_KEY/
+    // OPENAI_API_KEY from the env and ignore a key passed in config — so a
+    // caller-supplied apiKey (e.g. workflow-stored credentials) must go through
+    // createAnthropic/createOpenAI to actually authenticate.
     let model: unknown;
     if (provider === "anthropic") {
-      const { anthropic } = await import("@ai-sdk/anthropic" as string);
-      model = (anthropic as any)(config.model || process.env["AI_MODEL"] || DEFAULT_ANTHROPIC_MODEL);
+      const { createAnthropic } = await import("@ai-sdk/anthropic" as string);
+      const anthropic = (createAnthropic as any)({ apiKey });
+      model = anthropic(config.model || process.env["AI_MODEL"] || DEFAULT_ANTHROPIC_MODEL);
     } else {
-      const { openai } = await import("@ai-sdk/openai" as string);
-      model = (openai as any)(config.model || process.env["AI_MODEL"] || DEFAULT_OPENAI_MODEL);
+      const { createOpenAI } = await import("@ai-sdk/openai" as string);
+      const openai = (createOpenAI as any)({ apiKey });
+      model = openai(config.model || process.env["AI_MODEL"] || DEFAULT_OPENAI_MODEL);
     }
 
     const votes: GuardVote[] = [];
@@ -108,10 +115,15 @@ export function parseAiResponse(text: string, persona: AgentPersona): GuardVote 
   const riskMatch = /RISK:\s*([\d.]+)/i.exec(text);
   const reasonMatch = /REASON:\s*(.+)/i.exec(text);
 
+  // The [\d.]+ class can match a non-numeric token like "." → parseFloat → NaN,
+  // which slips through Math.min/Math.max. Fall back to 0.5 on NaN.
+  const parsedRisk = parseFloat(riskMatch?.[1] || "0.5");
+  const risk = Number.isNaN(parsedRisk) ? 0.5 : Math.min(1, Math.max(0, parsedRisk));
+
   return {
     evaluator: persona.id,
     vote: (voteMatch?.[1]?.toUpperCase() as "YES" | "NO" | "REWRITE") || "YES",
-    risk: Math.min(1, Math.max(0, parseFloat(riskMatch?.[1] || "0.5"))),
+    risk,
     reason: reasonMatch?.[1]?.trim() || `${persona.name}: No issues detected`,
   };
 }

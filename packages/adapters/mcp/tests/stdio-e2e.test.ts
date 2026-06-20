@@ -32,6 +32,10 @@ class StdioClient {
       stdio: ["pipe", "pipe", "pipe"],
     });
     this.child.stderr.on("data", (d) => (this.stderr += d.toString()));
+    // Swallow EPIPE / write-after-end: if the server exits while we still hold
+    // stdin, a pending write would otherwise throw an unhandled stream error
+    // and crash the test process instead of failing the assertion.
+    this.child.stdin.on("error", () => {});
     this.child.stdout.on("data", (chunk) => {
       this.buf += chunk.toString();
       let nl: number;
@@ -71,7 +75,19 @@ class StdioClient {
     return text ? JSON.parse(text) : undefined;
   }
 
-  kill(): void { this.child.kill(); }
+  /** Terminate the child and resolve once it has fully exited, so callers can
+   *  safely remove the temp dir without racing the process's open handles. */
+  close(): Promise<void> {
+    return new Promise((resolve) => {
+      const child = this.child;
+      if (child.exitCode !== null || child.signalCode !== null) return resolve();
+      child.once("close", () => resolve());
+      try { child.stdin.end(); } catch { /* already closed */ }
+      child.kill();
+      // Safety net: never hang the suite if "close" somehow never fires.
+      setTimeout(resolve, 2000).unref();
+    });
+  }
 }
 
 describe("MCP stdio e2e (shipped binary)", () => {
@@ -94,8 +110,8 @@ describe("MCP stdio e2e (shipped binary)", () => {
     client.notify("notifications/initialized");
   }, 30000);
 
-  afterAll(() => {
-    client?.kill();
+  afterAll(async () => {
+    await client?.close();
     if (tmpDir) rmSync(tmpDir, { recursive: true, force: true });
   });
 

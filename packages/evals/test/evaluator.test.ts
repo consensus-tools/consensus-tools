@@ -1,19 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock the optional AI SDK peer deps so the LLM path is exercised without any
-// network. vi.mock is hoisted; the dynamic import() inside evaluator.ts resolves
-// to these mocks. @ai-sdk/anthropic + ai are devDependencies (test-only).
+// network. evaluator.ts builds providers via createAnthropic({apiKey}) /
+// createOpenAI({apiKey}) — these mocks let us assert BOTH that the resolved key
+// reaches the factory and that the right model id reaches the provider. The
+// two-level shape (factory → model fn) is built with vi.hoisted so the mock
+// factory can reference it (vi.mock is hoisted above imports).
+const { createAnthropic, anthropicModelFn, createOpenAI, openaiModelFn } = vi.hoisted(() => {
+  const anthropicModelFn = vi.fn((id: string) => ({ __model: id }));
+  const openaiModelFn = vi.fn((id: string) => ({ __model: id }));
+  return {
+    anthropicModelFn,
+    createAnthropic: vi.fn(() => anthropicModelFn),
+    openaiModelFn,
+    createOpenAI: vi.fn(() => openaiModelFn),
+  };
+});
 vi.mock("ai", () => ({ generateText: vi.fn() }));
-vi.mock("@ai-sdk/anthropic", () => ({
-  anthropic: vi.fn((id: string) => ({ __model: id })),
-}));
-vi.mock("@ai-sdk/openai", () => ({
-  openai: vi.fn((id: string) => ({ __model: id })),
-}));
+vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic }));
+vi.mock("@ai-sdk/openai", () => ({ createOpenAI }));
 
 import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { openai } from "@ai-sdk/openai";
 import {
   evaluateWithAiSdk,
   parseAiResponse,
@@ -24,8 +31,10 @@ import type { AgentPersona } from "../src/personas.js";
 import type { GuardEvaluateInput } from "@consensus-tools/schemas";
 
 const mockGenerateText = vi.mocked(generateText);
-const mockAnthropic = vi.mocked(anthropic);
-const mockOpenai = vi.mocked(openai);
+const mockCreateAnthropic = vi.mocked(createAnthropic);
+const mockAnthropicModel = vi.mocked(anthropicModelFn);
+const mockCreateOpenAI = vi.mocked(createOpenAI);
+const mockOpenaiModel = vi.mocked(openaiModelFn);
 
 // Minimal input — evaluateWithAiSdk reads input.action.{type,payload}.
 const input = {
@@ -116,8 +125,13 @@ describe("evaluateWithAiSdk", () => {
 
     it("defaults to the Anthropic provider and claude-opus-4-8", async () => {
       await evaluateWithAiSdk(input, makePersonas(["solo"]), { apiKey: "sk-ant-test" });
-      expect(mockAnthropic).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
+      expect(mockAnthropicModel).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
       expect(DEFAULT_ANTHROPIC_MODEL).toBe("claude-opus-4-8");
+    });
+
+    it("forwards the configured apiKey to createAnthropic (not just the env)", async () => {
+      await evaluateWithAiSdk(input, makePersonas(["solo"]), { apiKey: "sk-ant-test" });
+      expect(mockCreateAnthropic).toHaveBeenCalledWith({ apiKey: "sk-ant-test" });
     });
 
     it("honors config.model over the default", async () => {
@@ -125,19 +139,20 @@ describe("evaluateWithAiSdk", () => {
         apiKey: "sk-ant-test",
         model: "claude-haiku-4-5",
       });
-      expect(mockAnthropic).toHaveBeenCalledWith("claude-haiku-4-5");
+      expect(mockAnthropicModel).toHaveBeenCalledWith("claude-haiku-4-5");
     });
 
     it("honors the AI_MODEL env var when config.model is unset", async () => {
       vi.stubEnv("AI_MODEL", "claude-sonnet-4-6");
       await evaluateWithAiSdk(input, makePersonas(["solo"]), { apiKey: "sk-ant-test" });
-      expect(mockAnthropic).toHaveBeenCalledWith("claude-sonnet-4-6");
+      expect(mockAnthropicModel).toHaveBeenCalledWith("claude-sonnet-4-6");
     });
 
-    it("selects Anthropic when only ANTHROPIC_API_KEY is in the env", async () => {
+    it("selects Anthropic and forwards the env key when only ANTHROPIC_API_KEY is set", async () => {
       vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-from-env");
       await evaluateWithAiSdk(input, makePersonas(["solo"]));
-      expect(mockAnthropic).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
+      expect(mockAnthropicModel).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
+      expect(mockCreateAnthropic).toHaveBeenCalledWith({ apiKey: "sk-ant-from-env" });
     });
 
     it("builds a prompt carrying the persona identity and the action type", async () => {
@@ -178,35 +193,38 @@ describe("evaluateWithAiSdk", () => {
       } as never);
     });
 
-    it("routes to the OpenAI SDK + gpt-4o-mini when provider is 'openai'", async () => {
+    it("routes to the OpenAI SDK + gpt-4o-mini, forwarding the key, when provider is 'openai'", async () => {
       await evaluateWithAiSdk(input, makePersonas(["solo"]), {
         provider: "openai",
         apiKey: "sk-openai-test",
       });
-      expect(mockOpenai).toHaveBeenCalledWith(DEFAULT_OPENAI_MODEL);
+      expect(mockCreateOpenAI).toHaveBeenCalledWith({ apiKey: "sk-openai-test" });
+      expect(mockOpenaiModel).toHaveBeenCalledWith(DEFAULT_OPENAI_MODEL);
       expect(DEFAULT_OPENAI_MODEL).toBe("gpt-4o-mini");
-      expect(mockAnthropic).not.toHaveBeenCalled();
+      expect(mockCreateAnthropic).not.toHaveBeenCalled();
     });
 
     it("auto-selects OpenAI when only OPENAI_API_KEY is set (no provider, no Anthropic key)", async () => {
       vi.stubEnv("OPENAI_API_KEY", "sk-openai-env");
       await evaluateWithAiSdk(input, makePersonas(["solo"]));
-      expect(mockOpenai).toHaveBeenCalledWith(DEFAULT_OPENAI_MODEL);
-      expect(mockAnthropic).not.toHaveBeenCalled();
+      expect(mockCreateOpenAI).toHaveBeenCalledWith({ apiKey: "sk-openai-env" });
+      expect(mockOpenaiModel).toHaveBeenCalledWith(DEFAULT_OPENAI_MODEL);
+      expect(mockCreateAnthropic).not.toHaveBeenCalled();
     });
 
     it("treats a bare config.apiKey as the Anthropic key by default", async () => {
       await evaluateWithAiSdk(input, makePersonas(["solo"]), { apiKey: "sk-ambiguous" });
-      expect(mockAnthropic).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
-      expect(mockOpenai).not.toHaveBeenCalled();
+      expect(mockCreateAnthropic).toHaveBeenCalledWith({ apiKey: "sk-ambiguous" });
+      expect(mockAnthropicModel).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
+      expect(mockCreateOpenAI).not.toHaveBeenCalled();
     });
 
     it("prefers Anthropic when both keys are present", async () => {
       vi.stubEnv("ANTHROPIC_API_KEY", "sk-ant-env");
       vi.stubEnv("OPENAI_API_KEY", "sk-openai-env");
       await evaluateWithAiSdk(input, makePersonas(["solo"]));
-      expect(mockAnthropic).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
-      expect(mockOpenai).not.toHaveBeenCalled();
+      expect(mockAnthropicModel).toHaveBeenCalledWith(DEFAULT_ANTHROPIC_MODEL);
+      expect(mockCreateOpenAI).not.toHaveBeenCalled();
     });
   });
 });
@@ -259,6 +277,11 @@ describe("parseAiResponse", () => {
   it("clamps risk above 1 down to 1", () => {
     expect(parseAiResponse("VOTE: NO | RISK: 5 | REASON: x", persona).risk).toBe(1);
     expect(parseAiResponse("VOTE: NO | RISK: 1.9 | REASON: x", persona).risk).toBe(1);
+  });
+
+  it("defaults risk to 0.5 when RISK matches a non-numeric token (NaN guard)", () => {
+    // "RISK: ." matches [\d.]+ but parseFloat(".") is NaN — must not leak NaN.
+    expect(parseAiResponse("VOTE: NO | RISK: . | REASON: x", persona).risk).toBe(0.5);
   });
 
   it("defaults reason to a persona-named message when REASON is missing", () => {
