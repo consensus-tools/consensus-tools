@@ -11,3 +11,6 @@ _legacy_mcp/
 .claude/
 .worktrees/
 docs/
+
+# Local MCP dev server state (created at runtime by .mcp.json)
+data/mcp-dev-state.json
