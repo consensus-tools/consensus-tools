@@ -124,10 +124,11 @@ describe("MCP stdio e2e (shipped binary)", () => {
   it("advertises tools over the wire, each with an input schema", async () => {
     const res = await client.request("tools/list", {});
     const tools = res.result?.tools ?? [];
-    // The server is documented to expose a large tool surface; assert a healthy
-    // floor rather than an exact count so adding a tool doesn't break the test,
-    // but every advertised tool MUST carry an input schema (drift guard).
-    expect(tools.length).toBeGreaterThanOrEqual(24);
+    // The server is documented to expose 31 tools (see mcp/CLAUDE.md). Assert a
+    // floor at the documented count rather than an exact match so adding a tool
+    // doesn't break the test, but silently dropping below the shipped surface
+    // does. Every advertised tool MUST also carry an input schema (drift guard).
+    expect(tools.length).toBeGreaterThanOrEqual(31);
     expect(tools.every((t: any) => t.inputSchema && typeof t.inputSchema === "object")).toBe(true);
     const names: string[] = tools.map((t: any) => t.name);
     for (const expected of ["agent.register", "agent.list", "guard.evaluate", "consensus_post_job"]) {
