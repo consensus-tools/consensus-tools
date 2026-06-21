@@ -1,6 +1,6 @@
 # @consensus-tools/mcp
 
-MCP server exposing 24 consensus-tools as Model Context Protocol tools, resources, and prompts.
+MCP server exposing 31 consensus-tools as Model Context Protocol tools, resources, and prompts.
 
 ## Key Exports
 

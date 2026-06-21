@@ -154,6 +154,51 @@ describe("MCP stdio e2e (shipped binary)", () => {
     expect(agents.map((a: any) => a.id)).toContain("e2e-1");
   });
 
+  it("guard.evaluate runs the real engine and ALLOWs a benign action over the wire", async () => {
+    const res = await client.request("tools/call", {
+      name: "guard.evaluate",
+      arguments: {
+        boardId: "guard-allow",
+        action: { type: "send_email", payload: { to: "user@example.com", body: "Meeting notes attached." } },
+      },
+    });
+    expect(res.result?.isError).not.toBe(true);
+    const result = StdioClient.payload(res);
+    // The decision is computed by the real evaluator registry (not a mock), so
+    // assert the full GuardResult contract, not just that something came back.
+    expect(result.decision).toBe("ALLOW");
+    expect(result.audit_id).toBeTruthy();
+    expect(Array.isArray(result.votes)).toBe(true);
+    expect(result.guard_type).toBeTruthy();
+  });
+
+  it("guard.evaluate BLOCKs a risky action and persists the audit trail", async () => {
+    const res = await client.request("tools/call", {
+      name: "guard.evaluate",
+      arguments: {
+        boardId: "guard-block",
+        action: { type: "send_email", payload: { to: "user@example.com", body: "Here is the api_key: sk-live-123" } },
+      },
+    });
+    expect(res.result?.isError).not.toBe(true);
+    const result = StdioClient.payload(res);
+    expect(result.decision).toBe("BLOCK");
+    expect(result.risk_score).toBeGreaterThan(0.5);
+
+    // The engine persists audit events through real storage — prove the round-trip
+    // by reading the FINAL_DECISION back out over the wire. FINAL_DECISION events
+    // carry auditId (not boardId), so free-text search on the audit id, which is
+    // stamped on every event for this evaluation.
+    const audit = await client.request("tools/call", {
+      name: "audit.search",
+      arguments: { query: result.audit_id },
+    });
+    const { events } = StdioClient.payload(audit);
+    const finalDecision = events.find((e: any) => e.type === "FINAL_DECISION");
+    expect(finalDecision?.details?.decision).toBe("BLOCK");
+    expect(finalDecision?.details?.auditId).toBe(result.audit_id);
+  });
+
   it("returns a structured error for invalid tool input (not a crash)", async () => {
     const res = await client.request("tools/call", {
       name: "agent.register",
