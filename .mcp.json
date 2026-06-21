@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "consensus-tools": {
+      "command": "node",
+      "args": [
+        "packages/adapters/mcp/dist/entry.js"
+      ],
+      "env": {
+        "CONSENSUS_AGENT_ID": "claude-dev",
+        "CONSENSUS_STORAGE_PATH": "data/mcp-dev-state.json"
+      }
+    }
+  }
+}
