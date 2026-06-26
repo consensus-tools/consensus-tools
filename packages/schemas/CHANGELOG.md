@@ -1,5 +1,11 @@
 # @consensus-tools/schemas
 
+## 0.11.0
+
+### Minor Changes
+
+- Add Tier-0 audit-event payload schemas (`src/audit-events.ts`): `finalDecisionPayloadSchema` (runtime-validated FINAL_DECISION payload — normalizes canonical camelCase, legacy snake_case, and chat-approval-limited shapes; passthrough for forward-compat), `participantMetadataSchema` (typed `agentType`/`model`, rejects non-plain objects, returns a fresh object per parse), and `consensusMetaSchema`. Legacy snake_case + chat-approval shapes are accepted until 2026-09-01.
+
 ## 0.8.0
 
 ### Minor Changes

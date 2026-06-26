@@ -1,5 +1,11 @@
 # @consensus-tools/core
 
+## 0.11.0
+
+### Patch Changes
+
+- `createLlmFn`'s Anthropic default moved off `claude-sonnet-4-20250514` (deprecated, scheduled for retirement) to `claude-sonnet-4-6`.
+
 ## 0.8.0
 
 ### Minor Changes
