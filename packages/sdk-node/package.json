@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/sdk-node",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Node.js HTTP server for consensus-tools local board",
   "type": "module",
   "main": "./dist/index.js",

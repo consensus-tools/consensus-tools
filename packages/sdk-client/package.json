@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/sdk-client",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "HTTP client for consensus-tools board API",
   "type": "module",
   "main": "./dist/index.js",

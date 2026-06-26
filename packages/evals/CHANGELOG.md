@@ -1,5 +1,11 @@
 # @consensus-tools/evals
 
+## 0.11.0
+
+### Minor Changes
+
+- `evaluateWithAiSdk` is now Anthropic-first: defaults to `claude-opus-4-8` via `@ai-sdk/anthropic` (previously OpenAI `gpt-4o-mini`). Adds an explicit `provider?: "anthropic" | "openai"` field on `AiEvaluatorConfig`, `DEFAULT_ANTHROPIC_MODEL`/`DEFAULT_OPENAI_MODEL` exports, and now exports `parseAiResponse`. OpenAI is still used when `provider: "openai"` is passed or only `OPENAI_API_KEY` is set; `config.apiKey` with no `provider` is treated as the Anthropic key.
+
 ## 0.8.0
 
 ### Patch Changes
