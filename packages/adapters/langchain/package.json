@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/langchain",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "LangChain adapter — consensus-tools guards as LangChain tools + decision callback handler",
   "type": "module",
   "main": "./dist/index.js",

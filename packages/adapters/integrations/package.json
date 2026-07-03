@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/integrations",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "External platform adapters (GitHub, Linear) for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",

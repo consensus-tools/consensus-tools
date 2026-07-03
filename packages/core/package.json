@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/core",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Protocol engine, ledger, storage, and resolution primitives for consensus-tools",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "@consensus-tools/universal",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Universal facade — wrap any tool executor with consensus governance in one line",
   "type": "module",
   "main": "./dist/index.js",
@@ -32,9 +32,15 @@
     "@consensus-tools/mcp": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "@consensus-tools/langchain": { "optional": true },
-    "@consensus-tools/ai-sdk": { "optional": true },
-    "@consensus-tools/mcp": { "optional": true }
+    "@consensus-tools/langchain": {
+      "optional": true
+    },
+    "@consensus-tools/ai-sdk": {
+      "optional": true
+    },
+    "@consensus-tools/mcp": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

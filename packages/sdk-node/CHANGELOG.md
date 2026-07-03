@@ -1,5 +1,18 @@
 # @consensus-tools/sdk-node
 
+## 0.11.1
+
+### Patch Changes
+
+- Updated dependencies [90e0855]
+  - @consensus-tools/schemas@0.11.1
+  - @consensus-tools/guards@0.11.1
+  - @consensus-tools/core@0.11.1
+  - @consensus-tools/workflows@0.11.1
+  - @consensus-tools/integrations@0.11.1
+  - @consensus-tools/notifications@0.11.1
+  - @consensus-tools/storage@0.11.1
+
 ## 0.8.0
 
 ### Patch Changes

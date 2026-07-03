@@ -1,5 +1,20 @@
 # @consensus-tools/universal
 
+## 0.11.1
+
+### Patch Changes
+
+- Updated dependencies [90e0855]
+  - @consensus-tools/mcp@0.11.1
+  - @consensus-tools/schemas@0.11.1
+  - @consensus-tools/guards@0.11.1
+  - @consensus-tools/core@0.11.1
+  - @consensus-tools/ai-sdk@0.11.1
+  - @consensus-tools/langchain@0.11.1
+  - @consensus-tools/personas@0.11.1
+  - @consensus-tools/policies@0.11.1
+  - @consensus-tools/storage@0.11.1
+
 ## 0.11.0
 
 ### Minor Changes
