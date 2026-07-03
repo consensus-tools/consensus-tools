@@ -414,9 +414,6 @@ importers:
       '@consensus-tools/guards':
         specifier: workspace:*
         version: link:../../guards
-      '@consensus-tools/policies':
-        specifier: workspace:*
-        version: link:../../policies
       '@consensus-tools/schemas':
         specifier: workspace:*
         version: link:../../schemas
@@ -426,11 +423,8 @@ importers:
       '@consensus-tools/workflows':
         specifier: workspace:*
         version: link:../../workflows
-      '@consensus-tools/wrapper':
-        specifier: workspace:*
-        version: link:../../wrapper
       '@modelcontextprotocol/sdk':
-        specifier: ^1.0.0
+        specifier: ^1.27.0
         version: 1.27.1(@cfworker/json-schema@4.1.1)(zod@3.25.76)
     devDependencies:
       '@anthropic-ai/sdk':
@@ -4035,6 +4029,7 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@11.1.0:
