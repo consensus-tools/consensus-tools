@@ -32,6 +32,33 @@ describe("NodeExecutor", () => {
     expect(result).toBeDefined();
   });
 
+  it("requireFinalHumanApprovalYes aborts when no human decision is present (fail closed)", async () => {
+    const { storage } = await createTempStorage();
+    const executor = new NodeExecutor({ storage });
+    const node: WorkflowNode = { id: "a1", type: "action", config: { action: "log", message: "x", requireFinalHumanApprovalYes: true } };
+    // No hitlDecision in context — an explicit "require a human YES" node must NOT run.
+    const result = await executor.execute(node, {}, ids);
+    expect(result.ok).toBe(false);
+    expect(result.skipped).toBe(true);
+  });
+
+  it("requireFinalHumanApprovalYes aborts on a NO decision", async () => {
+    const { storage } = await createTempStorage();
+    const executor = new NodeExecutor({ storage });
+    const node: WorkflowNode = { id: "a1", type: "action", config: { action: "log", message: "x", requireFinalHumanApprovalYes: true } };
+    const result = await executor.execute(node, { hitlDecision: "NO" }, ids);
+    expect(result.ok).toBe(false);
+    expect(result.skipped).toBe(true);
+  });
+
+  it("requireFinalHumanApprovalYes proceeds on an explicit YES", async () => {
+    const { storage } = await createTempStorage();
+    const executor = new NodeExecutor({ storage });
+    const node: WorkflowNode = { id: "a1", type: "action", config: { action: "log", message: "x", requireFinalHumanApprovalYes: true } };
+    const result = await executor.execute(node, { hitlDecision: "YES" }, ids);
+    expect(result.ok).not.toBe(false);
+  });
+
   it("emits FINAL_DECISION audit details with camelCase keys (producer contract)", async () => {
     const { storage } = await createTempStorage();
     const executor = new NodeExecutor({ storage });

@@ -5,6 +5,7 @@ import type {
   WeightedGuardVote,
   WeightingMode,
 } from "@consensus-tools/schemas";
+import { DEFAULT_HITL_TIMEOUT_SEC } from "@consensus-tools/schemas";
 import type { IStorage } from "@consensus-tools/storage";
 import type { GuardEngineOptions } from "@consensus-tools/core";
 import {
@@ -735,7 +736,7 @@ export class NodeExecutor {
     }
 
     const promptMode = String(node.config?.promptMode || node.config?.mode || "yes-no");
-    const timeoutSec = Number(node.config?.timeoutSec ?? 900);
+    const timeoutSec = Number(node.config?.timeoutSec ?? DEFAULT_HITL_TIMEOUT_SEC);
     const requiredVotes = Number(node.config?.requiredVotes ?? 1);
     const isVoteMode = promptMode === "vote";
     const autoDecisionOnExpiry = String(node.config?.autoDecisionOnExpiry || "BLOCK");
@@ -787,10 +788,14 @@ export class NodeExecutor {
       }
     }
 
-    // Check final human approval requirement
+    // Check final human approval requirement. Fail CLOSED: this flag means "run only
+    // on an explicit human YES", so an absent decision (no approval recorded) must
+    // abort just like a NO/REWRITE — otherwise a resume that never injected a decision
+    // would execute the guarded action as if approved.
     if (node.config?.requireFinalHumanApprovalYes) {
-      if (context.hitlDecision && context.hitlDecision !== "YES") {
-        return { ok: false, action: actionName, skipped: true, reason: `Human decision was ${String(context.hitlDecision)} — action aborted` };
+      if (context.hitlDecision !== "YES") {
+        const decision = context.hitlDecision ? String(context.hitlDecision) : "missing";
+        return { ok: false, action: actionName, skipped: true, reason: `Final human approval required but decision was ${decision} — action aborted` };
       }
     }
 
