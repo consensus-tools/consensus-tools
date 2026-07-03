@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { GuardEvaluateInput, GuardResult, GuardPolicy } from "@consensus-tools/schemas";
+import { BUILT_IN_GUARD_DOMAINS } from "@consensus-tools/schemas";
 import { evaluatorVotes, finalizeVotes, normalizeGuardType, type GuardEvaluatorRegistry } from "@consensus-tools/guards";
 import type { IStorage } from "@consensus-tools/storage";
 import type { AgentRegistry } from "./agent-registry.js";
@@ -27,6 +28,15 @@ export class GuardEngine {
     this.agentRegistry = opts.agentRegistry;
     this.evaluatorRegistry = opts.evaluatorRegistry;
     this.defaultPolicy = opts.defaultPolicy;
+  }
+
+  // Guard types this engine can actually evaluate. Callers that accept a dynamic
+  // action.type (e.g. the MCP guard.evaluate tool) should gate on this rather than
+  // the full guardTypeSchema enum: a schema type with no registered evaluator falls
+  // through to the permissive generic evaluator (unconditional YES), so advertising
+  // it is a silent-ALLOW path.
+  supportedGuardTypes(): string[] {
+    return this.evaluatorRegistry ? this.evaluatorRegistry.listTypes() : [...BUILT_IN_GUARD_DOMAINS];
   }
 
   async evaluate(input: GuardEvaluateInput, policy?: GuardPolicy): Promise<GuardResult> {
