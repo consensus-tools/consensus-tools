@@ -245,6 +245,61 @@ describe("evaluatorVotes", () => {
       const votes = evaluatorVotes(makeInput("permission_escalation", { breakGlass: false }));
       expect(votes[0].vote).toBe("YES");
     });
+
+    it("flags a scoped wildcard permission (iam:*)", () => {
+      const votes = evaluatorVotes(makeInput("permission_escalation", { permission: "iam:*" }));
+      expect(votes[0].vote).toBe("REWRITE");
+      expect(votes[0].reason).toContain("wildcard");
+      expect(votes[0].risk).toBeGreaterThanOrEqual(0.85);
+    });
+
+    it("blocks a bare wildcard anywhere in requestedPermissions", () => {
+      const votes = evaluatorVotes(
+        makeInput("permission_escalation", { requestedPermissions: ["s3:read", "*"] }),
+      );
+      expect(votes[0].vote).toBe("NO");
+      expect(votes[0].reason).toContain("Wildcard");
+      expect(votes[0].risk).toBeGreaterThanOrEqual(0.95);
+    });
+
+    it("flags a scoped wildcard in a non-first requestedPermissions entry", () => {
+      const votes = evaluatorVotes(
+        makeInput("permission_escalation", { requestedPermissions: ["s3:read", "iam:*"] }),
+      );
+      expect(votes[0].vote).toBe("REWRITE");
+      expect(votes[0].reason).toContain("wildcard");
+    });
+
+    it("scans requestedPermissions even when a benign `permission` is also present", () => {
+      const votes = evaluatorVotes(
+        makeInput("permission_escalation", { permission: "s3:read", requestedPermissions: ["admin:*"] }),
+      );
+      expect(votes[0].vote).toBe("REWRITE");
+    });
+
+    it("break-glass outranks a scoped wildcard when both are present", () => {
+      const votes = evaluatorVotes(
+        makeInput("permission_escalation", { breakGlass: true, permission: "iam:*" }),
+      );
+      expect(votes[0].vote).toBe("REWRITE");
+      expect(votes[0].reason).toContain("Break-glass");
+      // Adding a risk factor must never LOWER the score below break-glass alone (0.9).
+      expect(votes[0].risk).toBeGreaterThanOrEqual(0.9);
+    });
+
+    it("allows a list of scoped, non-wildcard permissions", () => {
+      const votes = evaluatorVotes(
+        makeInput("permission_escalation", { requestedPermissions: ["s3:read", "s3:write", "logs:read"] }),
+      );
+      expect(votes[0].vote).toBe("YES");
+    });
+
+    it("flags a scoped wildcard resource (prod-*), matching the permission side", () => {
+      const votes = evaluatorVotes(makeInput("permission_escalation", { resource: "prod-*" }));
+      expect(votes[0].vote).toBe("REWRITE");
+      expect(votes[0].reason).toContain("wildcard");
+      expect(votes[0].risk).toBeGreaterThanOrEqual(0.85);
+    });
   });
 
   it("returns generic YES for unknown action type", () => {

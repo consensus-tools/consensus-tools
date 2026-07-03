@@ -116,15 +116,28 @@ function evaluateDeployment(p: Record<string, unknown>): GuardVote[] {
 }
 
 function evaluatePermissionEscalation(p: Record<string, unknown>): GuardVote[] {
-  const permission = String(p["permission"] || "");
   const resource = String(p["resource"] || "");
   const breakGlass = Boolean(p["breakGlass"]);
   const targetRole = String(p["target_role"] || "");
-  if (permission === "*" || resource === "*") {
+  // Scan EVERY requested permission, not just `permission`: a wildcard buried in
+  // a later requestedPermissions entry is just as broad a grant.
+  const permissions = [
+    ...(p["permission"] ? [String(p["permission"])] : []),
+    ...(Array.isArray(p["requestedPermissions"]) ? (p["requestedPermissions"] as unknown[]).map(String) : []),
+  ];
+  if (permissions.includes("*") || resource === "*") {
     return [{ evaluator: "perm-risk", vote: "NO", reason: "Wildcard permission or resource — too broad", risk: 0.95 }];
   }
+  // Checks are ordered by descending risk so a request combining factors always
+  // scores at its most severe one (break-glass 0.9 > scoped wildcard 0.85).
   if (breakGlass) {
     return [{ evaluator: "perm-risk", vote: "REWRITE", reason: "Break-glass escalation flagged", risk: 0.9 }];
+  }
+  // A scoped wildcard on either the permission or the resource is an unbounded
+  // grant within its namespace — treat both sides symmetrically.
+  const scopedWildcard = permissions.find((perm) => perm.includes("*")) ?? (resource.includes("*") ? resource : undefined);
+  if (scopedWildcard !== undefined) {
+    return [{ evaluator: "perm-risk", vote: "REWRITE", reason: `Scoped wildcard (${scopedWildcard}) — grants an unbounded set within its namespace`, risk: 0.85 }];
   }
   if (/admin|superuser|root/i.test(targetRole)) {
     return [{ evaluator: "perm-risk", vote: "REWRITE", reason: "Admin/superuser role escalation", risk: 0.8 }];
