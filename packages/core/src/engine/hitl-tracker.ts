@@ -112,6 +112,17 @@ export class HitlTracker {
     return state.hitlApprovals.filter((a) => a.status === "pending");
   }
 
+  // Re-arm deadline enforcement after a process restart. The interval timer only
+  // starts inside registerPendingApproval, so approvals persisted by a previous
+  // process would otherwise never expire. Runs an immediate deadline check so
+  // approvals that expired while the server was down resolve now, not one interval
+  // from now; checkDeadlines stops the timer again if nothing remains pending.
+  async resumeDeadlineTracking(): Promise<void> {
+    if ((await this.listPending()).length === 0) return;
+    this.ensureTimerRunning();
+    await this.checkDeadlines();
+  }
+
   private ensureTimerRunning() {
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {

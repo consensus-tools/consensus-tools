@@ -50,7 +50,7 @@ describe("server tool routing", () => {
       name: "guard.evaluate",
       arguments: {
         boardId: "b1",
-        action: { type: "test", payload: {} },
+        action: { type: "send_email", payload: {} },
       },
     });
     expect(result.isError).toBeUndefined();

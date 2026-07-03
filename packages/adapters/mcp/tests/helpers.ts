@@ -17,6 +17,10 @@ export function makeMockCtx(overrides: Partial<McpContext> = {}): McpContext {
       activateAgent: vi.fn().mockResolvedValue(null),
     } as any,
     guardEngine: {
+      supportedGuardTypes: vi.fn().mockReturnValue([
+        "send_email", "code_merge", "publish", "support_reply",
+        "agent_action", "deployment", "permission_escalation",
+      ]),
       evaluate: vi.fn().mockResolvedValue({
         decision: "ALLOW",
         reason: "Safe",
@@ -29,6 +33,20 @@ export function makeMockCtx(overrides: Partial<McpContext> = {}): McpContext {
     hitlTracker: {
       recordVoteReceived: vi.fn().mockResolvedValue({ complete: false, total: 1, required: 2 }),
       resolveApproval: vi.fn().mockResolvedValue(undefined),
+      getPendingApproval: vi.fn().mockResolvedValue(undefined),
+      registerPendingApproval: vi.fn().mockImplementation(async (opts: Record<string, unknown>) => ({
+        id: "hitl-1",
+        runId: opts.runId,
+        boardId: opts.boardId,
+        timeoutSec: opts.timeoutSec,
+        requiredVotes: opts.requiredVotes ?? 1,
+        receivedVotes: 0,
+        mode: opts.mode ?? "approval",
+        autoDecisionOnExpiry: opts.autoDecisionOnExpiry ?? "BLOCK",
+        startedAt: new Date().toISOString(),
+        warningSentAt: null,
+        status: "pending",
+      })),
     } as any,
     storage: (() => {
       const stateData: Record<string, unknown[]> = {

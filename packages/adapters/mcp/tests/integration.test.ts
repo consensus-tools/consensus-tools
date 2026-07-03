@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -13,6 +13,7 @@ import { handle } from "../src/tools/consensus-tools.js";
 import { handle as handleAgent } from "../src/tools/agent-tools.js";
 import { handle as handleGuard } from "../src/tools/guard-tools.js";
 import { handle as handleBoard } from "../src/tools/board-tools.js";
+import { handle as handleHitl } from "../src/tools/hitl-tools.js";
 import type { McpContext } from "../src/context.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -79,6 +80,12 @@ beforeAll(async () => {
     storage,
     agentId: "test-agent",
   };
+});
+
+// Registering a pending approval starts the HitlTracker deadline timer;
+// stop it so vitest can exit.
+afterAll(() => {
+  ctx.hitlTracker.stop();
 });
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -215,14 +222,151 @@ describe("Board tools integration (real storage)", () => {
 });
 
 describe("Guard tools integration (real guard engine)", () => {
-  it("guard.evaluate returns a decision with real engine", async () => {
+  const DECISIONS = ["ALLOW", "BLOCK", "REWRITE", "REQUIRE_HUMAN"];
+
+  it("guard.evaluate returns a valid decision with real engine", async () => {
     const result = await handleGuard("guard.evaluate", {
       boardId: "integ-board",
-      action: { type: "agent_action", payload: { toolName: "test_tool" } },
+      action: { type: "agent_action", payload: { irreversible: false } },
     }, ctx);
     expect((result as any).isError).toBeUndefined();
     const data = parseContent(result);
-    expect(data.decision).toBeDefined();
-    expect(["ALLOW", "DENY", "ESCALATE"]).toContain(data.decision);
+    expect(DECISIONS).toContain(data.decision);
+  });
+
+  // These prove the payload-translation fix end-to-end: sent exactly per the
+  // advertised MCP schema, the real evaluators must now flag the risk instead of
+  // returning ALLOW because the keys never matched.
+  it("guard.deployment flags a prod deploy sent as deployEnv:'prod'", async () => {
+    const result = await handleGuard("guard.deployment", {
+      boardId: "integ-board",
+      action: { type: "deployment", payload: { service: "api", version: "abc", deployEnv: "prod" } },
+    }, ctx);
+    const data = parseContent(result);
+    expect(data.decision).not.toBe("ALLOW");
+  });
+
+  it("guard.code_merge flags an auth-file change sent as filesChanged", async () => {
+    const result = await handleGuard("guard.code_merge", {
+      boardId: "integ-board",
+      action: { type: "code_merge", payload: { repo: "r", filesChanged: ["src/auth/login.ts"], diff: "tweak" } },
+    }, ctx);
+    const data = parseContent(result);
+    expect(data.decision).not.toBe("ALLOW");
+  });
+
+  it("guard.permission_escalation flags a wildcard requestedPermissions grant", async () => {
+    const result = await handleGuard("guard.permission_escalation", {
+      boardId: "integ-board",
+      action: { type: "permission_escalation", payload: { targetUser: "svc", requestedPermissions: ["*"] } },
+    }, ctx);
+    const data = parseContent(result);
+    expect(data.decision).not.toBe("ALLOW");
+  });
+
+  // Proves policy.assign is no longer a no-op: an assigned policy makes the board
+  // route a high-risk REWRITE to human review instead of a bare REWRITE.
+  it("an assigned board policy routes a high-risk action to human review", async () => {
+    const prodDeploy = {
+      action: { type: "deployment", payload: { service: "api", version: "v1", deployEnv: "prod" } },
+    };
+    const before = parseContent(
+      await handleGuard("guard.deployment", { boardId: "policy-off", ...prodDeploy }, ctx),
+    );
+    expect(before.decision).toBe("REWRITE");
+
+    await handleGuard("policy.assign", {
+      boardId: "policy-on", policyId: "strict", participants: [], quorum: 0.9,
+    }, ctx);
+    const after = parseContent(
+      await handleGuard("guard.deployment", { boardId: "policy-on", ...prodDeploy }, ctx),
+    );
+    expect(after.decision).toBe("REQUIRE_HUMAN");
+  });
+
+  // Per-board thresholds (the schema fields): a board that raises
+  // hitlRequiredAboveRisk above the action's risk should NOT escalate to human.
+  it("a per-board hitlRequiredAboveRisk threshold controls escalation", async () => {
+    const prodDeploy = {
+      action: { type: "deployment", payload: { service: "api", version: "v1", deployEnv: "prod" } },
+    };
+    // prod deploy risk is ~0.8; a 0.99 threshold keeps it a REWRITE, not human review.
+    await handleGuard("policy.assign", {
+      boardId: "lenient", policyId: "p", participants: [], quorum: 0.7, hitlRequiredAboveRisk: 0.99,
+    }, ctx);
+    const lenient = parseContent(
+      await handleGuard("guard.deployment", { boardId: "lenient", ...prodDeploy }, ctx),
+    );
+    expect(lenient.decision).toBe("REWRITE");
+
+    // A 0.1 threshold escalates the same action to human review.
+    await handleGuard("policy.assign", {
+      boardId: "tight", policyId: "p", participants: [], quorum: 0.7, hitlRequiredAboveRisk: 0.1,
+    }, ctx);
+    const tight = parseContent(
+      await handleGuard("guard.deployment", { boardId: "tight", ...prodDeploy }, ctx),
+    );
+    expect(tight.decision).toBe("REQUIRE_HUMAN");
+  });
+
+  it("guard.permission_escalation flags a scoped wildcard in requestedPermissions", async () => {
+    const result = parseContent(
+      await handleGuard("guard.permission_escalation", {
+        boardId: "perm-board",
+        action: { type: "permission_escalation", payload: { requestedPermissions: ["s3:read", "iam:*"] } },
+      }, ctx),
+    );
+    expect(["REWRITE", "REQUIRE_HUMAN", "BLOCK"]).toContain(result.decision);
+  });
+});
+
+describe("Standalone guard HITL (real tracker)", () => {
+  const prodDeploy = {
+    action: { type: "deployment", payload: { service: "api", version: "v1", deployEnv: "prod" } },
+  };
+
+  beforeAll(async () => {
+    await handleGuard("policy.assign", {
+      boardId: "hitl-board", policyId: "p", participants: [], quorum: 0.7, hitlRequiredAboveRisk: 0.1,
+    }, ctx);
+  });
+
+  it("REQUIRE_HUMAN registers a pending approval and a human NO resolves it", async () => {
+    const result = parseContent(
+      await handleGuard("guard.deployment", { boardId: "hitl-board", runId: "hitl-run-1", ...prodDeploy }, ctx),
+    );
+    expect(result.decision).toBe("REQUIRE_HUMAN");
+    expect(result.runId).toBe("hitl-run-1");
+    expect(result.next_step).toMatchObject({ tool: "human.approve" });
+
+    const pending = await ctx.hitlTracker.getPendingApproval("hitl-run-1");
+    expect(pending).toBeDefined();
+
+    const approve = await handleHitl("human.approve", {
+      runId: "hitl-run-1", replyText: "NO", idempotencyKey: "hitl-key-1",
+    }, ctx);
+    expect((approve as any).isError).toBeUndefined();
+    const decision = parseContent(approve);
+    expect(decision.decision).toBe("NO");
+    expect(decision.complete).toBe(true);
+
+    expect(await ctx.hitlTracker.getPendingApproval("hitl-run-1")).toBeUndefined();
+  });
+
+  it("mints a runId when the caller omits one, so human.approve has a handle", async () => {
+    const result = parseContent(
+      await handleGuard("guard.deployment", { boardId: "hitl-board", ...prodDeploy }, ctx),
+    );
+    expect(result.decision).toBe("REQUIRE_HUMAN");
+    expect(typeof result.runId).toBe("string");
+    expect(result.runId.length).toBeGreaterThan(0);
+
+    expect(await ctx.hitlTracker.getPendingApproval(result.runId)).toBeDefined();
+
+    // Resolve it so no pending approval outlives the suite.
+    const approve = await handleHitl("human.approve", {
+      runId: result.runId, replyText: "YES", idempotencyKey: "hitl-key-2",
+    }, ctx);
+    expect((approve as any).isError).toBeUndefined();
   });
 });

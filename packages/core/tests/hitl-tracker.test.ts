@@ -63,3 +63,31 @@ describe("HitlTracker", () => {
     t.stop(); // Idempotent
   });
 });
+
+describe("HitlTracker.resumeDeadlineTracking", () => {
+  it("re-arms deadline enforcement for approvals persisted by a previous process", async () => {
+    const { storage } = await createTempStorage();
+    // Previous process registers an approval that expires immediately, then dies.
+    const prev = new HitlTracker({ storage });
+    await prev.registerPendingApproval({ runId: "r-restart", boardId: "b1", timeoutSec: 0 });
+    prev.stop();
+
+    // New process: without resumeDeadlineTracking nothing ever expires this approval.
+    const expired: Array<{ runId: string; decision: string }> = [];
+    tracker = new HitlTracker({
+      storage,
+      onExpiry: async (approval, decision) => {
+        expired.push({ runId: approval.runId, decision });
+      },
+    });
+    await tracker.resumeDeadlineTracking();
+
+    expect(expired).toEqual([{ runId: "r-restart", decision: "BLOCK" }]);
+    expect(await tracker.listPending()).toHaveLength(0);
+  });
+
+  it("is a no-op when nothing is pending", async () => {
+    const t = await makeTracker();
+    await expect(t.resumeDeadlineTracking()).resolves.toBeUndefined();
+  });
+});

@@ -106,6 +106,7 @@ export {
   BUILT_IN_GUARD_DOMAINS,
   GUARD_DOMAIN_DESCRIPTIONS,
   DEFAULT_GUARD_POLICY,
+  DEFAULT_HITL_TIMEOUT_SEC,
 } from "./guard-constants.js";
 
 // ── Guard ───────────────────────────────────────────────────────────

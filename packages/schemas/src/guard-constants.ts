@@ -46,3 +46,7 @@ export const DEFAULT_GUARD_POLICY = {
   hitlRequiredAboveRisk: 0.7,
   options: {},
 } as const;
+
+// Default HITL approval deadline (seconds). Shared so standalone guard escalations
+// (MCP adapter) and workflow hitl nodes expire on the same clock.
+export const DEFAULT_HITL_TIMEOUT_SEC = 900;

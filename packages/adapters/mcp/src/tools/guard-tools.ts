@@ -1,7 +1,12 @@
+import { randomUUID } from "node:crypto";
 import {
   guardEvaluateInputSchema as guardInputZod,
+  policyAssignmentSchema,
+  DEFAULT_GUARD_POLICY,
+  DEFAULT_HITL_TIMEOUT_SEC,
   BUILT_IN_GUARD_DOMAINS,
 } from "@consensus-tools/schemas";
+import type { GuardPolicy } from "@consensus-tools/schemas";
 import type { McpContext } from "../context.js";
 
 const guardEvaluateInputSchema = {
@@ -30,7 +35,7 @@ const policyTools = [
   {
     name: "policy.assign",
     description:
-      "Assign a guard policy to a board with weighting mode and quorum settings. Upserts — if a policy is already assigned to the board, it is replaced.",
+      "Assign a guard policy to a board. Upserts — if a policy is already assigned to the board, it is replaced. Once assigned, guard.* evaluations on this board honor the policy: hitlRequiredAboveRisk routes high-risk actions to human review, while quorum/riskThreshold/weightingMode apply to multi-agent weighted decisions.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -47,6 +52,14 @@ const policyTools = [
           description: "Vote weighting mode (default: hybrid)",
         },
         quorum: { type: "number", description: "Quorum threshold 0-1" },
+        riskThreshold: {
+          type: "number",
+          description: "Optional 0-1 risk threshold for weighted decisions on this board (default: 0.7)",
+        },
+        hitlRequiredAboveRisk: {
+          type: "number",
+          description: "Optional 0-1 risk at or above which actions on this board route to human review (default: 0.7)",
+        },
       },
       required: ["boardId", "policyId", "participants", "quorum"],
     },
@@ -256,6 +269,86 @@ const GUARD_TYPE_MAP: Record<string, string> = Object.fromEntries(
   BUILT_IN_GUARD_DOMAINS.map((domain) => [`guard.${domain}`, domain]),
 );
 
+// Resolve the effective guard policy for a board from its policy assignment.
+// Without this, a policy assigned via policy.assign has no effect on guard.* calls
+// (GuardEngine.evaluate falls back to no policy). When a board has an assignment,
+// derive a GuardPolicy from it: the assignment's policyId and quorum are honored,
+// and the default risk/HITL thresholds apply — so a policy'd board routes high-risk
+// actions to human review (REQUIRE_HUMAN) and enforces quorum in weighted decisions.
+// Boards with no assignment keep the engine's default behavior (undefined policy).
+function resolveBoardPolicy(
+  assignments: Array<{
+    boardId: string;
+    policyId: string;
+    quorum: number;
+    riskThreshold?: number;
+    hitlRequiredAboveRisk?: number;
+  }> | undefined,
+  boardId: string | undefined,
+): GuardPolicy | undefined {
+  if (!boardId || !assignments) return undefined;
+  const assignment = assignments.find((p) => p.boardId === boardId);
+  if (!assignment) return undefined;
+  return {
+    ...DEFAULT_GUARD_POLICY,
+    policyId: assignment.policyId,
+    quorum: assignment.quorum,
+    ...(assignment.riskThreshold !== undefined ? { riskThreshold: assignment.riskThreshold } : {}),
+    ...(assignment.hitlRequiredAboveRisk !== undefined ? { hitlRequiredAboveRisk: assignment.hitlRequiredAboveRisk } : {}),
+  };
+}
+
+// The public MCP guard tools advertise ergonomic payload keys (filesChanged, diff,
+// content, replyText, deployEnv, requestedPermissions, ...). The deterministic
+// evaluators in @consensus-tools/guards read a different, internal key set (files,
+// diff_summary, text, message, env, permission, ...). Without translation, a payload
+// sent exactly per the advertised schema reaches the evaluator as empty and every
+// guard silently votes ALLOW. This maps the advertised keys onto the evaluator
+// contract so the guards actually inspect what callers send.
+function translateGuardPayload(
+  domain: string,
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const p = { ...payload };
+  const first = (v: unknown): unknown => (Array.isArray(v) ? v[0] : v);
+  switch (domain) {
+    case "send_email": {
+      const attachments = payload["attachments"];
+      if (payload["attachment"] === undefined && Array.isArray(attachments) && attachments.length > 0) {
+        p["attachment"] = attachments;
+      }
+      return p;
+    }
+    case "code_merge": {
+      if (payload["files"] === undefined && payload["filesChanged"] !== undefined) p["files"] = payload["filesChanged"];
+      if (payload["diff_summary"] === undefined && payload["diff"] !== undefined) p["diff_summary"] = payload["diff"];
+      return p;
+    }
+    case "publish": {
+      if (payload["text"] === undefined && payload["content"] !== undefined) p["text"] = payload["content"];
+      return p;
+    }
+    case "support_reply": {
+      if (payload["message"] === undefined && payload["replyText"] !== undefined) p["message"] = payload["replyText"];
+      return p;
+    }
+    case "deployment": {
+      if (payload["env"] === undefined && payload["deployEnv"] !== undefined) p["env"] = payload["deployEnv"];
+      return p;
+    }
+    case "permission_escalation": {
+      const requested = payload["requestedPermissions"];
+      if (payload["permission"] === undefined && requested !== undefined) {
+        p["permission"] = Array.isArray(requested) && requested.includes("*") ? "*" : first(requested);
+      }
+      return p;
+    }
+    // agent_action already shares its key (`irreversible`) with the evaluator.
+    default:
+      return p;
+  }
+}
+
 export async function handle(
   name: string,
   args: Record<string, unknown>,
@@ -264,19 +357,15 @@ export async function handle(
   try {
     // ── Policy tools ────────────────────────────────────────
     if (name === "policy.assign") {
-      const boardId = String(args.boardId || "");
-      const policyId = String(args.policyId || "");
-      const participants = Array.isArray(args.participants) ? (args.participants as string[]) : [];
-      const weightingMode = String(args.weightingMode || "hybrid");
-      const quorum = Number(args.quorum ?? 0.7);
-
-      if (!boardId || !policyId) {
-        return { isError: true, content: [{ type: "text", text: "boardId and policyId are required" }] };
+      const parsedPolicy = policyAssignmentSchema.safeParse(args);
+      if (!parsedPolicy.success) {
+        return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsedPolicy.error.issues }) }] };
       }
+      const assignment = parsedPolicy.data;
+      const boardId = assignment.boardId;
 
       await ctx.storage.update((state) => {
         const existing = state.policyAssignments.findIndex((p) => p.boardId === boardId);
-        const assignment = { boardId, policyId, participants, weightingMode: weightingMode as "static" | "reputation" | "hybrid", quorum };
         if (existing >= 0) {
           state.policyAssignments[existing] = assignment;
         } else {
@@ -300,15 +389,41 @@ export async function handle(
 
     // ── Guard tools ─────────────────────────────────────────
     const guardType = GUARD_TYPE_MAP[name];
-    const action = args.action as { type: string; payload: Record<string, unknown> } | undefined;
+    const action = args.action as { type?: string; payload?: Record<string, unknown> } | undefined;
+
+    // guard.evaluate is the generic tool — it MUST carry an explicit action with a
+    // type. Fabricating a fallback type ("evaluate") routes to the permissive generic
+    // evaluator, which always votes ALLOW — a silent pass for a malformed request.
+    if (!guardType) {
+      if (!action || typeof action.type !== "string" || !action.type) {
+        return { isError: true, content: [{ type: "text", text: "guard.evaluate requires an 'action' object with a non-empty 'type'" }] };
+      }
+      // Gate on the engine's actual evaluator set, NOT guardTypeSchema: schema types
+      // with no registered evaluator (seo_fix, diff_check) would fall through to the
+      // generic always-YES evaluator — a silent ALLOW. Custom domains registered on
+      // the engine's evaluator registry are accepted.
+      const supported = ctx.guardEngine.supportedGuardTypes();
+      if (!supported.includes(action.type)) {
+        return { isError: true, content: [{ type: "text", text: `Unknown guard action type: ${action.type}. This server can evaluate: ${supported.join(", ")}` }] };
+      }
+    }
+
+    const resolvedType = guardType ?? action!.type!;
+    const rawPayload = action?.payload ?? {};
+    // Translate advertised keys for ANY built-in domain, whether invoked via a named
+    // guard.<domain> tool or via guard.evaluate with an explicit domain type — so the
+    // same payload doesn't silently pass through as ALLOW on the guard.evaluate path.
+    const payload = BUILT_IN_GUARD_DOMAINS.includes(resolvedType as (typeof BUILT_IN_GUARD_DOMAINS)[number])
+      ? translateGuardPayload(resolvedType, rawPayload)
+      : rawPayload;
 
     const rawInput = {
       boardId: args.boardId,
       runId: args.runId,
       agentId: args.agentId,
       action: {
-        type: guardType ?? action?.type ?? "evaluate",
-        payload: action?.payload ?? {},
+        type: resolvedType,
+        payload,
       },
       policyPack: args.policyPack,
     };
@@ -318,7 +433,62 @@ export async function handle(
       return { isError: true, content: [{ type: "text", text: JSON.stringify({ error: "Validation failed", details: parsed.error.issues }) }] };
     }
 
-    const result = await ctx.guardEngine.evaluate(parsed.data);
+    // Apply the board's assigned policy (if any) so policy.assign actually governs
+    // this evaluation instead of being a no-op.
+    const state = await ctx.storage.getState();
+    const policy = resolveBoardPolicy(state.policyAssignments, parsed.data.boardId);
+
+    const result = policy
+      ? await ctx.guardEngine.evaluate(parsed.data, policy)
+      : await ctx.guardEngine.evaluate(parsed.data);
+
+    // REQUIRE_HUMAN on a standalone guard call must register a pending approval —
+    // otherwise a later human.approve has nothing to resolve and the decision is a
+    // dead end. Key the approval on the caller's runId (minted if absent) so the
+    // response tells the caller exactly how to complete the review. The tracker's
+    // deadline timer auto-BLOCKs on expiry, so an unanswered escalation fails closed.
+    if (result.decision === "REQUIRE_HUMAN") {
+      // `||`, not `??`: an empty-string runId would otherwise key the approval on ""
+      // and collide with every other empty-runId escalation.
+      const runId = parsed.data.runId || `run_${randomUUID()}`;
+      // A retry of the same runId must not stack a second pending approval — but only
+      // reuse an approval that belongs to THIS board. A cross-board runId collision
+      // would hand this caller a next_step that resolves someone else's escalation.
+      const existing = await ctx.hitlTracker.getPendingApproval(runId);
+      if (existing && existing.boardId !== parsed.data.boardId) {
+        return { isError: true, content: [{ type: "text", text: `runId ${runId} already has a pending approval on board ${existing.boardId}; use a distinct runId for board ${parsed.data.boardId}` }] };
+      }
+      const approval =
+        existing ??
+        (await ctx.hitlTracker.registerPendingApproval({
+          runId,
+          boardId: parsed.data.boardId,
+          timeoutSec: DEFAULT_HITL_TIMEOUT_SEC,
+          requiredVotes: 1,
+          mode: "approval",
+          autoDecisionOnExpiry: "BLOCK",
+        }));
+      const priorInput =
+        result.next_step && typeof result.next_step.input === "object" && result.next_step.input !== null
+          ? (result.next_step.input as Record<string, unknown>)
+          : {};
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            ...result,
+            runId,
+            next_step: { tool: "human.approve", input: { ...priorInput, runId } },
+            hitl: {
+              approvalId: approval.id,
+              timeoutSec: approval.timeoutSec,
+              autoDecisionOnExpiry: approval.autoDecisionOnExpiry,
+            },
+          }),
+        }],
+      };
+    }
+
     return { content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

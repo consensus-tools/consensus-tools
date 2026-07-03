@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -34,18 +37,31 @@ type ToolHandler = (name: string, args: Record<string, unknown>, ctx: McpContext
   isError?: boolean;
 }>;
 
-const handlers: Array<{ prefix: string; names: Set<string>; handler: ToolHandler }> = [
-  { prefix: "guard.", names: new Set(guardTools.map((t) => t.name)), handler: handleGuard },
-  { prefix: "agent.", names: new Set(agentTools.map((t) => t.name)), handler: handleAgent },
-  { prefix: "consensus_", names: new Set(consensusTools.map((t) => t.name)), handler: handleConsensus },
-  { prefix: "human.", names: new Set(hitlTools.map((t) => t.name)), handler: handleHitl },
-  { prefix: "board.|run.|audit.", names: new Set(boardTools.map((t) => t.name)), handler: handleBoard },
-  { prefix: "workflow.|cron.", names: new Set(workflowTools.map((t) => t.name)), handler: handleWorkflow },
+const handlers: Array<{ names: Set<string>; handler: ToolHandler }> = [
+  { names: new Set(guardTools.map((t) => t.name)), handler: handleGuard },
+  { names: new Set(agentTools.map((t) => t.name)), handler: handleAgent },
+  { names: new Set(consensusTools.map((t) => t.name)), handler: handleConsensus },
+  { names: new Set(hitlTools.map((t) => t.name)), handler: handleHitl },
+  { names: new Set(boardTools.map((t) => t.name)), handler: handleBoard },
+  { names: new Set(workflowTools.map((t) => t.name)), handler: handleWorkflow },
 ];
+
+// Single source of truth for the advertised server version — read from package.json
+// so `initialize` never drifts from the published package version. Resolves to
+// <pkg-root>/package.json from both src/ (dev) and dist/ (built).
+function resolveServerVersion(): string {
+  try {
+    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
 
 export function createMcpServer(ctx: McpContext): Server {
   const server = new Server(
-    { name: "consensus-tools", version: "0.9.1" },
+    { name: "consensus-tools", version: resolveServerVersion() },
     { capabilities: { tools: {}, resources: {}, prompts: {} } },
   );
 

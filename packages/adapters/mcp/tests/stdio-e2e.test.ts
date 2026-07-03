@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -117,7 +117,9 @@ describe("MCP stdio e2e (shipped binary)", () => {
 
   it("completes the initialize handshake with server identity", () => {
     expect(initResult?.serverInfo?.name).toBe("consensus-tools");
-    expect(initResult?.serverInfo?.version).toBeTruthy();
+    // Served version must equal package.json — catches the hardcoded-version drift.
+    const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8"));
+    expect(initResult?.serverInfo?.version).toBe(pkg.version);
     expect(initResult?.protocolVersion).toBe("2024-11-05");
   });
 

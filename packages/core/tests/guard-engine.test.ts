@@ -96,3 +96,26 @@ describe("GuardEngine", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("GuardEngine.supportedGuardTypes", () => {
+  it("returns the built-in domains when no evaluator registry is configured", async () => {
+    const { storage } = await createTempStorage();
+    const engine = new GuardEngine({ storage });
+    const types = engine.supportedGuardTypes();
+    expect(types).toContain("deployment");
+    expect(types).toContain("permission_escalation");
+    expect(types).toHaveLength(7);
+    // No evaluator exists for these — advertising them would be a silent-ALLOW path.
+    expect(types).not.toContain("seo_fix");
+    expect(types).not.toContain("diff_check");
+  });
+
+  it("reflects custom evaluators registered on the registry", async () => {
+    const { storage } = await createTempStorage();
+    const { createGuardEvaluatorRegistry } = await import("@consensus-tools/guards");
+    const registry = createGuardEvaluatorRegistry();
+    registry.register("db_migration", () => [{ evaluator: "custom", vote: "YES", reason: "ok", risk: 0.1 }]);
+    const engine = new GuardEngine({ storage, evaluatorRegistry: registry });
+    expect(engine.supportedGuardTypes()).toContain("db_migration");
+  });
+});

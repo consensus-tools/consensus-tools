@@ -118,9 +118,19 @@ export async function handle(
         // Return jobs, submissions, and resolutions for the board
         const jobs = state.jobs.filter((j) => j.boardId === id);
         const submissions = state.submissions.filter((s) => s.boardId === id);
-        const guardResults = state.guardResults.filter(
-          (r) => (r as Record<string, unknown>).guard_type !== undefined,
-        );
+        // GuardResult carries no boardId, so scope by joining through audit events.
+        // Two producers link differently: GuardEngine records the result id under
+        // details.auditId, while workflow guard nodes set guardResult.audit_id to the
+        // audit event's own id. Collect both for board-matching events so neither
+        // path is dropped (and cross-board results are never leaked).
+        const boardAuditIds = new Set<string>();
+        for (const e of state.audit ?? []) {
+          const d = e.details as Record<string, unknown>;
+          if (d?.boardId !== id) continue;
+          if (typeof d?.auditId === "string") boardAuditIds.add(d.auditId);
+          boardAuditIds.add(e.id);
+        }
+        const guardResults = (state.guardResults ?? []).filter((r) => boardAuditIds.has(r.audit_id));
         return {
           content: [
             {
@@ -159,7 +169,12 @@ export async function handle(
 
       case "audit.search": {
         const rawQuery = (args.query as string) ?? "";
-        const limit = Math.min(Math.max((args.limit as number) ?? 100, 1), 500);
+        // Guard against a non-numeric limit: Number(NaN) → slice(-NaN) would return
+        // the entire (unbounded) audit log, bypassing the documented 500 cap. A
+        // null/omitted limit means the default 100 — Number(null) is 0, which would
+        // otherwise clamp to 1.
+        const limitNum = args.limit == null ? 100 : Number(args.limit);
+        const limit = Math.min(Math.max(Number.isFinite(limitNum) ? limitNum : 100, 1), 500);
         const state = await ctx.storage.getState();
 
         // Support field-specific search: "type:AGENT_VERDICT", "runId:wfrun_abc", "boardId:workflow-system"
@@ -215,32 +230,41 @@ export async function handle(
 
         const input = guardResultToExplainInput(guardResult);
         const maxTokens = 1024;
+        // The LLM SDKs are optional (declared as devDependencies — "bring your own").
+        // If the caller set a key but never installed the SDK, surface an actionable
+        // message instead of a raw ERR_MODULE_NOT_FOUND.
         let llm;
-        if (anthropicKey) {
-          const Anthropic = (await import("@anthropic-ai/sdk" as string)).default;
-          const client = new Anthropic({ apiKey: anthropicKey });
-          const model = "claude-sonnet-4-20250514";
-          llm = async (prompt: string) => {
-            const res = await client.messages.create({
-              model,
-              max_tokens: maxTokens,
-              messages: [{ role: "user", content: prompt }],
-            });
-            const block = res.content?.[0];
-            return block?.type === "text" ? block.text : "";
-          };
-        } else {
-          const OpenAI = (await import("openai" as string)).default;
-          const client = new OpenAI({ apiKey: openaiKey });
-          const model = "gpt-4o-mini";
-          llm = async (prompt: string) => {
-            const res = await client.chat.completions.create({
-              model,
-              messages: [{ role: "user", content: prompt }],
-              max_tokens: maxTokens,
-            });
-            return res.choices?.[0]?.message?.content ?? "";
-          };
+        try {
+          if (anthropicKey) {
+            const Anthropic = (await import("@anthropic-ai/sdk" as string)).default;
+            const client = new Anthropic({ apiKey: anthropicKey });
+            const model = "claude-sonnet-4-20250514";
+            llm = async (prompt: string) => {
+              const res = await client.messages.create({
+                model,
+                max_tokens: maxTokens,
+                messages: [{ role: "user", content: prompt }],
+              });
+              const block = res.content?.[0];
+              return block?.type === "text" ? block.text : "";
+            };
+          } else {
+            const OpenAI = (await import("openai" as string)).default;
+            const client = new OpenAI({ apiKey: openaiKey });
+            const model = "gpt-4o-mini";
+            llm = async (prompt: string) => {
+              const res = await client.chat.completions.create({
+                model,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: maxTokens,
+              });
+              return res.choices?.[0]?.message?.content ?? "";
+            };
+          }
+        } catch (err: unknown) {
+          const pkg = anthropicKey ? "@anthropic-ai/sdk" : "openai";
+          const detail = err instanceof Error ? err.message : String(err);
+          return { isError: true, content: [{ type: "text", text: `audit.explain requires the ${pkg} package. Install it to use this tool (npm install ${pkg}). Underlying error: ${detail}` }] };
         }
         const result = await explainDecision(input, { llm });
 
