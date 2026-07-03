@@ -9,14 +9,14 @@ export const resourceTemplates = [
   },
   {
     uriTemplate: "consensus://boards/{boardId}/ledger",
-    name: "Board Ledger",
-    description: "Ledger entries for a consensus board",
+    name: "Credit Ledger",
+    description: "Credit ledger entries (global — the ledger is shared across all boards)",
     mimeType: "application/json",
   },
   {
     uriTemplate: "consensus://boards/{boardId}/agents",
     name: "Registered Agents",
-    description: "All registered agents for a consensus board",
+    description: "All registered agents (global — agents are not scoped per board)",
     mimeType: "application/json",
   },
 ];
@@ -36,8 +36,8 @@ export async function listResources(ctx: McpContext): Promise<Array<{ uri: strin
   for (const id of boardIds) {
     resources.push(
       { uri: `consensus://boards/${id}/jobs`, name: `${id} — Jobs`, mimeType: "application/json" },
-      { uri: `consensus://boards/${id}/ledger`, name: `${id} — Ledger`, mimeType: "application/json" },
-      { uri: `consensus://boards/${id}/agents`, name: `${id} — Agents`, mimeType: "application/json" },
+      { uri: `consensus://boards/${id}/ledger`, name: `${id} — Ledger (global)`, mimeType: "application/json" },
+      { uri: `consensus://boards/${id}/agents`, name: `${id} — Agents (global)`, mimeType: "application/json" },
     );
   }
   return resources;
